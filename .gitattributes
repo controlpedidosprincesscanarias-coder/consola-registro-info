@@ -1,0 +1,8 @@
+# Consola Registro Info SAP — saltos de línea (VAMA)
+# En el repositorio, todo con LF. Git pone CRLF al sacar los archivos en Windows.
+# Python acepta los dos tipos; los .bat necesitan CRLF.
+* text=auto
+*.bat text eol=crlf
+*.png binary
+*.ico binary
+*.jpg binary
