@@ -995,7 +995,28 @@ gen._ejecutar()   # síncrono, sin hilo — los errores salen al momento como tr
 
 ---
 
+## 42. Repositorio en GitHub: seguridad y etapa 1 de la reorganización (9 nov 2026) — PR en GitHub
+
+El proyecto se subió a GitHub (`controlpedidosprincesscanarias-coder/consola-registro-info`, un solo commit «Add files via upload»). Se sigue el mismo método que con el Organizador Princess: por etapas, una rama y un PR por etapa, sin push a `main` sin confirmación de Víctor.
+
+### Seguridad (PR #1, fusionado)
+- `tarifa_config.json` se subió por error con el correo y la contraseña de Catálogo Asignaciones en claro (el `.gitignore` local no se subió). Se quita del repositorio y se añade `.gitignore` (mismo criterio que el local, más `TARIFA_Finder.spec`, `Thumbs.db` y `__pycache__`). Víctor confirma que esa contraseña no sirve para nada.
+- Nuevo `credenciales.py` (sin tkinter): la contraseña se guarda cifrada con DPAPI de Windows (`dali_app_password_cifrada`, prefijo `dpapi1:`), como el Organizador. Una antigua en claro se cifra y se borra al arrancar; si no se puede cifrar, no se guarda. `test_credenciales.py` (8 pruebas).
+
+### Etapa 1 (base del repositorio)
+- **Bug de pruebas** (commit propio): TC25 no tenía `@unittest.skipIf(_CRI is None, …)` y en un Python sin tkinter daba 2 errores en vez de saltarse.
+- **Importaciones sin usar** (pyflakes, unas 70) quitadas. pyflakes no encuentra ningún nombre sin definir (solo una anotación de tipo en texto en `sap_helpers.py`). Variables asignadas y sin usar revisadas: son restos inofensivos (`val_col5`, `mejor_tipo`, `df1`, `COL_*`…), sin errores escondidos.
+- **Archivos muertos fuera:** `organizar_dali_metodo.py` (fragmento de integración de la antigua Acción 1, ya integrada) y `TARIFA_Finder.spec` (lo genera PyInstaller con rutas de G:).
+- **Documentación nueva:** `CLAUDE.md` (reglas para Claude Code), `AUTORIA.md` y README reescrito (el anterior era de «TARIFA Finder v2» y tenía los acentos rotos).
+- **Pruebas:** 103 en verde con tkinter (`xvfb-run` en Linux); las 18 que importan `crear_registro_info` se saltan sin tkinter.
+
+---
+
 ## Próximos pasos, en orden de prioridad
+0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
+   - etapa 2: carpetas por capas (como `app/` del Organizador) sin cambiar el funcionamiento;
+   - etapa 3: seguir troceando `crear_registro_info.py` (~10.000 líneas) y `tarifa_app.py` (~5.600), separando ventanas y lógica;
+   - etapa 4: compilación automática en GitHub Actions (Windows, solo a mano) con las pruebas, y manual de usuario con capturas.
 1. Roadmap de limpieza — puntos **1, 2, 3, 4 y 5 CERRADOS**. Punto 6 con su **primera pasada hecha** (sección 32): boilerplate 100% idéntico consolidado; quedan 6 geometrías con fórmulas propias, sin tocar deliberadamente — no hay más trabajo pendiente salvo que en algún momento vuelvan a coincidir entre sí.
 2. Recomendación pendiente para el usuario: revisar en SAP los ~50 materiales que aparecieron con el mismo hueco de Hoja3 que 10101839, por si llevan tiempo sin condición de precio activa sin que nadie lo notara.
 3. Recomendación pendiente (sección 22): siguen existiendo ~1.594 materiales SAP más (además del 10102980, ya resuelto) sin cruce DALI en el LISTADO — el fallback a `Productos.xlsx` los cubre para la sincronización de UM, pero conviene revisar y completar el cruce DALI real cuando haya ocasión, ya que el fallback no puede aportar IGIC ni grupo de compras.
