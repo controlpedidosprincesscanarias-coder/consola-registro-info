@@ -1,60 +1,53 @@
-# TARIFA Finder v2
-### Creaci\xf3n Registro Info SAP \u2014 Central Compras Princess Canarias
-**\xa9 VAMA 2026 \u2014 V\xedctor Alejandro Mart\xedn Andrade**
+# Consola Registro Info SAP (TARIFA Finder)
 
----
+App de escritorio de la **Central de Compras Princess Canarias** para preparar las tarifas de los proveedores y generar los **Registros de Información de compras de SAP (RINFO)**. También mantiene los listados de artículos DALI y de materiales SAP.
 
-## Distribuci\xf3n
+> La idea y el desarrollo de la aplicación, incluidas sus pruebas, son de **Víctor Alejandro Martín Andrade**, para el Departamento de Central de Compras de Princess Hotels en Canarias. Ver `AUTORIA.md`.
 
-Solo se distribuye el archivo:
-```
-TARIFA_Finder.exe
-```
-**No requiere Python, ni librer\xedas, ni instalaci\xf3n.**
+**Versión actual:** v 10.2.36 (`APP_VERSION` en `tarifa_app.py`).
 
----
+## Uso
+Se distribuye solo `TARIFA_Finder.exe`, que no necesita Python instalado. Hace falta Excel para algunas acciones.
 
-## Interfaz
+1. Elige la **carpeta del proyecto** (con `TARIFAS/` y `RECURSOS/`). Se recuerda en `tarifa_config.json`, junto al `.exe`.
+2. Usa las **acciones** del panel izquierdo:
 
-| Zona | Contenido |
+| Nº | Acción |
 |---|---|
-| **Cabecera** | Logo Princess, t\xedtulo del m\xf3dulo, sub\xedtulo corporativo |
-| **Panel izquierdo** | Selecci\xf3n de carpeta, estado del archivo, barra de progreso, botones de acci\xf3n |
-| **Panel derecho** | Ventana Inmediata (consola de log tipo VBA): muestra el flujo paso a paso con timestamp y colores por nivel |
-| **Pie** | Firma \xa9 VAMA 2026 y denominaci\xf3n corporativa |
+| 1 | Organizar artículos DALI y generar `ARTICULOS_DALI` |
+| 2 | Actualizar el listado de artículos DALI |
+| 3 | Actualizar el listado de materiales SAP |
+| 4 | Generar la TARIFA final y procesar las tarifas incompletas |
+| 5 | Abrir la última TARIFA procesada |
+| 6 | Actualizar a mano los archivos [INCOMPLETOS] |
+| 7 | Listado de tarifa de proveedor vacía (en construcción) |
 
-### Niveles de log en la consola
-- `SISTEMA` \u2014 dorado \u2014 eventos del sistema
-- `INFO`    \u2014 azul   \u2014 informaci\xf3n general
-- `OK`      \u2014 verde  \u2014 operaciones completadas
-- `WARN`    \u2014 amarillo \u2014 avisos
-- `ERROR`   \u2014 rojo   \u2014 errores
+Desde la tarifa preparada se crea el **Registro Info SAP**, a partir del «Purchasing Info Records» descargado de SAP.
 
----
+La **consola** de la derecha muestra cada paso con su hora y un color por nivel: `SISTEMA`, `INFO`, `OK`, `WARN` y `ERROR`.
 
-## Compilar el ejecutable
+**Catálogo Asignaciones:** la primera vez que hace falta descargar su catálogo, la app pide tu usuario y tu contraseña. La contraseña se guarda **cifrada**: solo tu usuario de Windows, en ese equipo, puede leerla. Si la contraseña deja de valer, se borra y se vuelve a pedir.
 
-1. Instalar dependencias (una sola vez):
-   ```
-   pip install pyinstaller pillow
-   ```
-2. Compilar:
-   ```
-   python build_exe.py
-   ```
-3. El ejecutable se genera en `dist/TARIFA_Finder.exe`.
-
-> **Nota sobre Pillow:** se usa solo para renderizar el logo con fondo transparente.
-> Si no est\xe1 instalado, la app funciona igualmente mostrando el texto "PRINCESS HOTELS & RESORTS".
-
----
-
-## Archivos del proyecto
-
+## Compilar (Windows)
+```bash
+pip install pyinstaller pillow pandas openpyxl xlrd pywin32 psutil
 ```
-tarifa_finder_v2/
-\u251c\u2500\u2500 tarifa_app.py       \u2190 C\xf3digo fuente principal
-\u251c\u2500\u2500 build_exe.py        \u2190 Script de compilaci\xf3n
-\u251c\u2500\u2500 README.md           \u2190 Este archivo
-\u2514\u2500\u2500 tarifa_config.json  \u2190 Generado autom\xe1ticamente (carpeta guardada)
+Después ejecuta `COMPILAR_TARIFA.bat`: pregunta la versión, la escribe en `tarifa_app.py` y llama a `build_exe.py`. El ejecutable queda en `dist/TARIFA_Finder.exe`.
+
+## Pruebas
+```bash
+python -m unittest test_crear_registro_info test_credenciales -v
 ```
+
+## Archivos
+| Archivo | Contenido |
+|---|---|
+| `tarifa_app.py` | Ventana principal y acciones |
+| `crear_registro_info.py` | Motor de generación de RINFO y sus ventanas |
+| `transformar_tarifa.py` | Transformación de la tarifa del proveedor |
+| `acciones/organizar_dali.py` | Lógica de la Acción 1 (sin interfaz) |
+| `sap_helpers.py` | Funciones de negocio puras (sin interfaz) |
+| `credenciales.py` | Contraseña de Catálogo Asignaciones cifrada (DPAPI) |
+| `tarifa_core.py`, `tarifa_dialogs.py`, `tarifa_constants.py` | Utilidades, ventanas y constantes |
+| `build_exe.py`, `COMPILAR_TARIFA.bat`, `_bat_helper.py` | Compilación |
+| `HISTORIAL_REORGANIZACION_RINFO.md` | Historial de cambios y próximos pasos |

@@ -25,18 +25,11 @@ from tkinter import ttk
 from datetime import datetime
 import json
 import sys
-import base64
-import threading
-import time
 
 from tarifa_constants import (
     resource_path,
-    C_DARK, C_MID, C_SIDEBAR, C_CARD, C_ACCENT, C_ACCENT2,
-    C_BG, C_PANEL, C_TEXT, C_TEXT_LIGHT, C_MUTED,
-    C_SUCCESS,
-    C_LOG_BG, C_LOG_FG, C_LOG_INFO, C_LOG_WARN, C_LOG_ERR, C_LOG_OK,
-    FONT_TITLE, FONT_SUB, FONT_LABEL, FONT_BOLD,
-    FONT_LOG, FONT_SMALL, FONT_TINY, FONT_SECTION,
+    C_DARK, C_MID, C_SIDEBAR, C_ACCENT, C_MUTED, C_LOG_BG,
+    C_LOG_FG, C_LOG_INFO, C_LOG_WARN, C_LOG_ERR, C_LOG_OK,
 )
 
 

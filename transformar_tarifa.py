@@ -62,8 +62,6 @@ from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.styles.differential import DifferentialStyle
 from openpyxl.formatting.rule import Rule
 from openpyxl.utils import get_column_letter
-import win32com.client as win32
-import pythoncom
 
 
 # ============================================================
@@ -250,7 +248,6 @@ def _insertar_logo_cabecera(ws, log_fn=None) -> None:
         import base64
         from openpyxl.drawing.image import Image as XLImage
         from io import BytesIO
-        from PIL import Image as PILImage
 
         # Logo Princess embebido en base64 — funciona en .py y .exe sin archivos externos
         LOGO_B64 = (
@@ -418,7 +415,7 @@ def _insertar_logo_cabecera(ws, log_fn=None) -> None:
         #  Fila 4 tiene alto 6pt; filas 1,2,3,5 tienen 18pt cada una.
         #  1 px = 9525 EMU.  Mitad de fila (18pt×1.333px/pt ≈ 24px → 12px offset).
         from openpyxl.drawing.spreadsheet_drawing import (
-            AnchorMarker, TwoCellAnchor, OneCellAnchor, XDRPoint2D, XDRPositiveSize2D
+            AnchorMarker, TwoCellAnchor
         )
 
         EMU_PX   = 9525          # 1 px en EMU

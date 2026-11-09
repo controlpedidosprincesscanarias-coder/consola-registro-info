@@ -799,7 +799,7 @@ class TC20_EliminarFilasAgrupadas(unittest.TestCase):
         self.assertEqual(self._valores(ws1), self._valores(ws2))
 
     def test_aleatorio_multiples_semillas(self):
-        import random, openpyxl
+        import random
         for seed in range(5):
             random.seed(seed)
             n = random.choice([30, 80, 150])
@@ -1318,6 +1318,7 @@ class TC24_AvisoCambioPerdidoPorUM(unittest.TestCase):
 #  en que se ejecuten los tests.
 # ─────────────────────────────────────────────────────────────────────────────
 
+@unittest.skipIf(_CRI is None, "crear_registro_info no importable (¿sin tkinter?)")
 class TC25_CierreFinValidezEnBaja(unittest.TestCase):
 
     def test_helper_cierra_periodo_vigente_que_empieza_antes(self):

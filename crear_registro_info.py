@@ -50,15 +50,12 @@ from copy import copy
 import zipfile
 
 import openpyxl
-from openpyxl.styles import Font, PatternFill, Border, Side, Alignment, numbers
-from openpyxl.styles.colors import Color
-from openpyxl.utils import get_column_letter
 
 from tarifa_constants import (
     resource_path,
     C_MID, C_BG, C_PANEL, C_TEXT, C_TEXT_LIGHT, C_HOVER, C_ACCENT2,
-    C_SUCCESS, C_ERROR, C_WARNING,
-    FONT_TITLE, FONT_SUB, FONT_LABEL, FONT_BOLD, FONT_SMALL,
+    C_ERROR, FONT_TITLE, FONT_SUB,
+    FONT_LABEL, FONT_BOLD, FONT_SMALL,
 )
 from tarifa_core import cargar_icono_ventana, ajustar_geometria_pantalla
 
@@ -9700,7 +9697,6 @@ import datetime as _dt_test
 
 def _run_tests(filtro: list = None):
     """Ejecuta todos los tests de edge cases SAP PIR."""
-    import traceback
 
     VERDE  = "\033[92m"
     ROJO   = "\033[91m"
