@@ -799,7 +799,7 @@ class TC20_EliminarFilasAgrupadas(unittest.TestCase):
         self.assertEqual(self._valores(ws1), self._valores(ws2))
 
     def test_aleatorio_multiples_semillas(self):
-        import random, openpyxl
+        import random
         for seed in range(5):
             random.seed(seed)
             n = random.choice([30, 80, 150])

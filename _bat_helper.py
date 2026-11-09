@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-import re, sys, os
+import re
+import sys
 
 accion = sys.argv[1] if len(sys.argv) > 1 else ""
 ruta   = "tarifa_app.py"

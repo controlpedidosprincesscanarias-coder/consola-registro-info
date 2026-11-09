@@ -13,12 +13,9 @@ Estructura del proyecto:
 """
 
 import os
-import shutil
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
-import json
-import sys
 import base64
 import threading
 import time
@@ -26,21 +23,15 @@ import time
 from tarifa_constants import (
     C_DARK, C_MID, C_SIDEBAR, C_CARD, C_BORDER, C_HOVER,
     C_ACCENT, C_ACCENT2, C_ACCENT_DIM,
-    C_BG, C_PANEL, C_TEXT, C_TEXT_LIGHT, C_MUTED,
-    C_SUCCESS, C_ERROR, C_WARNING,
-    C_LOG_BG, C_LOG_FG, C_LOG_INFO, C_LOG_WARN, C_LOG_ERR, C_LOG_OK,
-    FONT_TITLE, FONT_SUB, FONT_LABEL, FONT_BOLD,
-    FONT_LOG, FONT_SMALL, FONT_TINY, FONT_SECTION,
-    SAP_LOGO_B64,
-    DALI_CLAVES_SUBFAMILIA, DALI_CLAVES_IGIC,
+    C_BG, C_TEXT, C_TEXT_LIGHT, C_MUTED, C_SUCCESS,
+    C_ERROR, C_WARNING, C_LOG_BG,
+    FONT_SUB, FONT_LABEL, FONT_SMALL, SAP_LOGO_B64,
     TABLA_SUBFAMILIA_GRUPO_COMPRAS, TABLA_IGIC_GRUPO_COMPRAS,
 )
 from tarifa_core import (
     resource_path, LOGO_B64,
-    get_config_path, cargar_config, guardar_config,
-    TARIFA_NAME, FOLDER_TARIFAS, FOLDER_RECURSOS, FOLDER_PROYECTO,
-    get_subcarpetas, crear_estructura_proyecto, buscar_tarifa,
-    listar_xls, renombrar_a_tarifa,
+    cargar_config, guardar_config, TARIFA_NAME,
+    FOLDER_TARIFAS, FOLDER_RECURSOS, buscar_tarifa, listar_xls,
     ConsolaLog, CanvasProgressBar,
 )
 from credenciales import (
@@ -48,8 +39,7 @@ from credenciales import (
     borrar_credenciales_dali, migrar_credenciales_dali,
 )
 from tarifa_dialogs import (
-    VentanaSeleccionXLS, VentanaAbrirTarifaEdicion,
-    VentanaCrearProyecto, VentanaSeleccionTarifaRI,
+    VentanaSeleccionXLS, VentanaCrearProyecto,
     VentanaSAPFaltantes, VentanaResolverSAPDuplicados,
 )
 from crear_registro_info import iniciar_crear_registro_info
@@ -1086,8 +1076,7 @@ class App(tk.Tk):
                 # -- Ajustar Tabla1: rango fila 7 (cabecera) hasta última fila con datos --
                 # -- y aplicar formato uniforme a todas las filas de datos (fila 8 en adelante) --
                 try:
-                    from openpyxl.utils import get_column_letter
-                    from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+                    from openpyxl.styles import Font, Alignment, Border, Side
 
                     # ── 1. Redimensionar Tabla1 ────────────────────────────────
                     _fila_cab   = 7                    # cabecera siempre en fila 7
@@ -3355,8 +3344,6 @@ class App(tk.Tk):
             self.after(0, lambda: self._barra.indeterminate("Leyendo Productos.xlsx..."))
 
             try:
-                import openpyxl
-
                 # ── LECTURA 1: Productos.xlsx ─────────────────────────────────
                 #    Extraido a _leer_productos_sap() -- ver ese metodo para el
                 #    mapeo exacto de columnas (identico al que habia aqui antes).
@@ -4999,9 +4986,6 @@ class App(tk.Tk):
         def proceso():
             _barra_finalizada = {"v": False}   # red de seguridad, ver finally: más abajo
             try:
-                from openpyxl import load_workbook as _lw
-                from openpyxl.styles import Font, PatternFill
-
                 self.consola.separador("REINSCRIPCIÓN SAP DESDE LISTADO (archivo INC)")
                 self.log_consola(f"Archivo INC: {os.path.basename(ruta_inc)}", "INFO")
                 self.after(0, lambda: self._barra.indeterminate("Leyendo LISTADO DALI-SAP..."))
@@ -5275,10 +5259,6 @@ class App(tk.Tk):
         Los estilos se aplican por rango, no celda a celda.
         """
         import threading
-        import pandas as pd
-        from openpyxl import Workbook
-        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-        from openpyxl.utils import get_column_letter
 
         carpeta = self._carpeta_proyecto.get().strip()
         if not carpeta or not os.path.isdir(carpeta):
@@ -5529,7 +5509,6 @@ class App(tk.Tk):
                                        techo=_ultimo_cod_art1,
                                        elim=_eliminados_ok):
                     from tkinter import messagebox
-                    import tkinter as tk
 
                     # Construir texto del mensaje
                     lineas = [
@@ -5623,9 +5602,5 @@ class App(tk.Tk):
 #  ENTRY POINT
 # ---------------------------------------------------------
 if __name__ == "__main__":
-    try:
-        from PIL import Image, ImageTk
-    except ImportError:
-        pass
     app = App()
     app.mainloop()
