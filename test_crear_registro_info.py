@@ -1318,6 +1318,7 @@ class TC24_AvisoCambioPerdidoPorUM(unittest.TestCase):
 #  en que se ejecuten los tests.
 # ─────────────────────────────────────────────────────────────────────────────
 
+@unittest.skipIf(_CRI is None, "crear_registro_info no importable (¿sin tkinter?)")
 class TC25_CierreFinValidezEnBaja(unittest.TestCase):
 
     def test_helper_cierra_periodo_vigente_que_empieza_antes(self):
