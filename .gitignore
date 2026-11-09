@@ -2,7 +2,8 @@
 # Compilación
 build/
 dist/
-*.spec.bak
+# build_exe.py genera TARIFA_Finder.spec en cada compilación (con rutas de G:)
+TARIFA_Finder.spec
 # Python
 __pycache__/
 *.pyc
