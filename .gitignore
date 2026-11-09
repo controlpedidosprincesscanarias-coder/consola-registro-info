@@ -1,0 +1,24 @@
+# Consola Registro Info SAP — Central Compras Princess Canarias (VAMA)
+# Compilación
+build/
+dist/
+*.spec.bak
+# Python
+__pycache__/
+*.pyc
+# Configuración local de cada equipo: carpeta del proyecto y credenciales (¡nunca al repositorio!)
+tarifa_config.json
+# Datos reales (tarifas, listados SAP/DALI); las plantillas de assets/ sí se suben
+*.xlsx
+*.xls
+*.xlsm
+!assets/*.xlsx
+!assets/*.xls
+RECURSOS/
+log_*.txt
+# Copias de seguridad manuales antiguas
+*.zip
+SEGURIDAD/
+# Windows
+Thumbs.db
+desktop.ini
