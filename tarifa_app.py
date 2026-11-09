@@ -43,6 +43,10 @@ from tarifa_core import (
     listar_xls, renombrar_a_tarifa,
     ConsolaLog, CanvasProgressBar,
 )
+from credenciales import (
+    leer_credenciales_dali, guardar_credenciales_dali,
+    borrar_credenciales_dali, migrar_credenciales_dali,
+)
 from tarifa_dialogs import (
     VentanaSeleccionXLS, VentanaAbrirTarifaEdicion,
     VentanaCrearProyecto, VentanaSeleccionTarifaRI,
@@ -82,6 +86,10 @@ class App(tk.Tk):
         except Exception:
             pass
         self.config_data       = cargar_config()
+        # (nov 2026) Una contraseña de Catálogo Asignaciones antigua en claro se cifra
+        # con DPAPI y se borra la copia en claro (ver credenciales.py).
+        if migrar_credenciales_dali(self.config_data):
+            guardar_config(self.config_data)
         # Memoria de sesión: una vez resuelto el aviso de catalogo-dali-completo.xlsx
         # desactualizado (Acción 2/3), no se repregunta hasta reiniciar la app.
         self._catalogo_verificado_sesion = False
@@ -1833,17 +1841,15 @@ class App(tk.Tk):
     def _obtener_credenciales_dali_app(self):
         """
         Devuelve (email, password) para la app web «Catálogo Asignaciones».
-        Si ya están guardadas en tarifa_config.json (claves
-        'dali_app_email'/'dali_app_password'), las devuelve directamente
-        sin preguntar nada. Si no, abre un diálogo modal para pedirlas
-        una vez, avisando con claridad de que se guardan en texto plano
-        en ese archivo -- decisión que tomó el usuario expresamente,
-        priorizando comodidad sobre no tener que teclearlas cada vez.
+        Si ya están guardadas en tarifa_config.json (email y contraseña
+        CIFRADA con DPAPI de Windows, ver credenciales.py), las devuelve
+        directamente sin preguntar nada. Si no, abre un diálogo modal para
+        pedirlas una vez. (nov 2026: antes se guardaban en texto plano y el
+        archivo llegó a subirse a GitHub; ahora nunca se escriben en claro.)
 
         Devuelve (None, None) si el usuario cancela el diálogo.
         """
-        email_guardado = self.config_data.get("dali_app_email")
-        pass_guardado  = self.config_data.get("dali_app_password")
+        email_guardado, pass_guardado = leer_credenciales_dali(self.config_data)
         if email_guardado and pass_guardado:
             return email_guardado, pass_guardado
 
@@ -1864,9 +1870,9 @@ class App(tk.Tk):
         tk.Label(
             frm,
             text="Se usan para descargar automáticamente el catálogo\n"
-                 "actualizado antes de esta acción. Se guardan en texto\n"
-                 "plano en tarifa_config.json, en esta misma carpeta --\n"
-                 "solo en este equipo, sin enviarse a ningún otro sitio.",
+                 "actualizado antes de esta acción. La contraseña se guarda\n"
+                 "cifrada: solo tu usuario de Windows, en este equipo,\n"
+                 "puede leerla. No se envía a ningún otro sitio.",
             bg=C_DARK, fg=C_MUTED, font=FONT_SMALL, justify="left",
         ).pack(anchor="w", pady=(4, 16))
 
@@ -1913,8 +1919,10 @@ class App(tk.Tk):
         win.wait_window()
 
         if resultado["email"] and resultado["password"]:
-            self.config_data["dali_app_email"] = resultado["email"]
-            self.config_data["dali_app_password"] = resultado["password"]
+            if not guardar_credenciales_dali(self.config_data, resultado["email"], resultado["password"]):
+                self.log_consola(
+                    "No se pudo cifrar la contraseña de Catálogo Asignaciones: se usa solo "
+                    "en esta sesión y se volverá a pedir la próxima vez.", "WARN")
             guardar_config(self.config_data)
         return resultado["email"], resultado["password"]
 
@@ -2017,8 +2025,7 @@ class App(tk.Tk):
                     f"Login en Catálogo Asignaciones rechazado (HTTP {e.code}"
                     f"{': ' + detalle if detalle else ''}) — se han borrado las "
                     f"credenciales guardadas, vuelva a intentarlo.", "ERROR")
-                self.config_data.pop("dali_app_email", None)
-                self.config_data.pop("dali_app_password", None)
+                borrar_credenciales_dali(self.config_data)
                 guardar_config(self.config_data)
             else:
                 self.log_consola(f"Error al iniciar sesión en Catálogo Asignaciones "
