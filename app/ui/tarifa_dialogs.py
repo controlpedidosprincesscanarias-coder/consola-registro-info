@@ -19,14 +19,14 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import threading
 
-from tarifa_constants import (
+from app.comun.tarifa_constants import (
     C_DARK, C_MID, C_CARD, C_BORDER, C_HOVER, C_ACCENT,
     C_ACCENT2, C_BG, C_PANEL,
     C_TEXT, C_TEXT_LIGHT, C_MUTED, C_SUCCESS, FONT_TITLE,
     FONT_SUB, FONT_LABEL, FONT_BOLD,
     FONT_SMALL, FONT_TINY,
 )
-from tarifa_core import (
+from app.comun.tarifa_core import (
     resource_path, renombrar_a_tarifa, crear_estructura_proyecto,
     FOLDER_TARIFAS, FOLDER_RECURSOS, cargar_icono_ventana, centrar_sobre_padre,
 )

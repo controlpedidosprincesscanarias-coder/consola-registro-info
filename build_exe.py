@@ -83,17 +83,18 @@ def main():
     exe_name = f"TARIFA_Finder"
 
     script_main     = os.path.join(base, "tarifa_app.py")
-    script_mod      = os.path.join(base, "transformar_tarifa.py")
-    script_constants = os.path.join(base, "tarifa_constants.py")
-    script_core     = os.path.join(base, "tarifa_core.py")
-    script_dialogs  = os.path.join(base, "tarifa_dialogs.py")
-    script_cri      = os.path.join(base, "crear_registro_info.py")
+    # (nov 2026, etapa 2) Los módulos viven en app/ y PyInstaller los incluye solo al seguir
+    # las importaciones de tarifa_app.py; aquí solo se comprueba que estén.
+    modulos = [os.path.join(base, *r.split("/")) for r in (
+        "app/comun/tarifa_constants.py", "app/comun/tarifa_core.py", "app/comun/credenciales.py",
+        "app/comun/sap_helpers.py", "app/ui/tarifa_dialogs.py", "app/rinfo/crear_registro_info.py",
+        "app/tarifas/transformar_tarifa.py", "app/acciones/organizar_dali.py")]
     logo_png    = os.path.join(base, "assets", "logo.png")
     logo_ico    = os.path.join(base, "assets", "logo.ico")
     logo_dali   = os.path.join(base, "assets", "logo_dali_articulos.png")
 
     # ── Verificación de archivos obligatorios ────────────
-    for f in (script_main, script_mod, script_constants, script_core, script_dialogs, script_cri):
+    for f in [script_main] + modulos:
         if not os.path.isfile(f):
             print(f"ERROR: No se encuentra {f}")
             sys.exit(1)
@@ -108,11 +109,8 @@ def main():
     print("=" * 60)
     print("Incluyendo:")
     print("  ✔ tarifa_app.py")
-    print("  ✔ tarifa_constants.py")
-    print("  ✔ tarifa_core.py")
-    print("  ✔ tarifa_dialogs.py")
-    print("  ✔ crear_registro_info.py (botón CREAR REGISTRO INFO)")
-    print("  ✔ transformar_tarifa.py (V9.7)")
+    for f in modulos:
+        print(f"  ✔ {os.path.relpath(f, base)}")
     print("  ✔ win32com (Excel)")
     print("  ✔ openpyxl")
     print("  ✔ pillow")
@@ -161,12 +159,8 @@ def main():
         "--hidden-import", "xlrd",
         "--hidden-import", "xlrd.biffh",
 
-        # ── Módulo de transformación ─────────────────────
-        "--add-data", f"{script_mod}{os.pathsep}.",
-        "--add-data", f"{script_constants}{os.pathsep}.",
-        "--add-data", f"{script_core}{os.pathsep}.",
-        "--add-data", f"{script_dialogs}{os.pathsep}.",
-        "--add-data", f"{script_cri}{os.pathsep}.",
+        # ── Paquete app/ (todos sus submódulos, aunque alguno se importe dentro de una función)
+        "--collect-submodules", "app",
     ]
 
     # ── Assets: solo se añaden si existen ───────────────

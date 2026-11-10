@@ -63,13 +63,13 @@ def _parse_fecha(valor):
 
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from sap_helpers import normalizar_codigo_sap as _normalizar_codigo_sap
-from sap_helpers import ultima_fila_con_datos
-from sap_helpers import parsear_fecha_celda
-from sap_helpers import (
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # raíz del proyecto
+from app.comun.sap_helpers import normalizar_codigo_sap as _normalizar_codigo_sap
+from app.comun.sap_helpers import ultima_fila_con_datos
+from app.comun.sap_helpers import parsear_fecha_celda
+from app.comun.sap_helpers import (
     formatear_fecha_dmy, clave_pir_h3, material_de_clave_pir, formatear_clave_pir)
-from sap_helpers import eliminar_filas_agrupadas
+from app.comun.sap_helpers import eliminar_filas_agrupadas
 # ↑ Import real (antes había aquí una reimplementación paralela que
 #   podía divergir del código de producción sin que ningún test lo
 #   detectara). Ahora TC13 protege la función que usa de verdad
@@ -834,7 +834,7 @@ class TC20_EliminarFilasAgrupadas(unittest.TestCase):
 def _importar_modulo_real():
     """Importa crear_registro_info, o None si no es posible (sin tkinter, etc.)."""
     try:
-        import crear_registro_info as _cri
+        import app.rinfo.crear_registro_info as _cri
         return _cri
     except Exception:
         return None
@@ -1015,12 +1015,12 @@ class TC22_LayoutCatalogo(unittest.TestCase):
     ]
 
     def test_definicion_canonica_coincide_con_el_excel_de_la_web(self):
-        import sap_helpers as S
+        import app.comun.sap_helpers as S
         self.assertEqual([h for _k, h, _a in S.CATALOGO_COLUMNAS],
                          self.CABECERAS_NUEVAS)
 
     def test_claves_unicas_y_las_de_origen_sap_existen(self):
-        import sap_helpers as S
+        import app.comun.sap_helpers as S
         claves = [k for k, _h, _a in S.CATALOGO_COLUMNAS]
         self.assertEqual(len(claves), len(set(claves)))
         for k in S.CATALOGO_CLAVES_SAP:
@@ -1028,7 +1028,7 @@ class TC22_LayoutCatalogo(unittest.TestCase):
         self.assertNotIn("precio", S.CATALOGO_CLAVES_SAP)   # no viene del LISTADO
 
     def test_mapa_formato_nuevo(self):
-        import sap_helpers as S
+        import app.comun.sap_helpers as S
         m = S.mapa_columnas_catalogo(self.CABECERAS_NUEVAS)
         self.assertEqual(m["cod_sap"], 10)
         self.assertEqual(m["texto_um"], 13)
@@ -1037,7 +1037,7 @@ class TC22_LayoutCatalogo(unittest.TestCase):
         self.assertEqual(m["activo"], 22)        # antes 20
 
     def test_mapa_formato_viejo_de_20_columnas(self):
-        import sap_helpers as S
+        import app.comun.sap_helpers as S
         viejas = [h for h in self.CABECERAS_NUEVAS
                   if h not in ("Texto UM (expl.)", "Precio €")]
         m = S.mapa_columnas_catalogo(viejas)
@@ -1048,7 +1048,7 @@ class TC22_LayoutCatalogo(unittest.TestCase):
         self.assertEqual(m["activo"], 20)
 
     def test_mapa_sigue_a_una_columna_insertada_y_ignora_mayusculas(self):
-        import sap_helpers as S
+        import app.comun.sap_helpers as S
         cab = list(self.CABECERAS_NUEVAS)
         cab.insert(2, "Columna Futura")                       # desconocida: se ignora
         cab = [c.upper() if c == "Precio €" else c for c in cab]
@@ -1060,7 +1060,7 @@ class TC22_LayoutCatalogo(unittest.TestCase):
         self.assertEqual(m["precio"], 15)
 
     def test_datos_sap_desde_fila_listado_texto_um_es_la_columna_F(self):
-        import sap_helpers as S
+        import app.comun.sap_helpers as S
         fila = (1, "AGUA", "UNIDAD", 10200458, " AGUA GARRAFA 5L VITALIA ",
                 "Pieza", "PI", "020020030", "AGUAS", "3X", "3102", "BSEU",
                 "200", "BEVERAGES", "SI")
@@ -1074,7 +1074,7 @@ class TC22_LayoutCatalogo(unittest.TestCase):
         self.assertEqual(set(d), set(S.CATALOGO_CLAVES_SAP))
 
     def test_datos_sap_desde_fila_corta_o_sin_sap(self):
-        import sap_helpers as S
+        import app.comun.sap_helpers as S
         d = S.datos_sap_desde_fila_listado((2, "AGUA VITTEL", "UNIDAD"))
         self.assertTrue(all(v is None for v in d.values()))
         d2 = S.datos_sap_desde_fila_listado(
@@ -1083,7 +1083,7 @@ class TC22_LayoutCatalogo(unittest.TestCase):
         self.assertEqual(d2["texto_um"], "Caja")
 
     def test_es_precio_valido(self):
-        import sap_helpers as S
+        import app.comun.sap_helpers as S
         for bueno in (12.5, 3, 0.01, 19.83, 1e6):
             self.assertTrue(S.es_precio_valido(bueno), bueno)
         for malo in (None, "", 0, 0.0, -1, -0.5, "abc", "1,50", True, False,
@@ -1322,18 +1322,18 @@ class TC24_AvisoCambioPerdidoPorUM(unittest.TestCase):
 class TC25_CierreFinValidezEnBaja(unittest.TestCase):
 
     def test_helper_cierra_periodo_vigente_que_empieza_antes(self):
-        from sap_helpers import debe_cerrar_fin_validez as f
+        from app.comun.sap_helpers import debe_cerrar_fin_validez as f
         d = datetime.date
         self.assertTrue(f(d(2026, 8, 1), d(2026, 12, 31), d(2026, 10, 6), d(2026, 9, 30)))
 
     def test_helper_no_cierra_periodo_que_empieza_despues_del_cierre(self):
-        from sap_helpers import debe_cerrar_fin_validez as f
+        from app.comun.sap_helpers import debe_cerrar_fin_validez as f
         d = datetime.date
         # caso MELOCOTON: 01.10→30.10 con cierre 30.09 dejaría fin < inicio
         self.assertFalse(f(d(2026, 10, 1), d(2026, 10, 30), d(2026, 10, 6), d(2026, 9, 30)))
 
     def test_helper_limites(self):
-        from sap_helpers import debe_cerrar_fin_validez as f
+        from app.comun.sap_helpers import debe_cerrar_fin_validez as f
         d = datetime.date
         hoy, cierre = d(2026, 10, 6), d(2026, 9, 30)
         self.assertTrue(f(cierre, d(2026, 12, 1), hoy, cierre))        # empieza el mismo día del cierre

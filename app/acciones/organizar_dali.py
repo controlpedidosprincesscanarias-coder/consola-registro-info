@@ -282,7 +282,7 @@ def generar_excel_dali(df_final, output_cols, output_path, log, progreso=None):
     from openpyxl.drawing.image import Image as XLImage
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
     from openpyxl.utils import get_column_letter
-    from tarifa_core import resource_path
+    from app.comun.tarifa_core import resource_path
 
     if progreso:
         progreso("Generando Excel...")
@@ -413,7 +413,7 @@ def validar_diccionarios_sap(df_final, log):
     si todo coincide) — la DECISIÓN de qué hacer si hay 0% de coincidencia
     (borrar ficheros, avisar al usuario) se queda en tarifa_app.py, no aquí.
     """
-    from tarifa_constants import DALI_CLAVES_SUBFAMILIA, DALI_CLAVES_IGIC
+    from app.comun.tarifa_constants import DALI_CLAVES_SUBFAMILIA, DALI_CLAVES_IGIC
 
     resultado = {"e_pct": 0, "g_pct": 0, "e_estado": "SIN DATOS",
                  "g_estado": "SIN DATOS", "columnas_sin_match": []}

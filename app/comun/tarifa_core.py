@@ -26,8 +26,8 @@ from datetime import datetime
 import json
 import sys
 
-from tarifa_constants import (
-    resource_path,
+from app.comun.tarifa_constants import (
+    resource_path, RAIZ_PROYECTO,
     C_DARK, C_MID, C_SIDEBAR, C_ACCENT, C_MUTED, C_LOG_BG,
     C_LOG_FG, C_LOG_INFO, C_LOG_WARN, C_LOG_ERR, C_LOG_OK,
 )
@@ -242,7 +242,7 @@ def get_config_path():
     if getattr(sys, "frozen", False):
         base = os.path.dirname(sys.executable)
     else:
-        base = os.path.dirname(os.path.abspath(__file__))
+        base = RAIZ_PROYECTO   # junto a tarifa_app.py, como siempre (este archivo está en app/comun/)
     return os.path.join(base, "tarifa_config.json")
 
 

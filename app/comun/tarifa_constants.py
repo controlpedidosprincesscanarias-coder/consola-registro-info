@@ -7,9 +7,9 @@ Constantes de diseño, tipografía y utilidades compartidas entre
 los módulos de TARIFA Finder.
 
 Importar en cada módulo:
-    from tarifa_constants import *
+    from app.comun.tarifa_constants import *
 o de forma explícita:
-    from tarifa_constants import C_MID, FONT_TITLE, resource_path, ...
+    from app.comun.tarifa_constants import C_MID, FONT_TITLE, resource_path, ...
 
 Central Compras Princess Canarias — (c) VAMA 2026
 """
@@ -21,11 +21,18 @@ import sys
 # ---------------------------------------------------------
 #  RUTA DE RECURSOS  (compatible .py y .exe PyInstaller)
 # ---------------------------------------------------------
+# Raíz del proyecto (donde están tarifa_app.py y assets/): este archivo está en app/comun/.
+RAIZ_PROYECTO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
 def resource_path(relative_path: str) -> str:
+    """Ruta a un recurso (p. ej. «assets/logo.png»): dentro del .exe de PyInstaller, en su
+    carpeta temporal; desde el código, en la raíz del proyecto. No usar __file__ para esto:
+    desde la etapa 2 (nov 2026) los módulos viven en app/ y no en la raíz."""
     try:
         base = sys._MEIPASS
     except AttributeError:
-        base = os.path.dirname(os.path.abspath(__file__))
+        base = RAIZ_PROYECTO
     return os.path.join(base, relative_path)
 
 
