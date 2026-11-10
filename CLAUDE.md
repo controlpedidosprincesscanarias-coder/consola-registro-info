@@ -12,6 +12,7 @@ App de escritorio para Windows (Python + Tkinter) de la Central de Compras: prep
 - **Catálogo Asignaciones** (repo `dali-sap-articulos-app`): antes de algunas acciones se descarga su catálogo a través del Worker `DALI_APP_API_BASE` (`tarifa_app.py`), con el usuario y la contraseña de cada persona.
 
 ## Estructura
+Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app.py` sigue en la raíz como punto de arranque: lo usan `COMPILAR_TARIFA.bat`, `_bat_helper.py` (lee `APP_VERSION`) y `build_exe.py`. Cada módulo conserva su nombre de siempre; para encontrar una función: `grep -rn "def nombre" tarifa_app.py app`.
 - `tarifa_app.py` — ventana principal (`App`) y las acciones del panel:
   1. Organizar artículos DALI;
   2. Actualizar listado DALI;
@@ -20,15 +21,17 @@ App de escritorio para Windows (Python + Tkinter) de la Central de Compras: prep
   5. Abrir la última tarifa;
   6. Archivos [INCOMPLETOS];
   7. Tarifa vacía (en construcción).
-  
+
   También contiene la integración con Catálogo Asignaciones y el catálogo DALI completo.
-- `crear_registro_info.py` — motor de RINFO: `GeneradorDesdeExistente` (desde un Purchasing existente) y `CreadorRINFO`, con sus ventanas.
-- `transformar_tarifa.py` — transforma la tarifa del proveedor al formato de trabajo.
-- `acciones/organizar_dali.py` — lógica de la Acción 1, sin tkinter.
-- `sap_helpers.py` — funciones de negocio puras (códigos SAP, fechas, filas), sin tkinter, compartidas con las pruebas.
-- `credenciales.py` — contraseña de Catálogo Asignaciones cifrada con DPAPI de Windows, sin tkinter.
-- `tarifa_core.py` (rutas, configuración, consola de log, barra de progreso), `tarifa_dialogs.py` (ventanas modales), `tarifa_constants.py` (colores, fuentes, tablas fijas), `assets/` (logos e icono).
-- **Dependencias** (sin importaciones circulares): `tarifa_constants` → `tarifa_core` → `tarifa_dialogs` / `crear_registro_info` / `transformar_tarifa` → `tarifa_app`. Los módulos sin tkinter (`sap_helpers`, `credenciales`, `acciones/`) no importan de la interfaz. Nada importa de `tarifa_app.py`.
+- `app/comun/` — `tarifa_constants.py` (colores, fuentes, tablas fijas, `resource_path` y `RAIZ_PROYECTO`), `tarifa_core.py` (configuración, consola de log, barra de progreso), `sap_helpers.py` (funciones de negocio puras, sin tkinter) y `credenciales.py` (DPAPI, sin tkinter).
+- `app/ui/tarifa_dialogs.py` — ventanas modales.
+- `app/rinfo/crear_registro_info.py` — motor de RINFO: `GeneradorDesdeExistente` (desde un Purchasing existente) y `CreadorRINFO`, con sus ventanas. Su autotest interno se lanza con `python -m app.rinfo.crear_registro_info --test`.
+- `app/tarifas/transformar_tarifa.py` — transforma la tarifa del proveedor al formato de trabajo.
+- `app/acciones/organizar_dali.py` — lógica de la Acción 1, sin tkinter.
+- `assets/` (logos e icono, en la raíz) y `tests/`.
+- **Dependencias** (sin importaciones circulares, siempre con la ruta completa `from app.comun.tarifa_core import …`): `app.comun` no importa de otros paquetes del proyecto; `app.ui`, `app.rinfo` y `app.tarifas` importan de `app.comun`; `tarifa_app.py` importa de todos. Los módulos sin tkinter (`sap_helpers`, `credenciales`, `app/acciones`) no importan de la interfaz. Nada importa de `tarifa_app.py`.
+- **Trampa conocida:** no usar `__file__` para localizar archivos del proyecto (assets, `tarifa_config.json`). Usar `resource_path()` y `RAIZ_PROYECTO`, porque los módulos ya no están en la raíz.
+- **Saltos de línea:** `.gitattributes` guarda LF en el repositorio y Git pone CRLF al sacar los archivos en Windows; los `.bat` siempre con CRLF. Al editar desde Linux, no convertir archivos enteros.
 
 ## Seguridad
 - **Nunca** escribir contraseñas, tokens, claves ni correos de cuentas en el código, en los commits ni en los documentos. El 9 nov 2026 se subió por error `tarifa_config.json` con la contraseña de Catálogo Asignaciones en claro; desde entonces está en `.gitignore` y la contraseña va cifrada (`credenciales.py`).
@@ -46,8 +49,9 @@ App de escritorio para Windows (Python + Tkinter) de la Central de Compras: prep
 
 ## Pruebas
 ```bash
-python -m unittest test_crear_registro_info test_credenciales -v
+python -m unittest discover -s tests -v
 ```
-- 103 pruebas. 18 de ellas importan `crear_registro_info` (que usa tkinter): sin tkinter se saltan. En Linux hay que lanzarlas con un Python que tenga tkinter y con `xvfb-run`.
+- 103 pruebas (desde la raíz). 18 de ellas importan `crear_registro_info` (que usa tkinter): sin tkinter se saltan. En Linux hay que lanzarlas con un Python que tenga tkinter y con `xvfb-run`.
 - Dependencias para probar: `pandas openpyxl xlrd pillow psutil`. Para compilar, además `pyinstaller pywin32`.
-- `test_crear_registro_info.py` prueba el código real a través de `sap_helpers.py` y de `crear_registro_info`; no se deben reimplementar funciones dentro de la prueba.
+- `tests/test_crear_registro_info.py` prueba el código real a través de `sap_helpers.py` y de `crear_registro_info`; no se deben reimplementar funciones dentro de la prueba.
+- Comprobación de la compilación: `build_exe.py` también funciona en Linux (genera un ejecutable de Linux). Sirve para ver que PyInstaller incluye todo `app/` y que la app arranca.
