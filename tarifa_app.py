@@ -19,7 +19,7 @@ from app.comun.tarifa_constants import (
     SAP_LOGO_PNG,
 )
 from app.comun.tarifa_core import (
-    resource_path,
+    resource_path, poner_icono_aplicacion,
     cargar_config, guardar_config,
 )
 from app.comun.credenciales import (
@@ -52,10 +52,7 @@ class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap,
         self.configure(bg=C_BG)
         self.resizable(True, True)
         self.minsize(820, 640)
-        try:
-            self.iconbitmap(resource_path("assets/logo.ico"))
-        except Exception:
-            pass
+        poner_icono_aplicacion(self)    # también el de la barra de tareas (antes salía la pluma de Tk)
         self.config_data       = cargar_config()
         # (nov 2026) Una contraseña de Catálogo Asignaciones antigua en claro se cifra
         # con DPAPI y se borra la copia en claro (ver credenciales.py).
