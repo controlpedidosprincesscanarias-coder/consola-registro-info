@@ -36,18 +36,18 @@ Después ejecuta `COMPILAR_TARIFA.bat`: pregunta la versión, la escribe en `tar
 
 ## Pruebas
 ```bash
-python -m unittest test_crear_registro_info test_credenciales -v
+python -m unittest discover -s tests -v
 ```
 
 ## Archivos
 | Archivo | Contenido |
 |---|---|
-| `tarifa_app.py` | Ventana principal y acciones |
-| `crear_registro_info.py` | Motor de generación de RINFO y sus ventanas |
-| `transformar_tarifa.py` | Transformación de la tarifa del proveedor |
-| `acciones/organizar_dali.py` | Lógica de la Acción 1 (sin interfaz) |
-| `sap_helpers.py` | Funciones de negocio puras (sin interfaz) |
-| `credenciales.py` | Contraseña de Catálogo Asignaciones cifrada (DPAPI) |
-| `tarifa_core.py`, `tarifa_dialogs.py`, `tarifa_constants.py` | Utilidades, ventanas y constantes |
+| `tarifa_app.py` | Punto de arranque: ventana principal y acciones |
+| `app/rinfo/crear_registro_info.py` | Motor de generación de RINFO y sus ventanas |
+| `app/tarifas/transformar_tarifa.py` | Transformación de la tarifa del proveedor |
+| `app/acciones/organizar_dali.py` | Lógica de la Acción 1 (sin interfaz) |
+| `app/comun/` | Constantes, configuración, consola, `sap_helpers.py` y `credenciales.py` |
+| `app/ui/tarifa_dialogs.py` | Ventanas modales |
+| `tests/` | Pruebas automáticas |
 | `build_exe.py`, `COMPILAR_TARIFA.bat`, `_bat_helper.py` | Compilación |
 | `HISTORIAL_REORGANIZACION_RINFO.md` | Historial de cambios y próximos pasos |

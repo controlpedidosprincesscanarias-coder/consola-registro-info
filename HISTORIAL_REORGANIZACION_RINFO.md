@@ -1012,9 +1012,21 @@ El proyecto se subió a GitHub (`controlpedidosprincesscanarias-coder/consola-re
 
 ---
 
+## 43. Etapa 2: código en carpetas por temas (10 nov 2026) — PR en GitHub
+
+- **Saltos de línea** (commit propio): los archivos mezclaban CRLF y LF. Ahora `.gitattributes` (`* text=auto`, `.bat` con CRLF): el repositorio guarda LF y Git pone CRLF al sacarlos en Windows. Solo cambian los saltos de línea.
+- **Movimiento** (commit de solo renombrados, para que `git log --follow` siga funcionando): `app/comun` (`tarifa_constants`, `tarifa_core`, `credenciales`, `sap_helpers`), `app/ui` (`tarifa_dialogs`), `app/rinfo` (`crear_registro_info`), `app/tarifas` (`transformar_tarifa`), `app/acciones`, y las pruebas a `tests/`. `tarifa_app.py` se queda en la raíz (lo usan el `.bat`, `_bat_helper.py` y `build_exe.py`).
+- **Importaciones** con la ruta completa (`from app.comun.tarifa_core import …`).
+- **Rutas:** `resource_path()` y `get_config_path()` usaban la carpeta del propio módulo (`__file__`). Ahora usan `RAIZ_PROYECTO` (`tarifa_constants.py`), así que `assets/` y `tarifa_config.json` siguen en la raíz, junto a `tarifa_app.py`.
+- **`build_exe.py`:** ya no añade los `.py` como datos. Incluye el paquete con `--collect-submodules app` y solo comprueba que estén todos los módulos.
+- **Comprobado:** 103 pruebas (18 se saltan sin tkinter); autotest `python -m app.rinfo.crear_registro_info --test` (9 OK); la app arranca con su logo y lee la configuración de la raíz. Además, compilado con PyInstaller en Linux con el mismo `build_exe.py`: el ejecutable incluye todo `app/` y arranca.
+- **Visto de paso (ya pasaba antes de la etapa):** en el ejecutable de Linux la cabecera muestra «P» en vez del logo (lo mismo compilando `main`). Hay que confirmar que en el `.exe` de Windows sale el logo.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
-   - etapa 2: carpetas por capas (como `app/` del Organizador) sin cambiar el funcionamiento;
+   - ~~etapa 2: carpetas por capas~~ hecha (sección 43);
    - etapa 3: seguir troceando `crear_registro_info.py` (~10.000 líneas) y `tarifa_app.py` (~5.600), separando ventanas y lógica;
    - etapa 4: compilación automática en GitHub Actions (Windows, solo a mano) con las pruebas, y manual de usuario con capturas.
 1. Roadmap de limpieza — puntos **1, 2, 3, 4 y 5 CERRADOS**. Punto 6 con su **primera pasada hecha** (sección 32): boilerplate 100% idéntico consolidado; quedan 6 geometrías con fórmulas propias, sin tocar deliberadamente — no hay más trabajo pendiente salvo que en algún momento vuelvan a coincidir entre sí.

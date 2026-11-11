@@ -3,13 +3,15 @@
 
 Central Compras Princess Canarias · La idea y el desarrollo de la aplicación, incluidas sus pruebas,
 son de Víctor Alejandro Martín Andrade (VAMA).
-Uso: python -m unittest test_credenciales -v   (en Windows prueba también el cifrado real con DPAPI)
+Uso: python -m unittest discover -s tests -v   (desde la raíz)   (en Windows prueba también el cifrado real con DPAPI)
 """
+import os
 import sys
 import unittest
 from unittest import mock
 
-import credenciales as cr
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # raíz del proyecto
+import app.comun.credenciales as cr  # noqa: E402
 
 
 def _falso_proteger(texto):

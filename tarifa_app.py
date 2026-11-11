@@ -20,7 +20,7 @@ import base64
 import threading
 import time
 
-from tarifa_constants import (
+from app.comun.tarifa_constants import (
     C_DARK, C_MID, C_SIDEBAR, C_CARD, C_BORDER, C_HOVER,
     C_ACCENT, C_ACCENT2, C_ACCENT_DIM,
     C_BG, C_TEXT, C_TEXT_LIGHT, C_MUTED, C_SUCCESS,
@@ -28,23 +28,23 @@ from tarifa_constants import (
     FONT_SUB, FONT_LABEL, FONT_SMALL, SAP_LOGO_B64,
     TABLA_SUBFAMILIA_GRUPO_COMPRAS, TABLA_IGIC_GRUPO_COMPRAS,
 )
-from tarifa_core import (
+from app.comun.tarifa_core import (
     resource_path, LOGO_B64,
     cargar_config, guardar_config, TARIFA_NAME,
     FOLDER_TARIFAS, FOLDER_RECURSOS, buscar_tarifa, listar_xls,
     ConsolaLog, CanvasProgressBar,
 )
-from credenciales import (
+from app.comun.credenciales import (
     leer_credenciales_dali, guardar_credenciales_dali,
     borrar_credenciales_dali, migrar_credenciales_dali,
 )
-from tarifa_dialogs import (
+from app.ui.tarifa_dialogs import (
     VentanaSeleccionXLS, VentanaCrearProyecto,
     VentanaSAPFaltantes, VentanaResolverSAPDuplicados,
 )
-from crear_registro_info import iniciar_crear_registro_info
-from acciones import organizar_dali as organizar_dali_datos
-from sap_helpers import (
+from app.rinfo.crear_registro_info import iniciar_crear_registro_info
+from app.acciones import organizar_dali as organizar_dali_datos
+from app.comun.sap_helpers import (
     CATALOGO_COLUMNAS, CATALOGO_CLAVES_SAP,
     CATALOGO_FILA_CABECERA, CATALOGO_PRIMERA_FILA_DATOS,
     mapa_columnas_catalogo, datos_sap_desde_fila_listado, es_precio_valido,
@@ -3930,7 +3930,7 @@ class App(tk.Tk):
 
         def proceso():
             try:
-                from transformar_tarifa import transformar
+                from app.tarifas.transformar_tarifa import transformar
             except ImportError:
                 self.after(0, lambda: messagebox.showerror(
                     "M\xf3dulo no encontrado",
