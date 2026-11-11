@@ -4,7 +4,7 @@ App de escritorio de la **Central de Compras Princess Canarias** para preparar l
 
 > La idea y el desarrollo de la aplicación, incluidas sus pruebas, son de **Víctor Alejandro Martín Andrade**, para el Departamento de Central de Compras de Princess Hotels en Canarias. Ver `AUTORIA.md`.
 
-**Versión actual:** v 10.2.36. A partir de ahora la pone sola cada compilación en GitHub: la de cada `.exe` es la etiqueta de su Release.
+**Versión:** la pone sola cada compilación en GitHub (`compilacion/version.py`). La de cada `.exe` es la etiqueta de su Release: la última publicada está en la página **Releases**. La v10.2.38 (borrador) es la validada con datos reales; la primera que se actualiza sola es la v10.2.40.
 
 ## Uso
 Se distribuye solo `TARIFA_Finder.exe`, que no necesita Python instalado. Hace falta Excel para algunas acciones.

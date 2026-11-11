@@ -6,10 +6,11 @@ la reorganización. Cubre lectura, deduplicación de códigos de origen,
 cruce por CODIGO y saneamiento — es decir, todo lo que va desde "Leyendo
 ARTICULOS1.xls..." hasta "Saneamiento completado" en el log.
 
-Deliberadamente NO incluye (todavía) la generación del Excel de salida,
-estilos, ni los diccionarios de SUBFAMILIA/IGIC — eso queda como
-Tanda 2, para no mover de golpe las ~600 líneas restantes sin poder
-probarlas contra la interfaz real.
+Después se añadieron también la generación del Excel de salida
+(generar_excel_dali), la limpieza de los .xls de origen, la validación de
+los diccionarios SUBFAMILIA/IGIC, la detección de códigos faltantes y el
+log de incidencias. La interfaz de la Acción 1 está en
+app/principal/accion_organizar_dali.py.
 
 Este módulo no importa tkinter ni depende de ninguna instancia de App:
 recibe una función `log(mensaje, nivel="INFO")` para reportar progreso,

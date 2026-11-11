@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 tarifa_core.py
-Recursos compartidos: rutas, logo embebido, configuración persistente,
-lógica de negocio de archivos y widgets reutilizables de UI.
+Recursos compartidos: rutas, configuración persistente (tarifa_config.json, junto al .exe o
+a tarifa_app.py), lógica de negocio de archivos y widgets reutilizables de UI. (Los logos están
+en assets/ desde nov 2026; ya no hay imágenes en base64 en el código.)
 Central Compras Princess Canarias
 Autor: Victor Alejandro Martin Andrade (VAMA)
 (c) VAMA 2026

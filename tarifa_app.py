@@ -5,11 +5,10 @@ CREACIÓN REGISTRO INFO SAP — Central Compras Princess Canarias
 Autor: Victor Alejandro Martin Andrade (VAMA)
 (c) VAMA 2026
 
-Estructura del proyecto:
-    tarifa_design.py   — paleta de colores y tipografía
-    tarifa_core.py     — recursos, config, lógica de negocio, widgets UI
-    tarifa_dialogs.py  — ventanas modales (Toplevel)
-    tarifa_app.py      — ventana principal App + entry point  ← este archivo
+Punto de arranque: la clase App (ventana principal) se compone de los mixins de app/principal/
+(interfaz, Acciones 1-6 y catálogo DALI). Aquí quedan __init__, la cabecera, el pie y APP_VERSION,
+que tiene que seguir en este archivo (lo leen _bat_helper.py, build_exe.py y compilacion/version.py).
+Estructura completa del proyecto: CLAUDE.md y README.md.
 """
 
 import tkinter as tk

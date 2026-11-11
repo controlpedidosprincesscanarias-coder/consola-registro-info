@@ -1127,7 +1127,8 @@ En todos los casos, **0 diferencias** en los datos. Solo cambian el mensaje del 
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
    - ~~etapa 2: carpetas por capas~~ hecha (sección 43);
    - ~~etapa 3: limpieza~~ hecha (sección 44); ~~trocear `crear_registro_info.py`~~ hecho (sección 45); ~~trocear `tarifa_app.py`~~ hecho (sección 46);
-   - ~~compilación automática en GitHub~~ hecha (sección 47); falta probar la primera ejecución, las actualizaciones automáticas a los compañeros y el manual de usuario con capturas.
+   - ~~compilación automática en GitHub~~ hecha y probada (sección 47); ~~actualizaciones automáticas~~ hechas (sección 48), falta probarlas en Windows (10.2.40 → 10.2.42);
+   - pendiente: manual de usuario con capturas; aviso «Node.js 20 is deprecated» del workflow; si se quiere, seguir troceando `generador_existente.py` (`GeneradorDesdeExistente`, ~4.200 líneas) y `accion_tarifa.py` (~1.600), con el mismo método (sin cambiar código y comparando por AST).
 1. Roadmap de limpieza — puntos **1, 2, 3, 4 y 5 CERRADOS**. Punto 6 con su **primera pasada hecha** (sección 32): boilerplate 100% idéntico consolidado; quedan 6 geometrías con fórmulas propias, sin tocar deliberadamente — no hay más trabajo pendiente salvo que en algún momento vuelvan a coincidir entre sí.
 2. Recomendación pendiente para el usuario: revisar en SAP los ~50 materiales que aparecieron con el mismo hueco de Hoja3 que 10101839, por si llevan tiempo sin condición de precio activa sin que nadie lo notara.
 3. Recomendación pendiente (sección 22): siguen existiendo ~1.594 materiales SAP más (además del 10102980, ya resuelto) sin cruce DALI en el LISTADO — el fallback a `Productos.xlsx` los cubre para la sincronización de UM, pero conviene revisar y completar el cruce DALI real cuando haya ocasión, ya que el fallback no puede aportar IGIC ni grupo de compras.
