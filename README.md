@@ -42,7 +42,8 @@ python -m unittest discover -s tests -v
 ## Archivos
 | Archivo | Contenido |
 |---|---|
-| `tarifa_app.py` | Punto de arranque: ventana principal y acciones |
+| `tarifa_app.py` | Punto de arranque y clase de la ventana principal (`APP_VERSION`) |
+| `app/principal/` | Métodos de la ventana principal por temas: interfaz, Acciones 1, 2, 3, 4/6 y catálogo DALI |
 | `app/rinfo/` | Motor de generación de RINFO: `generador_existente.py`, `creador_rinfo.py`, `ventanas_rinfo.py`, `comun_rinfo.py` y `crear_registro_info.py` (entrada) |
 | `app/tarifas/transformar_tarifa.py` | Transformación de la tarifa del proveedor |
 | `app/acciones/organizar_dali.py` | Lógica de la Acción 1 (sin interfaz) |

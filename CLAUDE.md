@@ -9,20 +9,19 @@ App de escritorio para Windows (Python + Tkinter) de la Central de Compras: prep
 - **Versión:** `APP_VERSION` en `tarifa_app.py` (formato `"v X.Y.Z"`). La pide y la escribe `COMPILAR_TARIFA.bat` al compilar, con `_bat_helper.py`.
 - **Compilación** (en Windows): `COMPILAR_TARIFA.bat` → `build_exe.py` → PyInstaller `--onefile --windowed`, que genera `dist/TARIFA_Finder.exe`. El `.spec` lo genera PyInstaller y no se sube.
 - **Datos:** carpeta de proyecto en la unidad de red (`TARIFAS/`, `RECURSOS/`), elegida en la app y guardada en `tarifa_config.json`, junto al `.exe` o al script. Ese archivo **no se sube nunca** (está en `.gitignore`).
-- **Catálogo Asignaciones** (repo `dali-sap-articulos-app`): antes de algunas acciones se descarga su catálogo a través del Worker `DALI_APP_API_BASE` (`tarifa_app.py`), con el usuario y la contraseña de cada persona.
+- **Catálogo Asignaciones** (repo `dali-sap-articulos-app`): antes de algunas acciones se descarga su catálogo a través del Worker `DALI_APP_API_BASE` (`app/principal/catalogo_dali.py`), con el usuario y la contraseña de cada persona.
 
 ## Estructura
 Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app.py` sigue en la raíz como punto de arranque: lo usan `COMPILAR_TARIFA.bat`, `_bat_helper.py` (lee `APP_VERSION`) y `build_exe.py`. Cada módulo conserva su nombre de siempre; para encontrar una función: `grep -rn "def nombre" tarifa_app.py app`.
-- `tarifa_app.py` — ventana principal (`App`) y las acciones del panel:
-  1. Organizar artículos DALI;
-  2. Actualizar listado DALI;
-  3. Actualizar listado SAP;
-  4. Generar TARIFA final;
-  5. Abrir la última tarifa;
-  6. Archivos [INCOMPLETOS];
-  7. Tarifa vacía (en construcción).
-
-  También contiene la integración con Catálogo Asignaciones y el catálogo DALI completo.
+- `tarifa_app.py` (~200 líneas) — punto de arranque y clase `App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap, CatalogoDali, AccionesTarifa, tk.Tk)`. Aquí quedan `__init__`, la cabecera y el pie, porque usan `APP_VERSION`, que **tiene que seguir en este archivo** (lo leen `_bat_helper.py` y `COMPILAR_TARIFA.bat`).
+- `app/principal/` — los métodos de `App`, repartidos por temas en clases *mixin* (etapa 4, nov 2026, sin cambiar el código). Se llaman siempre como `self.metodo()`, así que un método puede vivir en cualquiera de ellas:
+  - `interfaz.py`: construcción de la ventana, consola de log, botones y acciones sencillas (carpeta, buscar `TARIFA.xls`, abrir resultado). El botón 7 (tarifa vacía) está en construcción.
+  - `accion_organizar_dali.py`: Acción 1. Su lógica está en `app/acciones/organizar_dali.py`.
+  - `accion_listado_dali.py`: Acción 2.
+  - `accion_listado_sap.py`: Acción 3.
+  - `accion_tarifa.py`: Acciones 4 y 6 (TARIFA final, archivos INC / [INCOMPLETO], reinscripción SAP, botón Registro Info).
+  - `catalogo_dali.py`: Catálogo DALI completo y Catálogo Asignaciones (`DALI_APP_API_BASE`).
+  - Un método nuevo va al mixin de su tema. Dos mixins no pueden tener un método con el mismo nombre, porque ganaría el primero de la lista sin avisar.
 - `app/comun/` — `tarifa_constants.py` (colores, fuentes, tablas fijas, `resource_path` y `RAIZ_PROYECTO`), `tarifa_core.py` (configuración, consola de log, barra de progreso), `sap_helpers.py` (funciones de negocio puras, sin tkinter) y `credenciales.py` (DPAPI, sin tkinter).
 - `app/ui/tarifa_dialogs.py` — ventanas modales.
 - `app/rinfo/` — motor de RINFO, repartido en la etapa 4 (nov 2026) sin cambiar el código:
@@ -37,7 +36,7 @@ Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app
 - `assets/` (en la raíz): `logo.png`, `logo.ico`, `logo_dali_articulos.png`, `logo_sap.png` y `marcar_borrado_sap.png`. Todos se usan y van dentro del `.exe` (`ASSETS_NECESARIOS` en `build_exe.py`). Las imágenes van en `assets/` y se cargan con `resource_path()`; no se incrustan en base64 en el código.
 - `tests/`.
 - **Arranque:** lo pesado (pandas) se importa dentro de la acción que lo usa, no al arrancar. No volver a importarlo arriba del todo en `tarifa_app.py`.
-- **Dependencias** (sin importaciones circulares, siempre con la ruta completa `from app.comun.tarifa_core import …`): `app.comun` no importa de otros paquetes del proyecto; `app.ui`, `app.rinfo` y `app.tarifas` importan de `app.comun`; `tarifa_app.py` importa de todos. Los módulos sin tkinter (`sap_helpers`, `credenciales`, `app/acciones`) no importan de la interfaz. Nada importa de `tarifa_app.py`.
+- **Dependencias** (sin importaciones circulares, siempre con la ruta completa `from app.comun.tarifa_core import …`): `app.comun` no importa de otros paquetes del proyecto; `app.ui`, `app.rinfo` y `app.tarifas` importan de `app.comun`; `app.principal` importa de los anteriores, y `tarifa_app.py` de `app.principal`. Los módulos sin tkinter (`sap_helpers`, `credenciales`, `app/acciones`) no importan de la interfaz. Nada importa de `tarifa_app.py`.
 - **Trampa conocida:** no usar `__file__` para localizar archivos del proyecto (assets, `tarifa_config.json`). Usar `resource_path()` y `RAIZ_PROYECTO`, porque los módulos ya no están en la raíz.
 - **Saltos de línea:** `.gitattributes` guarda LF en el repositorio y Git pone CRLF al sacar los archivos en Windows; los `.bat` siempre con CRLF. Al editar desde Linux, no convertir archivos enteros.
 
