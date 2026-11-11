@@ -16,7 +16,6 @@ import os
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
-import base64
 import threading
 import time
 
@@ -25,11 +24,11 @@ from app.comun.tarifa_constants import (
     C_ACCENT, C_ACCENT2, C_ACCENT_DIM,
     C_BG, C_TEXT, C_TEXT_LIGHT, C_MUTED, C_SUCCESS,
     C_ERROR, C_WARNING, C_LOG_BG,
-    FONT_SUB, FONT_LABEL, FONT_SMALL, SAP_LOGO_B64,
+    FONT_SUB, FONT_LABEL, FONT_SMALL, SAP_LOGO_PNG,
     TABLA_SUBFAMILIA_GRUPO_COMPRAS, TABLA_IGIC_GRUPO_COMPRAS,
 )
 from app.comun.tarifa_core import (
-    resource_path, LOGO_B64,
+    resource_path,
     cargar_config, guardar_config, TARIFA_NAME,
     FOLDER_TARIFAS, FOLDER_RECURSOS, buscar_tarifa, listar_xls,
     ConsolaLog, CanvasProgressBar,
@@ -63,7 +62,7 @@ DALI_APP_API_BASE = "https://dali-proxy-api.centralcompras1-canarias.workers.dev
 # ─────────────────────────────────────────────────────────────────────────────
 
 class App(tk.Tk):
-    # SAP_LOGO_B64 centralizado en tarifa_constants.py
+    # SAP_LOGO_PNG (ruta de assets/logo_sap.png) centralizado en tarifa_constants.py
 
     def __init__(self):
         super().__init__()
@@ -141,13 +140,8 @@ class App(tk.Tk):
 
         # ── Logo ──────────────────────────────────────────────────────────
         try:
-            from io import BytesIO
             from PIL import Image, ImageTk
-            ruta_logo = resource_path("assets/logo.png")
-            if os.path.isfile(ruta_logo):
-                img = Image.open(ruta_logo)
-            else:
-                img = Image.open(BytesIO(base64.b64decode(LOGO_B64)))
+            img = Image.open(resource_path("assets/logo.png"))   # va siempre dentro del .exe
             img    = img.resize((54, 58), Image.LANCZOS).convert("RGBA")
             bg_img = Image.new("RGBA", img.size, (6, 13, 24, 255))
             bg_img.paste(img, mask=img.split()[3])
@@ -177,9 +171,8 @@ class App(tk.Tk):
 
         # ── Lado derecho: logo SAP + reloj ────────────────────────────────
         try:
-            from io import BytesIO as _BIO
             from PIL import Image as _Img, ImageTk as _ImgTk
-            _sap_pil = _Img.open(_BIO(base64.b64decode(SAP_LOGO_B64))).resize((72, 26), _Img.LANCZOS)
+            _sap_pil = _Img.open(SAP_LOGO_PNG).resize((72, 26), _Img.LANCZOS)
             _sap_bg  = _Img.new("RGBA", _sap_pil.size, (6, 13, 24, 255))
             (_sap_bg.paste(_sap_pil, mask=_sap_pil.split()[3])
              if _sap_pil.mode == "RGBA" else _sap_bg.paste(_sap_pil))
@@ -464,9 +457,8 @@ class App(tk.Tk):
         frm_sap_inner.pack(fill="both", expand=True)
 
         try:
-            from io import BytesIO as _BytesIO
             from PIL import Image as _Image, ImageTk as _ImageTk
-            _sap_pil = _Image.open(_BytesIO(base64.b64decode(SAP_LOGO_B64))).resize(
+            _sap_pil = _Image.open(SAP_LOGO_PNG).resize(
                 (72, 26), _Image.LANCZOS)
             self._sap_logo_img = _ImageTk.PhotoImage(_sap_pil)
             _sap_icon = tk.Label(frm_sap_inner, image=self._sap_logo_img,

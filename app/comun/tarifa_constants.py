@@ -82,41 +82,8 @@ FONT_TINY    = ("Segoe UI",  7)
 FONT_SECTION = ("Segoe UI",  7, "bold")
 
 
-# ---------------------------------------------------------
-#  LOGOS EMBEBIDOS — base64
-# ---------------------------------------------------------
-# Logo SAP S/4HANA (120×44 px) — reutilizado en header y acceso rápido
-SAP_LOGO_B64 = (
-    "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"
-)
+# (nov 2026) Logo SAP del panel: antes en base64 aquí; ahora en assets/logo_sap.png.
+SAP_LOGO_PNG = resource_path("assets/logo_sap.png")
 
 # ---------------------------------------------------------
 #  DICCIONARIOS SAP — Acción 1 (Organizar DALI)
