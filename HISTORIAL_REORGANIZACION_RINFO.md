@@ -1083,11 +1083,30 @@ Petición de Víctor: «limpiar bien la aplicación, hacerla más ágil, reorgan
 
 ---
 
+## 47. Compilación en GitHub con versión automática (11 nov 2026) — PR en GitHub
+
+Petición de Víctor: compilar desde GitHub, igual que el Organizador, y que la versión suba sola en cada versión nueva, sin el `.bat`.
+- **Workflow** `.github/workflows/compilar.yml` («Compilar Consola Registro Info»), solo a mano, en Windows:
+  1. calcula la versión;
+  2. instala `compilacion/requisitos.txt`;
+  3. compila y lanza todas las pruebas (`unittest discover`);
+  4. ejecuta `build_exe.py` y genera `TARIFA_Finder.exe` y su `.sha256`.
+
+  Tiene dos destinos: «solo-descarga» (deja el `.exe` como artefacto) y «borrador» (crea una Release en borrador con `--generate-notes`).
+- **Versión automática** (`compilacion/version.py`, 8 pruebas en `tests/test_version.py`):
+  - toma la mayor entre `APP_VERSION` y las Releases, +2 (siempre par): la primera será **10.2.38**;
+  - se escribe en la copia que se compila y no se sube al repositorio;
+  - el campo «version» permite forzar otra, que tiene que ser mayor y par.
+- `COMPILAR_TARIFA.bat` se queda para compilar en local, pero ya no hace falta para la versión.
+- **Pendiente:** probar la primera ejecución en GitHub, que solo se puede lanzar cuando el workflow esté en `main`. Después, las actualizaciones automáticas a los compañeros (como el Organizador, con `releases/latest`); antes hay que decidir si el repositorio vuelve a ser público.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
    - ~~etapa 2: carpetas por capas~~ hecha (sección 43);
    - ~~etapa 3: limpieza~~ hecha (sección 44); ~~trocear `crear_registro_info.py`~~ hecho (sección 45); ~~trocear `tarifa_app.py`~~ hecho (sección 46);
-   - etapa 4: compilación automática en GitHub Actions (Windows, solo a mano) con las pruebas, y manual de usuario con capturas.
+   - ~~compilación automática en GitHub~~ hecha (sección 47); falta probar la primera ejecución, las actualizaciones automáticas a los compañeros y el manual de usuario con capturas.
 1. Roadmap de limpieza — puntos **1, 2, 3, 4 y 5 CERRADOS**. Punto 6 con su **primera pasada hecha** (sección 32): boilerplate 100% idéntico consolidado; quedan 6 geometrías con fórmulas propias, sin tocar deliberadamente — no hay más trabajo pendiente salvo que en algún momento vuelvan a coincidir entre sí.
 2. Recomendación pendiente para el usuario: revisar en SAP los ~50 materiales que aparecieron con el mismo hueco de Hoja3 que 10101839, por si llevan tiempo sin condición de precio activa sin que nadie lo notara.
 3. Recomendación pendiente (sección 22): siguen existiendo ~1.594 materiales SAP más (además del 10102980, ya resuelto) sin cruce DALI en el LISTADO — el fallback a `Productos.xlsx` los cubre para la sincronización de UM, pero conviene revisar y completar el cruce DALI real cuando haya ocasión, ya que el fallback no puede aportar IGIC ni grupo de compras.

@@ -6,8 +6,23 @@ Instrucciones para Claude Code en este repositorio. Responde siempre en **españ
 
 ## Qué es
 App de escritorio para Windows (Python + Tkinter) de la Central de Compras: prepara las tarifas de los proveedores y genera los **Registros de Información de compras de SAP (RINFO)** a partir de la tarifa y del «Purchasing Info Records» descargado de SAP. Mantiene también los listados de artículos DALI y de materiales SAP. Ventana «CREACIÓN REGISTRO INFO SAP»; ejecutable `TARIFA_Finder.exe`.
-- **Versión:** `APP_VERSION` en `tarifa_app.py` (formato `"v X.Y.Z"`). La pide y la escribe `COMPILAR_TARIFA.bat` al compilar, con `_bat_helper.py`.
-- **Compilación** (en Windows): `COMPILAR_TARIFA.bat` → `build_exe.py` → PyInstaller `--onefile --windowed`, que genera `dist/TARIFA_Finder.exe`. El `.spec` lo genera PyInstaller y no se sube.
+- **Compilación en GitHub** (desde nov 2026, como el Organizador): `.github/workflows/compilar.yml`, **solo a mano** desde la pestaña Actions («Compilar Consola Registro Info»). Corre en Windows y hace esto:
+  1. Calcula la versión.
+  2. Pasa las pruebas.
+  3. Compila con `build_exe.py`, que llama a PyInstaller con `--onefile --windowed` y genera `dist/TARIFA_Finder.exe` con su `.sha256`.
+
+  Tiene dos destinos:
+  - «solo-descarga»: el `.exe` queda como descarga del propio workflow.
+  - «borrador»: además crea una Release en **borrador**, con las novedades generadas a partir de los PR. Se publica a mano con «Publish release».
+
+  Nunca publicar una Release directamente desde el workflow ni lanzarlo al subir código. Dependencias de la compilación: `compilacion/requisitos.txt`.
+- **Versión automática** (`compilacion/version.py`, pruebas en `tests/test_version.py`):
+  - La versión de cada compilación es la mayor entre `APP_VERSION` de `tarifa_app.py` y las Releases ya creadas (también los borradores), **+2**, siempre par: 10.2.36 → 10.2.38.
+  - Se escribe en la copia que se compila, así que el `.exe` la muestra y la Release lleva esa etiqueta (`v10.2.38`). El workflow **no** sube ese cambio al repositorio: las versiones publicadas quedan en las etiquetas de las Releases.
+  - El campo «version» del workflow permite forzar otra (por ejemplo, 10.3.0); tiene que ser mayor y par.
+  - `APP_VERSION` (formato `"v X.Y.Z"`) sigue en `tarifa_app.py`, que es de donde lo leen el workflow, `_bat_helper.py` y `build_exe.py`.
+- **Compilación local** (en Windows, si hace falta): `COMPILAR_TARIFA.bat` → `build_exe.py`. Ya no hace falta para poner la versión. El `.spec` lo genera PyInstaller y no se sube.
+- **Actualizaciones automáticas** a los compañeros: pendiente, igual que el Organizador desde `releases/latest`. Hará falta decidir si el repositorio vuelve a ser público, porque sin iniciar sesión solo se leen las Releases de un repositorio público.
 - **Datos:** carpeta de proyecto en la unidad de red (`TARIFAS/`, `RECURSOS/`), elegida en la app y guardada en `tarifa_config.json`, junto al `.exe` o al script. Ese archivo **no se sube nunca** (está en `.gitignore`).
 - **Catálogo Asignaciones** (repo `dali-sap-articulos-app`): antes de algunas acciones se descarga su catálogo a través del Worker `DALI_APP_API_BASE` (`app/principal/catalogo_dali.py`), con el usuario y la contraseña de cada persona.
 
@@ -58,7 +73,7 @@ Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app
 ```bash
 python -m unittest discover -s tests -v
 ```
-- 104 pruebas (desde la raíz). 18 de ellas importan `crear_registro_info` (que usa tkinter): sin tkinter se saltan. En Linux hay que lanzarlas con un Python que tenga tkinter y con `xvfb-run`.
+- 112 pruebas (desde la raíz). 18 de ellas importan `crear_registro_info` (que usa tkinter): sin tkinter se saltan. En Linux hay que lanzarlas con un Python que tenga tkinter y con `xvfb-run`.
 - Dependencias para probar: `pandas openpyxl xlrd pillow psutil`. Para compilar, además `pyinstaller pywin32`.
 - Código muerto: `vulture tarifa_app.py app --min-confidence 60`, comprobando cada resultado con `grep` (también en cadenas) antes de quitar nada.
 - `tests/test_crear_registro_info.py` prueba el código real a través de `sap_helpers.py` y de `crear_registro_info`; no se deben reimplementar funciones dentro de la prueba.
