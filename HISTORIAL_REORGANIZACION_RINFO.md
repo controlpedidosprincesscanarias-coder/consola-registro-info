@@ -1148,6 +1148,17 @@ Con la v10.2.42, Víctor vio en la barra de tareas la corona gris, borrosa y sin
 
 ---
 
+## 51. Novedades de la versión al pulsar sobre ella (11 nov 2026) — PR en GitHub
+
+Petición de Víctor: en todas las aplicaciones se pueden ver las notas de la versión pulsando sobre ella (Organizador v4.18.44, móvil v1.0.6, Control Pedidos v12.34.20 y aquí).
+- El número de versión de la cabecera (subrayado) y el del pie se pueden pulsar y abren «Novedades de la versión» (`app/ui/ventana_notas_version.py`), con el mismo formato que el aviso de versión nueva (`_notas_legibles`) y un botón «Todas las versiones».
+- Las notas son las de la Release de esa versión en GitHub (generadas a partir de los PR). Se piden en segundo plano y sin iniciar sesión con `actualizaciones.notas_de_version()` (`/releases/tags/v…`). Sin conexión, o desde el código (sin Release, 404), se dice y se ofrece la página de versiones.
+- Manual: la leyenda 11 de la ventana principal lo explica; PDF e índice regenerados (también en `assets/`).
+- 2 pruebas nuevas en `tests/test_actualizaciones.py` (133 en total). Ventana probada en una pantalla virtual con notas simuladas.
+- **Por probar en Windows:** pulsar la versión en el `.exe` publicado (la de la Release que se compile).
+
+---
+
 ## Próximos pasos, en orden de prioridad
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
    - ~~etapa 2: carpetas por capas~~ hecha (sección 43);

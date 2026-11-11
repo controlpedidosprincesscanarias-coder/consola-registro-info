@@ -66,7 +66,7 @@ s.push(...leyenda([[1, "**Carpeta del proyecto**: la ruta y el botón 📁 para 
   [8, "**Consola**: cada paso con su hora. Colores: SISTEMA (dorado), INFO (azul), OK (verde), WARN (amarillo, revisar) y ERROR (rojo)."],
   [9, "**guardar log** guarda la consola en un .txt; **limpiar** la vacía."],
   [10, "**Accesos rápidos**: portal de **SAP S/4HANA**, **Crear / Actualizar Registro Info SAP** (capítulo 7) y **Manual de usuario** (abre este PDF)."],
-  [11, "**Versión** instalada."]]));
+  [11, "**Versión** instalada. Púlsala para ver las **novedades** de esa versión."]]));
 s.push(...recuadro("consejo", "Lee la consola", ["Las líneas **WARN** (amarillas) no son errores, pero piden que revises algo: códigos SAP que faltan, duplicados, proveedores distintos… Si algo «se queda parado», mira la última línea de la consola antes de volver a pulsar."]));
 
 // ── 4 ──────────────────────────────────────────────────────────────────────
