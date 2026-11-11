@@ -1063,10 +1063,30 @@ Petición de Víctor: «limpiar bien la aplicación, hacerla más ágil, reorgan
 
 ---
 
+## 46. Etapa 4 (segunda parte): la clase App de tarifa_app.py repartida en mixins (11 nov 2026) — PR en GitHub
+
+`tarifa_app.py` (~5.300 líneas) queda en ~200: la clase `App` hereda de seis *mixins* de `app/principal/`, sin cambiar el código.
+
+| Mixin (módulo) | Contenido | Métodos | Líneas |
+|---|---|---|---|
+| `InterfazApp` (`interfaz.py`) | ventana, consola, botones, acciones sencillas | 23 | ~880 |
+| `AccionOrganizarDali` | Acción 1 | 1 | ~380 |
+| `AccionListadoDali` | Acción 2 | 1 | ~350 |
+| `AccionListadoSap` | Acción 3 | 6 | ~830 |
+| `CatalogoDali` | catálogo DALI completo y Catálogo Asignaciones (`DALI_APP_API_BASE`) | 15 | ~1.420 |
+| `AccionesTarifa` | Acciones 4 y 6 | 11 | ~1.600 |
+
+- En `App` quedan `__init__`, `_build_header` y `_build_footer`, porque usan `APP_VERSION`, que sigue en `tarifa_app.py` (lo leen `_bat_helper.py` y el `.bat`). Comprobado que `_bat_helper.py leer` da `v 10.2.36`.
+- Los 60 métodos se han comparado por AST con los originales: son idénticos, y ninguno está repetido entre mixins (si lo estuviera, ganaría el primero en silencio).
+- **Limpieza de la parte anterior** (commit propio): en `app/rinfo` quedaban importaciones que no se usaban, porque la de `sap_helpers` llevaba `# noqa: E402` y autoflake no la tocó.
+- **Comprobado:** 104 pruebas; la app arranca; compilado con PyInstaller, el ejecutable incluye los 6 módulos y muestra el logo.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
    - ~~etapa 2: carpetas por capas~~ hecha (sección 43);
-   - ~~etapa 3: limpieza~~ hecha (sección 44); ~~trocear `crear_registro_info.py`~~ hecho (sección 45); falta `tarifa_app.py` (~5.200 líneas);
+   - ~~etapa 3: limpieza~~ hecha (sección 44); ~~trocear `crear_registro_info.py`~~ hecho (sección 45); ~~trocear `tarifa_app.py`~~ hecho (sección 46);
    - etapa 4: compilación automática en GitHub Actions (Windows, solo a mano) con las pruebas, y manual de usuario con capturas.
 1. Roadmap de limpieza — puntos **1, 2, 3, 4 y 5 CERRADOS**. Punto 6 con su **primera pasada hecha** (sección 32): boilerplate 100% idéntico consolidado; quedan 6 geometrías con fórmulas propias, sin tocar deliberadamente — no hay más trabajo pendiente salvo que en algún momento vuelvan a coincidir entre sí.
 2. Recomendación pendiente para el usuario: revisar en SAP los ~50 materiales que aparecieron con el mismo hueco de Hoja3 que 10101839, por si llevan tiempo sin condición de precio activa sin que nadie lo notara.
