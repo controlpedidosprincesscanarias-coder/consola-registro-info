@@ -28,6 +28,9 @@ La **consola** de la derecha muestra cada paso con su hora y un color por nivel:
 
 **Catálogo Asignaciones:** la primera vez que hace falta descargar su catálogo, la app pide tu usuario y tu contraseña. La contraseña se guarda **cifrada**: solo tu usuario de Windows, en ese equipo, puede leerla. Si la contraseña deja de valer, se borra y se vuelve a pedir.
 
+## Actualizaciones
+Al abrirse, la app comprueba si hay una versión nueva publicada en GitHub. Si la hay, muestra las novedades y ofrece **Actualizar ahora**: descarga el `.exe` nuevo, comprueba que es el publicado (SHA-256), lo pone en el sitio del actual y se vuelve a abrir sola. La carpeta del proyecto y la contraseña guardada no se tocan. La versión anterior se borra sola en el siguiente arranque, y la consola lo indica.
+
 ## Compilar
 **En GitHub (lo normal):**
 1. Ve a la pestaña **Actions** → **Compilar Consola Registro Info** → **Run workflow**.

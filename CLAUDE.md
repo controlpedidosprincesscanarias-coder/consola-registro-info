@@ -22,7 +22,13 @@ App de escritorio para Windows (Python + Tkinter) de la Central de Compras: prep
   - El campo «version» del workflow permite forzar otra (por ejemplo, 10.3.0); tiene que ser mayor y par.
   - `APP_VERSION` (formato `"v X.Y.Z"`) sigue en `tarifa_app.py`, que es de donde lo leen el workflow, `_bat_helper.py` y `build_exe.py`.
 - **Compilación local** (en Windows, si hace falta): `COMPILAR_TARIFA.bat` → `build_exe.py`. Ya no hace falta para poner la versión. El `.spec` lo genera PyInstaller y no se sube.
-- **Actualizaciones automáticas** a los compañeros: pendiente, igual que el Organizador desde `releases/latest`. Hará falta decidir si el repositorio vuelve a ser público, porque sin iniciar sesión solo se leen las Releases de un repositorio público.
+- **Actualizaciones automáticas** (desde nov 2026; lógica en `app/comun/actualizaciones.py`, ventana en `app/ui/ventana_actualizacion.py`, pruebas en `tests/test_actualizaciones.py`). Cada compañero tiene su propia copia del `.exe` en su PC.
+  1. Al arrancar, en segundo plano y sin iniciar sesión, se consulta `releases/latest`. Los borradores no salen ahí, así que una versión no llega a nadie hasta que se pulsa «Publish release».
+  2. Si hay una más nueva, se avisa con las novedades. «Actualizar ahora» descarga `TARIFA_Finder.exe` a la **misma carpeta** (`.nuevo.exe`) y comprueba el SHA-256 con el `.sha256` publicado: sin `.sha256` o con hash distinto no se instala.
+  3. Después renombra el `.exe` en uso a `.anterior.exe`, coloca el nuevo, lo abre con el entorno de PyInstaller limpio (`entorno_limpio`) y cierra el viejo.
+  4. Al arrancar, la versión nueva borra el `.anterior.exe` y lo dice en la consola. Si aún está en uso, lo reintenta cada 10 s, hasta 6 veces.
+
+  Un 404 (ninguna Release publicada) no es un error. Desde el código (`python tarifa_app.py`) nunca se actualiza. **El repositorio tiene que seguir siendo público** y no se borran ni se renombran Releases, igual que en el Organizador.
 - **Datos:** carpeta de proyecto en la unidad de red (`TARIFAS/`, `RECURSOS/`), elegida en la app y guardada en `tarifa_config.json`, junto al `.exe` o al script. Ese archivo **no se sube nunca** (está en `.gitignore`).
 - **Catálogo Asignaciones** (repo `dali-sap-articulos-app`): antes de algunas acciones se descarga su catálogo a través del Worker `DALI_APP_API_BASE` (`app/principal/catalogo_dali.py`), con el usuario y la contraseña de cada persona.
 
@@ -73,7 +79,7 @@ Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app
 ```bash
 python -m unittest discover -s tests -v
 ```
-- 112 pruebas (desde la raíz). 18 de ellas importan `crear_registro_info` (que usa tkinter): sin tkinter se saltan. En Linux hay que lanzarlas con un Python que tenga tkinter y con `xvfb-run`.
+- 125 pruebas (desde la raíz). 18 de ellas importan `crear_registro_info` (que usa tkinter): sin tkinter se saltan. En Linux hay que lanzarlas con un Python que tenga tkinter y con `xvfb-run`.
 - Dependencias para probar: `pandas openpyxl xlrd pillow psutil`. Para compilar, además `pyinstaller pywin32`.
 - Código muerto: `vulture tarifa_app.py app --min-confidence 60`, comprobando cada resultado con `grep` (también en cadenas) antes de quitar nada.
 - `tests/test_crear_registro_info.py` prueba el código real a través de `sap_helpers.py` y de `crear_registro_info`; no se deben reimplementar funciones dentro de la prueba.

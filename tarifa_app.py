@@ -89,6 +89,8 @@ class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap,
             self.after(300, self._buscar)
         else:
             self.log_consola("No hay carpeta de proyecto configurada. Seleccione o cree una.", "WARN")
+        # (nov 2026) Actualización automática desde las Releases de GitHub (solo el .exe).
+        self.after(3000, lambda: self._comprobar_actualizaciones(APP_VERSION))
 
     # ── HEADER ────────────────────────────────────────────────────────────
     def _build_header(self):

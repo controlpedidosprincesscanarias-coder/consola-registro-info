@@ -865,3 +865,48 @@ class InterfazApp:
         else:
             messagebox.showwarning("Sin resultado",
                                    "A\xfan no se ha generado ning\xfan archivo procesado.")
+
+    # ── Actualización automática (nov 2026) ───────────────────────────────
+    def _comprobar_actualizaciones(self, version_local):
+        """Al arrancar: consulta en segundo plano la última Release publicada y, si es más nueva,
+        avisa (app/ui/ventana_actualizacion.py). Desde el código («python tarifa_app.py») no se
+        actualiza: solo el .exe. Un fallo de red solo deja una línea en la consola."""
+        import sys as _sys
+        from app.comun import actualizaciones as _act
+        if getattr(_sys, "frozen", False):
+            self._limpiar_version_anterior(os.path.abspath(_sys.executable))
+
+        def hilo():
+            try:
+                info = _act.consultar_ultima()
+            except Exception as e:  # noqa: BLE001
+                msg = f"No se pudo comprobar si hay versión nueva ({type(e).__name__})."
+                self.after(0, lambda: self.log_consola(msg, "WARN"))
+                return
+            self.after(0, lambda: self._resultado_actualizacion(info, version_local))
+        threading.Thread(target=hilo, daemon=True, name="ComprobarActualizacion").start()
+
+    def _limpiar_version_anterior(self, ruta_exe, intento=1):
+        """Tras actualizarse, borra el .exe de la versión anterior y lo dice en la consola. Si la versión
+        vieja todavía se está cerrando, lo reintenta (hasta 6 veces, cada 10 s)."""
+        from app.comun import actualizaciones as _act
+        borrados, pendientes = _act.limpiar_restos(ruta_exe)
+        for n in borrados:
+            self.log_consola(f"Versión anterior borrada: {n}", "OK")
+        if pendientes and intento < 6:
+            self.after(10000, lambda: self._limpiar_version_anterior(ruta_exe, intento + 1))
+        elif pendientes:
+            self.log_consola(f"No se pudo borrar todavía {', '.join(pendientes)}; se volverá a intentar "
+                             f"en el próximo arranque (se puede borrar a mano).", "WARN")
+
+    def _resultado_actualizacion(self, info, version_local):
+        from app.comun import actualizaciones as _act
+        if not info:
+            return
+        if not _act.es_mas_nueva(info["version"], version_local):
+            self.log_consola(f"Versión al día ({version_local.strip()}).", "OK")
+            return
+        self.log_consola(f"Nueva versión disponible: v {info['version']} (tienes la {version_local.strip()}).", "WARN")
+        from app.ui.ventana_actualizacion import VentanaActualizacion
+        VentanaActualizacion(self, info, version_local, self.log_consola)
+
