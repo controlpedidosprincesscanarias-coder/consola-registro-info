@@ -32,6 +32,7 @@ APP_VERSION = "v 10.2.36"   # ← actualiza aquí cada vez que termines una fase
 # DALI_APP_API_BASE (URL del Worker de Catálogo Asignaciones) vive en app/principal/catalogo_dali.py.
 # ─────────────────────────────────────────────────────────────────────────────
 from app.principal.interfaz import InterfazApp
+from app.ui import ventana_notas_version as notas_version
 from app.principal.accion_organizar_dali import AccionOrganizarDali
 from app.principal.accion_listado_dali import AccionListadoDali
 from app.principal.accion_listado_sap import AccionListadoSap
@@ -154,8 +155,11 @@ class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap,
         self._lbl_clock_date = tk.Label(frm_clock, text="", bg=C_DARK, fg=C_MUTED,
                                          font=("Segoe UI", 7), anchor="e")
         self._lbl_clock_date.pack(anchor="e")
-        tk.Label(frm_clock, text=APP_VERSION, bg=C_DARK, fg=C_ACCENT2,
-                 font=("Segoe UI", 10, "bold"), anchor="e").pack(anchor="e", pady=(3, 0))
+        lbl_version = tk.Label(frm_clock, text=APP_VERSION, bg=C_DARK, fg=C_ACCENT2,
+                               font=("Segoe UI", 10, "bold", "underline"), anchor="e")
+        lbl_version.pack(anchor="e", pady=(3, 0))
+        # (nov 2026) Al pulsar la versión se ven sus novedades (app/ui/ventana_notas_version.py)
+        notas_version.hacer_pulsable(lbl_version, self, APP_VERSION)
 
         # Franja dorada inferior (2 px)
         tk.Frame(hdr, bg=C_ACCENT, height=2).pack(fill="x")
@@ -172,10 +176,12 @@ class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap,
                   text="🏨  Princess Hotels & Resorts  ·  Central de Compras Canarias",
                   bg=C_DARK, fg=C_ACCENT,
                   font=("Segoe UI", 8, "bold")).pack(side="left")
-        tk.Label(frm_pie,
-                  text=f"© VAMA 2026  ·  Víctor Alejandro Martín Andrade  ·  {APP_VERSION}",
-                  bg=C_DARK, fg=C_MUTED,
-                  font=("Segoe UI", 8)).pack(side="right")
+        lbl_pie = tk.Label(frm_pie,
+                           text=f"© VAMA 2026  ·  Víctor Alejandro Martín Andrade  ·  {APP_VERSION}",
+                           bg=C_DARK, fg=C_MUTED,
+                           font=("Segoe UI", 8))
+        lbl_pie.pack(side="right")
+        notas_version.hacer_pulsable(lbl_pie, self, APP_VERSION)
 
 
 # ---------------------------------------------------------

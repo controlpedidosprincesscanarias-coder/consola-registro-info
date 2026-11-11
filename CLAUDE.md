@@ -44,7 +44,7 @@ Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app
   - `catalogo_dali.py`: Catálogo DALI completo y Catálogo Asignaciones (`DALI_APP_API_BASE`).
   - Un método nuevo va al mixin de su tema. Dos mixins no pueden tener un método con el mismo nombre, porque ganaría el primero de la lista sin avisar.
 - `app/comun/` — `manual.py` (abrir y consultar el manual), `tarifa_constants.py` (colores, fuentes, tablas fijas, `resource_path` y `RAIZ_PROYECTO`), `tarifa_core.py` (configuración, consola de log, barra de progreso), `sap_helpers.py` (funciones de negocio puras, sin tkinter), `credenciales.py` (DPAPI, sin tkinter) y `actualizaciones.py` (actualización automática, sin tkinter).
-- `app/ui/` — `tarifa_dialogs.py` (ventanas modales: selección de .xls, crear proyecto, SAP duplicados y SAP faltantes), `ventana_actualizacion.py` (aviso de versión nueva) y `ventana_consulta_manual.py` («Consultar el manual»).
+- `app/ui/` — `tarifa_dialogs.py` (ventanas modales: selección de .xls, crear proyecto, SAP duplicados y SAP faltantes), `ventana_actualizacion.py` (aviso de versión nueva), `ventana_consulta_manual.py` («Consultar el manual») y `ventana_notas_version.py` (novedades de la versión al pulsar el número de versión de la cabecera o del pie; las pide a la Release de GitHub de esa versión con `actualizaciones.notas_de_version`).
 - **Manual de usuario** (nov 2026): `docs/Manual_Usuario_ConsolaRegistroInfo.docx` / `.pdf`, con el estilo de los de Control Pedidos y el Organizador. Se regenera con `docs/manuales_fuente/` (capturas reales con datos inventados en Xvfb y maquetación con `docx` de Node; ver su README). El PDF y `manual_indice.json` van también en `assets/` (dentro del `.exe`): el acceso rápido «Manual de usuario» abre el PDF y la barra «🔎 Consultar el manual» busca en el índice (`app/comun/manual.py`, sin tkinter, pruebas en `tests/test_manual.py`). Si un cambio altera una pantalla o un texto del manual, avisar de que conviene regenerarlo (y copiar otra vez el PDF y el índice a `assets/`).
 - `app/rinfo/` — motor de RINFO, repartido en la etapa 4 (nov 2026) sin cambiar el código:
   - `comun_rinfo.py`: constantes, `_log`, `_safe_after` y funciones auxiliares (Excel, similitud de nombres, búsqueda de tarifas, Purchasing y listados). No importa de otros módulos de `app.rinfo`.
@@ -81,7 +81,7 @@ Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app
 ```bash
 python -m unittest discover -s tests -v
 ```
-- 131 pruebas (desde la raíz). 18 de ellas importan `crear_registro_info` (que usa tkinter): sin tkinter se saltan. En Linux hay que lanzarlas con un Python que tenga tkinter y con `xvfb-run`.
+- 133 pruebas (desde la raíz). 18 de ellas importan `crear_registro_info` (que usa tkinter): sin tkinter se saltan. En Linux hay que lanzarlas con un Python que tenga tkinter y con `xvfb-run`.
 - Dependencias para probar: `pandas openpyxl xlrd pillow psutil`. Para compilar, además `pyinstaller pywin32`.
 - Código muerto: `vulture tarifa_app.py app --min-confidence 60`, comprobando cada resultado con `grep` (también en cadenas) antes de quitar nada.
 - `tests/test_crear_registro_info.py` prueba el código real a través de `sap_helpers.py` y de `crear_registro_info`; no se deben reimplementar funciones dentro de la prueba.
