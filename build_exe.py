@@ -151,6 +151,9 @@ def main():
         "--hidden-import", "PIL",
         "--hidden-import", "PIL.Image",
         "--hidden-import", "PIL.ImageTk",
+        # (nov 2026) Sin él, ImageTk falla dentro del .exe («No module named
+        # 'PIL._tkinter_finder'») y la cabecera muestra una «P» en vez del logo.
+        "--hidden-import", "PIL._tkinter_finder",
 
         # ── pandas + xlrd (Acción 1 — ARTICULOS DALI) ───
         "--hidden-import", "pandas",
