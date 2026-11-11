@@ -1,0 +1,114 @@
+# Compila la Consola Registro Info SAP (TARIFA_Finder.exe) en Windows.
+#
+# La idea y el desarrollo de la aplicación, incluidas sus pruebas, son de Víctor Alejandro Martín
+# Andrade, para el Departamento de Central de Compras de Princess Hotels en Canarias.
+#
+# Solo se lanza A MANO (pestaña Actions → «Compilar Consola Registro Info» → Run workflow); nunca al subir código.
+#   - La VERSIÓN sale sola (compilacion/version.py): la mayor entre APP_VERSION de tarifa_app.py y las
+#     Releases ya creadas, +2 (siempre par). Se escribe en la copia que se compila, así que el .exe la
+#     muestra, y queda como etiqueta de la Release. «version» permite forzar otra (p. ej. 10.3.0).
+#   - destino «solo-descarga»: deja TARIFA_Finder.exe y su .sha256 como descarga del propio workflow.
+#     No crea ninguna Release (la versión no se gasta: la siguiente compilación usará la misma).
+#   - destino «borrador»: además crea una Release en BORRADOR con el .exe y el .sha256 y las novedades
+#     (los PR fusionados desde la Release anterior). Se publica a mano con «Publish release».
+# Antes de compilar se pasan todas las pruebas (tests/).
+name: Compilar Consola Registro Info
+
+on:
+  workflow_dispatch:
+    inputs:
+      destino:
+        description: "Qué hacer con el ejecutable"
+        type: choice
+        options:
+          - solo-descarga
+          - borrador
+        default: solo-descarga
+      version:
+        description: "Versión (vacío = automática, +2 sobre la última)"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: compilar-consola
+  cancel-in-progress: false
+
+jobs:
+  compilar:
+    runs-on: windows-2022
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Calcular la versión
+        id: version
+        shell: pwsh
+        run: |
+          gh api --paginate "repos/${{ github.repository }}/releases?per_page=100" --jq '.[].tag_name' | Out-File -Encoding utf8 etiquetas.txt
+          if ($LASTEXITCODE -ne 0) { throw "No se pudo leer la lista de Releases" }
+          python compilacion/version.py --releases etiquetas.txt --forzar "${{ inputs.version }}" --escribir --github-output "$env:GITHUB_OUTPUT"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Instalar dependencias
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r compilacion/requisitos.txt
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          python -c "import pandas, openpyxl, xlrd, PIL, win32com.client, psutil; print('Dependencias OK')"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          python -m pip freeze
+
+      - name: Comprobar el código
+        shell: pwsh
+        run: |
+          python -m compileall -q tarifa_app.py app compilacion
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          python -m unittest discover -s tests -v
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Compilar con PyInstaller
+        shell: pwsh
+        run: |
+          python build_exe.py
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $exe = "dist\TARIFA_Finder.exe"
+          if (-not (Test-Path $exe)) { throw "No se generó $exe" }
+          "{0:N1} MB" -f ((Get-Item $exe).Length / 1MB)
+          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  TARIFA_Finder.exe" | Out-File -Encoding ascii "$exe.sha256"
+          Get-Content "$exe.sha256"
+
+      - name: Guardar el ejecutable como descarga
+        uses: actions/upload-artifact@v4
+        with:
+          name: TARIFA_Finder_${{ steps.version.outputs.version }}
+          path: |
+            dist/TARIFA_Finder.exe
+            dist/TARIFA_Finder.exe.sha256
+          retention-days: 30
+
+      - name: Crear la Release en BORRADOR
+        if: inputs.destino == 'borrador'
+        shell: pwsh
+        run: |
+          gh release create "${{ steps.version.outputs.etiqueta }}" `
+            "dist\TARIFA_Finder.exe" `
+            "dist\TARIFA_Finder.exe.sha256" `
+            --draft `
+            --target "${{ github.sha }}" `
+            --title "Consola Registro Info SAP ${{ steps.version.outputs.app_version }}" `
+            --generate-notes
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          "Borrador creado. Revísalo en Releases y pulsa «Publish release» cuando quieras publicarlo."

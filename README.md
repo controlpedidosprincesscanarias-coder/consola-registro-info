@@ -4,7 +4,7 @@ App de escritorio de la **Central de Compras Princess Canarias** para preparar l
 
 > La idea y el desarrollo de la aplicación, incluidas sus pruebas, son de **Víctor Alejandro Martín Andrade**, para el Departamento de Central de Compras de Princess Hotels en Canarias. Ver `AUTORIA.md`.
 
-**Versión actual:** v 10.2.36 (`APP_VERSION` en `tarifa_app.py`).
+**Versión actual:** v 10.2.36. A partir de ahora la pone sola cada compilación en GitHub: la de cada `.exe` es la etiqueta de su Release.
 
 ## Uso
 Se distribuye solo `TARIFA_Finder.exe`, que no necesita Python instalado. Hace falta Excel para algunas acciones.
@@ -28,11 +28,21 @@ La **consola** de la derecha muestra cada paso con su hora y un color por nivel:
 
 **Catálogo Asignaciones:** la primera vez que hace falta descargar su catálogo, la app pide tu usuario y tu contraseña. La contraseña se guarda **cifrada**: solo tu usuario de Windows, en ese equipo, puede leerla. Si la contraseña deja de valer, se borra y se vuelve a pedir.
 
-## Compilar (Windows)
+## Compilar
+**En GitHub (lo normal):**
+1. Ve a la pestaña **Actions** → **Compilar Consola Registro Info** → **Run workflow**.
+2. Elige el destino:
+   - **solo-descarga**: el `.exe` queda en la propia ejecución, en «Artifacts».
+   - **borrador**: además crea una Release en borrador, que se publica a mano.
+3. La versión sale sola: la última más 2 (10.2.36 → 10.2.38). Se puede forzar otra en el campo «version».
+
+Antes de compilar se pasan todas las pruebas.
+
+**En el propio equipo (Windows):**
 ```bash
-pip install pyinstaller pillow pandas openpyxl xlrd pywin32 psutil
+pip install -r compilacion/requisitos.txt
 ```
-Después ejecuta `COMPILAR_TARIFA.bat`: pregunta la versión, la escribe en `tarifa_app.py` y llama a `build_exe.py`. El ejecutable queda en `dist/TARIFA_Finder.exe`.
+Después ejecuta `COMPILAR_TARIFA.bat`. El ejecutable queda en `dist/TARIFA_Finder.exe`.
 
 ## Pruebas
 ```bash
@@ -51,5 +61,6 @@ python -m unittest discover -s tests -v
 | `app/ui/tarifa_dialogs.py` | Ventanas modales |
 | `assets/` | Logos, icono e imágenes de ayuda (van dentro del `.exe`) |
 | `tests/` | Pruebas automáticas |
-| `build_exe.py`, `COMPILAR_TARIFA.bat`, `_bat_helper.py` | Compilación |
+| `build_exe.py`, `compilacion/`, `.github/workflows/compilar.yml` | Compilación (en GitHub, con versión automática) |
+| `COMPILAR_TARIFA.bat`, `_bat_helper.py` | Compilación local en Windows |
 | `HISTORIAL_REORGANIZACION_RINFO.md` | Historial de cambios y próximos pasos |

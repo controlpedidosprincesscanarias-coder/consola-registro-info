@@ -1,0 +1,9 @@
+# Dependencias para compilar la Consola Registro Info SAP (las usa .github/workflows/compilar.yml).
+# Idea y desarrollo: Víctor Alejandro Martín Andrade (VAMA).
+pyinstaller
+pillow
+pandas
+openpyxl
+xlrd
+pywin32
+psutil
