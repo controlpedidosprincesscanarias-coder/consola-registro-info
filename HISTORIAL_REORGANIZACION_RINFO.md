@@ -1102,6 +1102,27 @@ Petición de Víctor: compilar desde GitHub, igual que el Organizador, y que la 
 
 ---
 
+## 48. Actualizaciones automáticas para los compañeros (11 nov 2026) — PR en GitHub
+
+**Validación previa** de la v 10.2.38 compilada en GitHub, con datos reales. Víctor pasó las mismas tarifas con la versión anterior y con la nueva, y se compararon los logs y los Excel celda a celda:
+- ORION: tarifa, INC, reinscripción y RINFO nuevo con 2 centros.
+- Acciones 1–3 y catálogo DALI.
+- OFIPAPEL: alta de SAP faltantes, resolución de duplicados, Acción 3 a mitad de proceso y RINFO nuevo con 3 centros.
+- ANDROMEDA: RINFO desde Purchasing existente, con 92 materiales heredados y 3 nuevos.
+
+En todos los casos, **0 diferencias** en los datos. Solo cambian el mensaje del logo (paso 14b), las fechas «Generado el…», la celda seleccionada al abrir y el orden interno de la tabla de estilos.
+
+**Actualización automática.** Cada compañero tiene su copia del `.exe` (respuesta de Víctor).
+- `app/comun/actualizaciones.py` (sin tkinter): consulta `releases/latest` sin iniciar sesión (un 404, sin Releases publicadas, no es error), descarga junto al `.exe`, comprueba el SHA-256 (sin `.sha256` no instala), sustituye el `.exe` renombrando el actual a `.anterior.exe` y vuelve atrás si falla, y abre el nuevo con `PYINSTALLER_RESET_ENVIRONMENT=1` y sin las variables `_PYI_*`.
+- `app/ui/ventana_actualizacion.py`: aviso con las novedades de GitHub en castellano, «Actualizar ahora» y «Más tarde».
+- `InterfazApp._comprobar_actualizaciones` se lanza 3 s después de arrancar. En la consola aparece «Versión al día» o «Nueva versión disponible».
+- **Pregunta de Víctor: ¿se verifica el borrado de la versión anterior?** Ahora sí: al arrancar la versión nueva se borra el `.anterior.exe` y la consola lo indica («Versión anterior borrada»). Si la vieja aún se está cerrando, se reintenta cada 10 s, hasta 6 veces; si no, se avisa y se reintenta en el próximo arranque. En el Organizador, el instalador se instala encima, en la misma carpeta y con el mismo identificador, pero el instalador descargado se queda en `%TEMP%\OrganizadorPrincess_actualizacion` hasta la actualización siguiente (propuesto borrarlo).
+- 13 pruebas nuevas en `tests/test_actualizaciones.py` (125 en total).
+- **Por probar en Windows:** publicar la v10.2.38, compilar y publicar después otra (10.2.40) y abrir la 10.2.38: debe avisar, actualizarse, abrirse sola y borrar el `.anterior.exe`.
+- **Pendiente:** el aviso de GitHub «Node.js 20 is deprecated» en el workflow (subir `actions/checkout`, `setup-python` y `upload-artifact` a sus versiones con Node 24, comprobando antes que existen). También en el Organizador.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
    - ~~etapa 2: carpetas por capas~~ hecha (sección 43);
