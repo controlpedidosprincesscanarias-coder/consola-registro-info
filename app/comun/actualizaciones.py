@@ -31,6 +31,8 @@ import urllib.request
 
 REPO = "controlpedidosprincesscanarias-coder/consola-registro-info"
 API_ULTIMA = f"https://api.github.com/repos/{REPO}/releases/latest"
+API_ETIQUETA = f"https://api.github.com/repos/{REPO}/releases/tags/{{}}"   # (nov 2026) notas de una versión
+URL_VERSIONES = f"https://github.com/{REPO}/releases"
 NOMBRE_ASSET = "TARIFA_Finder.exe"
 USER_AGENT = "ConsolaRegistroInfo"
 TAMANO_MAXIMO = 300 * 1024 * 1024          # un .exe de más de 300 MB no es nuestro
@@ -87,6 +89,26 @@ def consultar_ultima(timeout=10):
         if e.code == 404:
             return None
         raise
+
+
+def notas_de_version(version, timeout=10):
+    """(nov 2026) Las notas de la Release de `version` («v 10.2.44» → etiqueta «v10.2.44»), para verlas al
+    pulsar el número de versión. None si esa versión no tiene Release (404: p. ej. desde el código, o
+    una versión que no se publicó). Lanza la excepción de red en cualquier otro fallo."""
+    nums = numeros(version)
+    if not nums:
+        return None
+    etiqueta = "v" + ".".join(map(str, nums))
+    req = urllib.request.Request(API_ETIQUETA.format(etiqueta), headers={
+        "Accept": "application/vnd.github+json", "User-Agent": USER_AGENT})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout, context=ssl_ctx()) as resp:
+            release = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return None
+        raise
+    return (release.get("body") or "").strip() if isinstance(release, dict) else None
 
 
 def extraer_hash(texto, nombre=NOMBRE_ASSET):

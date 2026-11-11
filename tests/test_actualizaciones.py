@@ -7,6 +7,9 @@ son de Víctor Alejandro Martín Andrade (VAMA).
 """
 import hashlib
 import io
+import json
+import urllib.error
+from unittest import mock
 import os
 import sys
 import tempfile
@@ -81,6 +84,22 @@ class SinReleasePublicada(unittest.TestCase):
         with mock.patch.object(A.urllib.request, "urlopen", side_effect=err):
             with self.assertRaises(urllib.error.HTTPError):
                 A.consultar_ultima()
+
+
+class NotasDeUnaVersion(unittest.TestCase):
+    """(nov 2026) Al pulsar la versión: las notas de la Release de esa versión, por su etiqueta."""
+    def test_pide_la_etiqueta_de_esa_version(self):
+        cuerpo = json.dumps({"tag_name": "v10.2.44", "body": "## What's Changed\n* Icono nuevo by @x in #11"}).encode()
+        with mock.patch.object(A.urllib.request, "urlopen", return_value=_Resp(cuerpo)) as u:
+            notas = A.notas_de_version("v 10.2.44")
+        self.assertIn("Icono nuevo", notas)
+        self.assertTrue(u.call_args.args[0].full_url.endswith("/releases/tags/v10.2.44"))
+
+    def test_sin_release_o_sin_numero(self):
+        err = urllib.error.HTTPError(A.API_ETIQUETA, 404, "Not Found", {}, None)
+        with mock.patch.object(A.urllib.request, "urlopen", side_effect=err):
+            self.assertIsNone(A.notas_de_version("v 10.2.36"))
+        self.assertIsNone(A.notas_de_version("sin versión"))
 
 
 class NotasLegibles(unittest.TestCase):
