@@ -17,10 +17,8 @@ import openpyxl
 # normalizar_codigo_sap vive en sap_helpers.py (sin tkinter) para que
 # también pueda importarla test_crear_registro_info.py sin arrastrar
 # la UI. Ver ese fichero para la implementación y el porqué.
-from app.comun.sap_helpers import (  # noqa: E402
-    normalizar_codigo_sap, ultima_fila_con_datos, parsear_fecha_celda,
-    formatear_fecha_dmy, clave_pir_h3, material_de_clave_pir, formatear_clave_pir,
-    debe_cerrar_fin_validez)
+from app.comun.sap_helpers import (
+    normalizar_codigo_sap, ultima_fila_con_datos)
 from app.rinfo.comun_rinfo import (  # noqa: F401
     ARCHIVO_TEMPLATE,
     FECHA_FIN_FIJA_HOJA1,

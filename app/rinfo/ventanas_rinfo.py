@@ -15,7 +15,6 @@ import subprocess
 import webbrowser
 import tkinter as tk
 from tkinter import ttk, messagebox
-import datetime as _dt_mod          # módulo completo — usado en lógica de fechas de baja
 from datetime import datetime
 from app.comun.tarifa_constants import (
     resource_path,
@@ -27,10 +26,6 @@ from app.comun.tarifa_core import cargar_icono_ventana, ajustar_geometria_pantal
 # normalizar_codigo_sap vive en sap_helpers.py (sin tkinter) para que
 # también pueda importarla test_crear_registro_info.py sin arrastrar
 # la UI. Ver ese fichero para la implementación y el porqué.
-from app.comun.sap_helpers import (  # noqa: E402
-    normalizar_codigo_sap, ultima_fila_con_datos, parsear_fecha_celda,
-    formatear_fecha_dmy, clave_pir_h3, material_de_clave_pir, formatear_clave_pir,
-    debe_cerrar_fin_validez)
 from app.rinfo.comun_rinfo import (  # noqa: F401
     URL_SAP,
     _CENTROS_LIST,
