@@ -42,7 +42,6 @@ from app.ui.tarifa_dialogs import (
     VentanaSAPFaltantes, VentanaResolverSAPDuplicados,
 )
 from app.rinfo.crear_registro_info import iniciar_crear_registro_info
-from app.acciones import organizar_dali as organizar_dali_datos
 from app.comun.sap_helpers import (
     CATALOGO_COLUMNAS, CATALOGO_CLAVES_SAP,
     CATALOGO_FILA_CABECERA, CATALOGO_PRIMERA_FILA_DATOS,
@@ -5031,6 +5030,9 @@ class App(tk.Tk):
         con pandas.merge en memoria y escribe el resultado de golpe con ws.append().
         Los estilos se aplican por rango, no celda a celda.
         """
+        # (nov 2026) Se importa aquí y no al arrancar: carga pandas (~la mitad del arranque)
+        # y solo lo usa esta acción.
+        from app.acciones import organizar_dali as organizar_dali_datos
         import threading
 
         carpeta = self._carpeta_proyecto.get().strip()
