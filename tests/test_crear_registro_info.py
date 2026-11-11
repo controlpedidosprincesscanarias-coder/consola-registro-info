@@ -871,7 +871,6 @@ class TC21_SolapamientoParcialPrecioDistinto(unittest.TestCase):
                          fecha_inicio, fecha_fin, centros_con_h3=None):
         """Monta un libro mínimo y encadena los pasos 6c → 9b → 10 reales.
         Devuelve {centro: [(inicio, fin, precio), ...]} ordenado por inicio."""
-        import unittest.mock as mock
         import openpyxl
 
         wb = openpyxl.Workbook()
@@ -1130,7 +1129,6 @@ class TC23_HeredadoIncoherenteSolapado(unittest.TestCase):
         """periodos_heredados: [(inicio, fin, precio), ...] aplicados a cada
         centro, en ESE orden físico. Devuelve {centro: [(i, f, precio), ...]}
         ordenado por inicio."""
-        import unittest.mock as mock
         import openpyxl
 
         wb = openpyxl.Workbook()
@@ -1265,7 +1263,6 @@ class TC24_AvisoCambioPerdidoPorUM(unittest.TestCase):
 
     def _ejecutar(self, filas):
         """filas: [(centro, inicio, fin, precio, R, S, Z), ...] -> (wb, avisos)"""
-        import unittest.mock as mock
         import openpyxl
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -1363,7 +1360,6 @@ class TC25_CierreFinValidezEnBaja(unittest.TestCase):
         """periodos: [(inicio, fin), ...] iguales en 0810 y 0910, en este orden
         físico. Da de baja el material (decisión simulada) y devuelve
         {centro: [(inicio, fin, Y), ...]}."""
-        import unittest.mock as mock
         import openpyxl
         wb = openpyxl.Workbook()
         ws1 = wb.active
