@@ -162,7 +162,7 @@ def poner_icono_aplicacion(root):
         from PIL import Image, ImageTk
         ico = Image.open(ruta)
         imagenes = []
-        for lado in (256, 64, 32, 16):
+        for lado in (256, 64, 48, 32, 24, 16):
             try:
                 ico.size = (lado, lado)          # elige ese tamaño dentro del .ico
             except (ValueError, KeyError):

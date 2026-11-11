@@ -1137,11 +1137,22 @@ Petición de Víctor: manual de usuario con las mismas pautas que los de Control
 
 ---
 
+## 50. Icono propio de la Consola en la barra de tareas (11 nov 2026) — PR en GitHub
+
+Con la v10.2.42, Víctor vio en la barra de tareas la corona gris, borrosa y sin recuadro, casi igual que la del Organizador. Pidió el icono con el recuadro para distinguirlas.
+- `assets/logo.ico` nuevo: corona dorada sobre un cuadrado azul marino de esquinas redondeadas con borde dorado, en 256, 128, 64, 48, 32, 24 y 16 px. Cada tamaño se dibuja aparte a 8x y se reduce; en los pequeños el borde es más grueso y la corona algo mayor, para que se vea nítido.
+- Se genera con `compilacion/generar_icono.py` (la corona de partida está en `compilacion/corona_icono.png`, sacada del icono anterior).
+- `poner_icono_aplicacion()` pasa también los tamaños 48 y 24 a la barra de tareas, que los usa con el zoom de Windows al 125–150 %.
+- **Por probar en Windows:** la barra de tareas, el `.exe` en el Explorador y las ventanas. Windows guarda en caché los iconos: si se sigue viendo el antiguo, quitar el anclado y volver a anclar.
+- La actualización de la 10.2.40 a la 10.2.42 funcionó (confirmado por Víctor).
+
+---
+
 ## Próximos pasos, en orden de prioridad
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
    - ~~etapa 2: carpetas por capas~~ hecha (sección 43);
    - ~~etapa 3: limpieza~~ hecha (sección 44); ~~trocear `crear_registro_info.py`~~ hecho (sección 45); ~~trocear `tarifa_app.py`~~ hecho (sección 46);
-   - ~~compilación automática en GitHub~~ hecha y probada (sección 47); ~~actualizaciones automáticas~~ hechas (sección 48), falta probarlas en Windows (10.2.40 → 10.2.42);
+   - ~~compilación automática en GitHub~~ hecha y probada (sección 47); ~~actualizaciones automáticas~~ hechas (sección 48), probadas en Windows (10.2.40 → 10.2.42, sección 50);
    - ~~manual de usuario con capturas~~ hecho (sección 49), con botón y consulta en la app; pendiente: aviso «Node.js 20 is deprecated» del workflow; si se quiere, seguir troceando `generador_existente.py` (`GeneradorDesdeExistente`, ~4.200 líneas) y `accion_tarifa.py` (~1.600), con el mismo método (sin cambiar código y comparando por AST).
 1. Roadmap de limpieza — puntos **1, 2, 3, 4 y 5 CERRADOS**. Punto 6 con su **primera pasada hecha** (sección 32): boilerplate 100% idéntico consolidado; quedan 6 geometrías con fórmulas propias, sin tocar deliberadamente — no hay más trabajo pendiente salvo que en algún momento vuelvan a coincidir entre sí.
 2. Recomendación pendiente para el usuario: revisar en SAP los ~50 materiales que aparecieron con el mismo hueco de Hoja3 que 10101839, por si llevan tiempo sin condición de precio activa sin que nadie lo notara.
