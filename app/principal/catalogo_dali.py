@@ -16,7 +16,7 @@ from tkinter import messagebox
 import threading
 import time
 from app.comun.tarifa_constants import (
-    C_DARK, C_ACCENT, C_ACCENT2, C_TEXT, C_MUTED, FONT_SUB,
+    C_DARK, C_ACCENT, C_ACCENT2, C_TEXT, C_TEXT_LIGHT, C_MUTED, FONT_SUB,
     FONT_LABEL, FONT_SMALL,
 )
 from app.comun.tarifa_core import (
@@ -82,11 +82,11 @@ class CatalogoDali:
             bg=C_DARK, fg=C_MUTED, font=FONT_SMALL, justify="left",
         ).pack(anchor="w", pady=(4, 16))
 
-        tk.Label(frm, text="Email", bg=C_DARK, fg=C_TEXT, font=FONT_LABEL).pack(anchor="w")
+        tk.Label(frm, text="Email", bg=C_DARK, fg=C_TEXT_LIGHT, font=FONT_LABEL).pack(anchor="w")
         entry_email = tk.Entry(frm, font=FONT_LABEL, width=34)
         entry_email.pack(fill="x", pady=(2, 10))
 
-        tk.Label(frm, text="Contraseña", bg=C_DARK, fg=C_TEXT, font=FONT_LABEL).pack(anchor="w")
+        tk.Label(frm, text="Contraseña", bg=C_DARK, fg=C_TEXT_LIGHT, font=FONT_LABEL).pack(anchor="w")
         entry_pass = tk.Entry(frm, font=FONT_LABEL, width=34, show="•")
         entry_pass.pack(fill="x", pady=(2, 16))
 

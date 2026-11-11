@@ -145,6 +145,36 @@ def cargar_icono_ventana(win):
         pass
 
 
+def poner_icono_aplicacion(root):
+    """
+    (nov 2026) Icono de la ventana principal y de la barra de tareas. Con solo
+    iconbitmap(ruta), Windows podía enseñar en la barra de tareas la pluma de Tk:
+    se pone el .ico como icono por defecto de todas las ventanas (default=) y,
+    además, sus tamaños grandes con iconphoto(True, ...), que es el que usa la
+    barra de tareas. Si algo falla se deja el de Tk, como antes.
+    """
+    ruta = resource_path("assets/logo.ico")
+    try:
+        root.iconbitmap(default=ruta)
+    except Exception:
+        pass
+    try:
+        from PIL import Image, ImageTk
+        ico = Image.open(ruta)
+        imagenes = []
+        for lado in (256, 64, 32, 16):
+            try:
+                ico.size = (lado, lado)          # elige ese tamaño dentro del .ico
+            except (ValueError, KeyError):
+                continue
+            imagenes.append(ImageTk.PhotoImage(ico.convert("RGBA"), master=root))
+        if imagenes:
+            root.iconphoto(True, *imagenes)
+            root._iconos_app = imagenes          # que no los borre el recolector
+    except Exception:
+        pass
+
+
 def centrar_sobre_padre(win, parent):
     """
     Centra una ventana Toplevel sobre el centro de su ventana padre

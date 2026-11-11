@@ -274,6 +274,35 @@ class InterfazApp:
                   bg=_HDR_BG, fg=C_MUTED,
                   font=("Segoe UI", 7, "bold")).pack(side="left")
 
+        # (nov 2026) Consultar el manual: escribe una duda y pulsa Intro
+        _CON_BG = "#071322"
+        frm_consulta = tk.Frame(right, bg=_CON_BG, padx=12, pady=6)
+        frm_consulta.pack(fill="x")
+        tk.Label(frm_consulta, text="\U0001f50e  Consultar el manual", bg=_CON_BG, fg=C_ACCENT2,
+                 font=("Segoe UI", 8, "bold")).pack(side="left", padx=(0, 8))
+        self._var_consulta = tk.StringVar()
+        _ent_consulta = tk.Entry(frm_consulta, textvariable=self._var_consulta, font=("Segoe UI", 9),
+                                 bg="#0D2236", fg="#FFFFFF", insertbackground="#FFFFFF", relief="flat")
+        _ent_consulta.pack(side="left", fill="x", expand=True, ipady=3)
+        _PISTA = "Escribe tu duda y pulsa Intro (p. ej. «códigos SAP faltantes»)"
+
+        def _pista(mostrar):
+            if mostrar and not self._var_consulta.get():
+                _ent_consulta.configure(fg="#5A7A9A"); self._var_consulta.set(_PISTA)
+            elif not mostrar and self._var_consulta.get() == _PISTA:
+                _ent_consulta.configure(fg="#FFFFFF"); self._var_consulta.set("")
+        _pista(True)
+        _ent_consulta.bind("<FocusIn>", lambda e: _pista(False))
+        _ent_consulta.bind("<FocusOut>", lambda e: _pista(True))
+
+        def _consultar(e=None):
+            texto = self._var_consulta.get().strip()
+            self._abrir_consulta_manual("" if texto == _PISTA else texto)
+        _ent_consulta.bind("<Return>", _consultar)
+        tk.Button(frm_consulta, text="Buscar", command=_consultar, bg="#0A4A7A", fg="#FFFFFF",
+                  activebackground="#0D5F9A", activeforeground="#FFFFFF", relief="flat",
+                  font=("Segoe UI", 8, "bold"), padx=10, cursor="hand2").pack(side="left", padx=(6, 0))
+
         # ConsolaLog
         self.consola = ConsolaLog(right)
         self.consola.pack(fill="both", expand=True)
@@ -293,11 +322,12 @@ class InterfazApp:
         frm_btns.pack(fill="x")
         frm_btns.columnconfigure(0, weight=1)
         frm_btns.columnconfigure(1, weight=1)
+        frm_btns.columnconfigure(2, weight=1)
 
         tk.Label(frm_btns, text="ACCESOS RÁPIDOS",
                   bg=_ACC_BG, fg="#1A3A5A",
                   font=("Segoe UI", 7, "bold"),
-                  anchor="w").grid(row=0, column=0, columnspan=2,
+                  anchor="w").grid(row=0, column=0, columnspan=3,
                                    sticky="w", padx=2, pady=(0, 5))
 
         # ── Botón SAP ─────────────────────────────────────────────────────
@@ -365,7 +395,7 @@ class InterfazApp:
         _RI_SUB = "#8A6FBB"
 
         frm_ri = tk.Frame(frm_btns, bg=_RI_BG, cursor="hand2")
-        frm_ri.grid(row=1, column=1, sticky="nsew", padx=(4, 0))
+        frm_ri.grid(row=1, column=1, sticky="nsew", padx=(4, 4))
         tk.Frame(frm_ri, bg="#7B4FA6", width=3).place(relx=0, rely=0, relheight=1)
 
         frm_ri_inner = tk.Frame(frm_ri, bg=_RI_BG, padx=10, pady=7)
@@ -406,6 +436,43 @@ class InterfazApp:
             _w.bind("<Button-1>", _abrir_ri)
             _w.bind("<Enter>",    _ri_enter)
             _w.bind("<Leave>",    _ri_leave)
+
+        # ── (nov 2026) Manual de usuario (acceso rápido) ──────────────────
+        _MAN_BG, _MAN_HOV = "#0E2A1E", "#14402C"
+        frm_man = tk.Frame(frm_btns, bg=_MAN_BG, cursor="hand2")
+        frm_man.grid(row=1, column=2, sticky="nsew", padx=(4, 0))
+        tk.Frame(frm_man, bg="#2E8B57", width=3).place(relx=0, rely=0, relheight=1)
+        frm_man_inner = tk.Frame(frm_man, bg=_MAN_BG, padx=10, pady=7)
+        frm_man_inner.pack(fill="both", expand=True)
+        _man_icon = tk.Label(frm_man_inner, text="\U0001f4d8", bg=_MAN_BG, fg="#FFFFFF", font=("Segoe UI", 14))
+        _man_icon.pack(side="left", padx=(6, 8))
+        frm_man_txt = tk.Frame(frm_man_inner, bg=_MAN_BG)
+        frm_man_txt.pack(side="left", fill="x", expand=True)
+        _man_t = tk.Label(frm_man_txt, text="Manual de usuario", bg=_MAN_BG, fg="#FFFFFF",
+                          font=("Segoe UI", 9, "bold"), anchor="w")
+        _man_t.pack(anchor="w")
+        _man_s = tk.Label(frm_man_txt, text="Abrir el PDF", bg=_MAN_BG, fg="#7FC8A0",
+                          font=("Segoe UI", 7), anchor="w")
+        _man_s.pack(anchor="w")
+        _man_ws = [frm_man, frm_man_inner, _man_icon, frm_man_txt, _man_t, _man_s]
+        for _w in _man_ws:
+            _w.bind("<Button-1>", lambda e: self._abrir_manual())
+            _w.bind("<Enter>", lambda e: [w.configure(bg=_MAN_HOV) for w in _man_ws])
+            _w.bind("<Leave>", lambda e: [w.configure(bg=_MAN_BG) for w in _man_ws])
+
+    # ── (nov 2026) Manual de usuario y consulta ───────────────────────────
+    def _abrir_manual(self):
+        from app.comun import manual as _manual
+        try:
+            _manual.abrir_manual()
+            self.log_consola("Abriendo el manual de usuario...", "INFO")
+        except Exception as e:  # noqa: BLE001
+            self.log_consola(f"No se pudo abrir el manual: {e}", "ERROR")
+            messagebox.showerror("Manual de usuario", f"No se pudo abrir el manual:\n{e}")
+
+    def _abrir_consulta_manual(self, consulta=""):
+        from app.ui.ventana_consulta_manual import VentanaConsultaManual
+        VentanaConsultaManual(self, consulta, self.log_consola)
 
     # ─────────────────────────────────────────────────────────────────────
     #  HELPERS DE UI

@@ -1123,12 +1123,26 @@ En todos los casos, **0 diferencias** en los datos. Solo cambian el mensaje del 
 
 ---
 
+## 49. Manual de usuario, botón «Manual» y «Consultar el manual» (11 nov 2026) — PR en GitHub
+
+Petición de Víctor: manual de usuario con las mismas pautas que los de Control Pedidos y el Organizador, un botón para abrirlo y una celda de consulta que busque las respuestas en el manual (elegidos: búsqueda en el manual y botón en «Accesos rápidos»).
+- **Manual** (`docs/Manual_Usuario_ConsolaRegistroInfo.docx` / `.pdf`, 22 páginas, 9 capítulos): qué es y flujo, ponerla en marcha (un solo `.exe`, sin instalar; `tarifa_config.json` junto a él), ventana principal, preparar el proyecto (qué archivo va en TARIFAS y en RECURSOS), Acciones 1–3 y catálogo, Acciones 4–6 (SAP faltantes y duplicados, [INCOMPLETO]), Registro Info (todas sus ventanas), consulta del manual y actualizaciones, y tablas de problemas frecuentes. Cada dato se comprobó en el código.
+- **Fuente** en `docs/manuales_fuente/` (ver su README): 21 capturas reales de la consola en Xvfb con un proyecto de datos inventados y sin red (`capturas.py`), y maquetación con `docx` de Node (`lib.js`, adaptado del Organizador). `lib.js` genera además `manual_indice.json` (apartados con capítulo y texto) y `paginar_indice.py` les pone la página del PDF. Corregido en `lib.js`: el párrafo separador tras una tabla, si caía al final de una página, dejaba una página en blanco antes del capítulo siguiente.
+- **En la app:** tarjeta «📘 Manual de usuario» en Accesos rápidos (abre el PDF del propio `.exe`, copiado a `%TEMP%\ConsolaRegistroInfo`) y barra «🔎 Consultar el manual» encima de la consola: con Intro abre `VentanaConsultaManual` con los apartados que mejor encajan (capítulo, página y fragmento), «Abrir el manual» y «Guardar una copia…». La búsqueda (`app/comun/manual.py`) normaliza acentos, quita palabras vacías, usa raíces sencillas («creo»/«crear», «tarifas»/«tarifa») y puntúa más el título y las palabras poco frecuentes. Sin Internet ni claves.
+- `build_exe.py`: el PDF y el índice pasan a `ASSETS_NECESARIOS`.
+- **Error corregido** (commit propio): las etiquetas «Email» y «Contraseña» de la ventana de Catálogo Asignaciones salían en un color casi invisible sobre el fondo oscuro.
+- **Icono de la barra de tareas** (pregunta de Víctor: salía la pluma de Tk): `poner_icono_aplicacion()` (`tarifa_core.py`) pone el `.ico` como icono por defecto de todas las ventanas y sus tamaños grandes con `iconphoto`, que es el que usa la barra de tareas. **Por probar en Windows.**
+- **Pregunta de Víctor: ¿el `.exe` tiene que estar siempre en el mismo sitio?** Sí, conviene: la actualización lo sustituye en la misma carpeta y con el mismo nombre, así que el acceso directo del Organizador sigue valiendo. Explicado en el capítulo 2 del manual.
+- 6 pruebas nuevas en `tests/test_manual.py` (131 en total), incluida una contra el índice real.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
    - ~~etapa 2: carpetas por capas~~ hecha (sección 43);
    - ~~etapa 3: limpieza~~ hecha (sección 44); ~~trocear `crear_registro_info.py`~~ hecho (sección 45); ~~trocear `tarifa_app.py`~~ hecho (sección 46);
    - ~~compilación automática en GitHub~~ hecha y probada (sección 47); ~~actualizaciones automáticas~~ hechas (sección 48), falta probarlas en Windows (10.2.40 → 10.2.42);
-   - pendiente: manual de usuario con capturas; aviso «Node.js 20 is deprecated» del workflow; si se quiere, seguir troceando `generador_existente.py` (`GeneradorDesdeExistente`, ~4.200 líneas) y `accion_tarifa.py` (~1.600), con el mismo método (sin cambiar código y comparando por AST).
+   - ~~manual de usuario con capturas~~ hecho (sección 49), con botón y consulta en la app; pendiente: aviso «Node.js 20 is deprecated» del workflow; si se quiere, seguir troceando `generador_existente.py` (`GeneradorDesdeExistente`, ~4.200 líneas) y `accion_tarifa.py` (~1.600), con el mismo método (sin cambiar código y comparando por AST).
 1. Roadmap de limpieza — puntos **1, 2, 3, 4 y 5 CERRADOS**. Punto 6 con su **primera pasada hecha** (sección 32): boilerplate 100% idéntico consolidado; quedan 6 geometrías con fórmulas propias, sin tocar deliberadamente — no hay más trabajo pendiente salvo que en algún momento vuelvan a coincidir entre sí.
 2. Recomendación pendiente para el usuario: revisar en SAP los ~50 materiales que aparecieron con el mismo hueco de Hoja3 que 10101839, por si llevan tiempo sin condición de precio activa sin que nadie lo notara.
 3. Recomendación pendiente (sección 22): siguen existiendo ~1.594 materiales SAP más (además del 10102980, ya resuelto) sin cruce DALI en el LISTADO — el fallback a `Productos.xlsx` los cubre para la sincronización de UM, pero conviene revisar y completar el cruce DALI real cuando haya ocasión, ya que el fallback no puede aportar IGIC ni grupo de compras.

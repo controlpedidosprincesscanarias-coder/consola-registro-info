@@ -89,9 +89,11 @@ def main():
     carpeta_assets = os.path.join(base, "assets")
     logo_ico    = os.path.join(carpeta_assets, "logo.ico")
     # (nov 2026) Todo lo de assets/ se usa y va dentro del .exe: los logos y las imágenes que
-    # antes estaban incrustadas en base64 en el código.
+    # antes estaban incrustadas en base64 en el código, y el manual de usuario con su índice para
+    # «Consultar el manual» (se regeneran con docs/manuales_fuente/generar.sh).
     ASSETS_NECESARIOS = ("logo.png", "logo.ico", "logo_dali_articulos.png", "logo_sap.png",
-                         "marcar_borrado_sap.png")
+                         "marcar_borrado_sap.png", "Manual_Usuario_ConsolaRegistroInfo.pdf",
+                         "manual_indice.json")
 
     # ── Verificación de archivos obligatorios ────────────
     for f in [script_main] + modulos:

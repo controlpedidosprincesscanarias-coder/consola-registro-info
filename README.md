@@ -26,6 +26,10 @@ Desde la tarifa preparada se crea el **Registro Info SAP**, a partir del «Purch
 
 La **consola** de la derecha muestra cada paso con su hora y un color por nivel: `SISTEMA`, `INFO`, `OK`, `WARN` y `ERROR`.
 
+**Manual de usuario:** `docs/Manual_Usuario_ConsolaRegistroInfo.pdf`. Dentro de la app, el acceso rápido **Manual de usuario** lo abre y la barra **🔎 Consultar el manual** (encima de la consola) busca la duda que escribas en sus apartados, sin Internet.
+
+**Dónde dejar el `.exe`:** no se instala. Déjalo siempre en la misma carpeta y con su nombre (`TARIFA_Finder.exe`): las actualizaciones lo sustituyen en ese mismo sitio, así que los accesos directos (también el del Organizador) no hay que cambiarlos.
+
 **Catálogo Asignaciones:** la primera vez que hace falta descargar su catálogo, la app pide tu usuario y tu contraseña. La contraseña se guarda **cifrada**: solo tu usuario de Windows, en ese equipo, puede leerla. Si la contraseña deja de valer, se borra y se vuelve a pedir.
 
 ## Actualizaciones
@@ -60,9 +64,10 @@ python -m unittest discover -s tests -v
 | `app/rinfo/` | Motor de generación de RINFO: `generador_existente.py`, `creador_rinfo.py`, `ventanas_rinfo.py`, `comun_rinfo.py` y `crear_registro_info.py` (entrada) |
 | `app/tarifas/transformar_tarifa.py` | Transformación de la tarifa del proveedor |
 | `app/acciones/organizar_dali.py` | Lógica de la Acción 1 (sin interfaz) |
-| `app/comun/` | Constantes, configuración, consola, `sap_helpers.py` y `credenciales.py` |
-| `app/ui/tarifa_dialogs.py` | Ventanas modales |
-| `assets/` | Logos, icono e imágenes de ayuda (van dentro del `.exe`) |
+| `app/comun/` | Constantes, configuración, consola, `sap_helpers.py`, `credenciales.py`, `actualizaciones.py` y `manual.py` (abrir y consultar el manual) |
+| `app/ui/` | Ventanas modales, aviso de actualización y «Consultar el manual» |
+| `assets/` | Logos, icono, imágenes de ayuda y el manual con su índice (van dentro del `.exe`) |
+| `docs/` | Manual de usuario (`.docx` y `.pdf`) y su fuente (`docs/manuales_fuente/`, ver su README) |
 | `tests/` | Pruebas automáticas |
 | `build_exe.py`, `compilacion/`, `.github/workflows/compilar.yml` | Compilación (en GitHub, con versión automática) |
 | `COMPILAR_TARIFA.bat`, `_bat_helper.py` | Compilación local en Windows |
