@@ -23,3 +23,6 @@ SEGURIDAD/
 # Windows
 Thumbs.db
 desktop.ini
+# Manual: capturas y salida de docs/manuales_fuente (se regeneran; el resultado va en docs/ y assets/)
+docs/manuales_fuente/cap/
+docs/manuales_fuente/salida/
