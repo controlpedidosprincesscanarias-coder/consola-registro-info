@@ -13,10 +13,10 @@ Flujo completo según especificación:
   3. Buscar el proveedor en RECURSOS/Proveedores.xlsx por similitud (col A → D2,
      col B → C2 del nuevo RINFO).
   4. Buscar si ya existe un Purchasing Info Records*.xlsx compatible en TARIFAS.
-     · Si existe  → informar y cerrar.
-     · Si no      → ofrecer:
-         a) Descargar desde SAP (guía de 7 pasos).
-         b) Crear RINFO desde cero a partir de la plantilla.
+     · Si existe  → VentanaPurchasingEncontrado: continuar con él (GeneradorDesdeExistente,
+                    en generador_existente.py) o crear uno nuevo.
+     · Si no      → VentanaOpcionesSinPurchasing: descargarlo de SAP (guía de 7 pasos) o crear
+                    el RINFO desde cero (CreadorRINFO, en creador_rinfo.py).
   5. Creación del RINFO:
      · Crea un archivo NUEVO desde cero con las mismas 4 hojas del original.
      · Inserta las mismas cabeceras en la fila 1 de cada hoja.
@@ -30,6 +30,10 @@ Flujo completo según especificación:
 Dependencias:  openpyxl, tkinter (stdlib)
 Integración:   llamar a  iniciar_crear_registro_info(app, carpeta_proyecto)
                desde tarifa_app.App.
+
+Desde nov 2026 (etapa 4) este archivo solo contiene las ventanas del flujo (pasos 1-4) e
+iniciar_crear_registro_info; el resto está en comun_rinfo.py, ventanas_rinfo.py, creador_rinfo.py
+y generador_existente.py. Reexporta todos los nombres de siempre.
 
 Central Compras Princess Canarias — (c) VAMA 2026
 """

@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-build_exe.py — Versión V7.1 (accion6_registro_sap eliminado, Acción 6 integrada en tarifa_app)
-Compila TARIFA Finder con soporte completo para:
- - win32com (Excel)
- - transformar_tarifa.py (V9.7)
- - interfaz tarifa_app.py
- - dependencias openpyxl, pillow, pywin32
- - dependencias pandas + xlrd  (Acción 1 — organizar ARTICULOS DALI)
- - assets/logo.png y assets/logo.ico (logo personalizado)
- - crear_registro_info.py (botón CREAR REGISTRO INFO — módulo independiente)
+build_exe.py — compila TARIFA_Finder.exe con PyInstaller (--onefile --windowed).
+Lo usan el workflow de GitHub (.github/workflows/compilar.yml, lo normal) y COMPILAR_TARIFA.bat
+(compilación local en Windows). Incluye:
+ - tarifa_app.py y todo el paquete app/ (--collect-submodules app)
+ - win32com/pywin32 (Excel), openpyxl, pillow (con PIL._tkinter_finder), pandas y xlrd
+ - los assets de ASSETS_NECESARIOS (se para si falta alguno)
 
 Uso:
     python build_exe.py

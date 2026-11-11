@@ -43,8 +43,8 @@ Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app
   - `accion_tarifa.py`: Acciones 4 y 6 (TARIFA final, archivos INC / [INCOMPLETO], reinscripción SAP, botón Registro Info).
   - `catalogo_dali.py`: Catálogo DALI completo y Catálogo Asignaciones (`DALI_APP_API_BASE`).
   - Un método nuevo va al mixin de su tema. Dos mixins no pueden tener un método con el mismo nombre, porque ganaría el primero de la lista sin avisar.
-- `app/comun/` — `tarifa_constants.py` (colores, fuentes, tablas fijas, `resource_path` y `RAIZ_PROYECTO`), `tarifa_core.py` (configuración, consola de log, barra de progreso), `sap_helpers.py` (funciones de negocio puras, sin tkinter) y `credenciales.py` (DPAPI, sin tkinter).
-- `app/ui/tarifa_dialogs.py` — ventanas modales.
+- `app/comun/` — `tarifa_constants.py` (colores, fuentes, tablas fijas, `resource_path` y `RAIZ_PROYECTO`), `tarifa_core.py` (configuración, consola de log, barra de progreso), `sap_helpers.py` (funciones de negocio puras, sin tkinter), `credenciales.py` (DPAPI, sin tkinter) y `actualizaciones.py` (actualización automática, sin tkinter).
+- `app/ui/` — `tarifa_dialogs.py` (ventanas modales: selección de .xls, crear proyecto, SAP duplicados y SAP faltantes) y `ventana_actualizacion.py` (aviso de versión nueva).
 - `app/rinfo/` — motor de RINFO, repartido en la etapa 4 (nov 2026) sin cambiar el código:
   - `comun_rinfo.py`: constantes, `_log`, `_safe_after` y funciones auxiliares (Excel, similitud de nombres, búsqueda de tarifas, Purchasing y listados). No importa de otros módulos de `app.rinfo`.
   - `ventanas_rinfo.py`: ventanas que no dependen de otras (fechas, centros, teléfono, confirmaciones, materiales sin tarifa / para reactivar…). Importa solo de `comun_rinfo`.
