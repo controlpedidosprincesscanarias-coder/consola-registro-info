@@ -43,7 +43,7 @@ python -m unittest discover -s tests -v
 | Archivo | Contenido |
 |---|---|
 | `tarifa_app.py` | Punto de arranque: ventana principal y acciones |
-| `app/rinfo/crear_registro_info.py` | Motor de generación de RINFO y sus ventanas |
+| `app/rinfo/` | Motor de generación de RINFO: `generador_existente.py`, `creador_rinfo.py`, `ventanas_rinfo.py`, `comun_rinfo.py` y `crear_registro_info.py` (entrada) |
 | `app/tarifas/transformar_tarifa.py` | Transformación de la tarifa del proveedor |
 | `app/acciones/organizar_dali.py` | Lógica de la Acción 1 (sin interfaz) |
 | `app/comun/` | Constantes, configuración, consola, `sap_helpers.py` y `credenciales.py` |
