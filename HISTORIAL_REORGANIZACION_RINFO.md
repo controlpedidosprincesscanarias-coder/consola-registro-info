@@ -1045,10 +1045,28 @@ Petición de Víctor: «limpiar bien la aplicación, hacerla más ágil, reorgan
 
 ---
 
+## 45. Etapa 4 (primera parte): crear_registro_info.py repartido en módulos (11 nov 2026) — PR en GitHub
+
+`crear_registro_info.py` (~9.000 líneas) pasa a cinco módulos de `app/rinfo/`, sin cambiar el código:
+
+| Módulo | Contenido | Líneas |
+|---|---|---|
+| `comun_rinfo.py` | constantes, `_log`, `_LogAgrupado`, `_safe_after` y funciones auxiliares (plantilla Purchasing, formato de filas, similitud de nombres, búsqueda de tarifas, Purchasing y listados) | ~1.100 |
+| `ventanas_rinfo.py` | 9 ventanas que no dependen de otras | ~1.500 |
+| `creador_rinfo.py` | `CreadorRINFO` | ~1.100 |
+| `generador_existente.py` | `GeneradorDesdeExistente` y `_EstadoIndicesH3` | ~4.300 |
+| `crear_registro_info.py` | las 3 ventanas del flujo, `iniciar_crear_registro_info` y la reexportación de todos los nombres | ~900 |
+
+- **Hecho con un script** (cada definición con sus comentarios de encima). Las 55 definiciones se han comparado por AST con las originales: son idénticas. No hay importaciones circulares (`comun_rinfo` ← `ventanas_rinfo` ← `creador_rinfo` / `generador_existente` ← `crear_registro_info`) ni variables `global`.
+- **Pruebas:** parcheaban `_log`, `_safe_after` y `_ventana_sin_tarifa` en `crear_registro_info`. Ahora cada módulo tiene su propia referencia, así que se parchean en todos con `_parchear_rinfo()`. Sin ese cambio, 4 pruebas abrían la ventana real de «materiales sin tarifa». 104 pruebas OK y la app arranca.
+- **Siguiente:** trocear `tarifa_app.py` (clase `App`, ~5.200 líneas) por acciones, con clases *mixin* (`App(AccionDali, AccionSap, …)`), siguiendo el mismo método.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
    - ~~etapa 2: carpetas por capas~~ hecha (sección 43);
-   - etapa 3: seguir troceando `crear_registro_info.py` (~10.000 líneas) y `tarifa_app.py` (~5.600), separando ventanas y lógica;
+   - ~~etapa 3: limpieza~~ hecha (sección 44); ~~trocear `crear_registro_info.py`~~ hecho (sección 45); falta `tarifa_app.py` (~5.200 líneas);
    - etapa 4: compilación automática en GitHub Actions (Windows, solo a mano) con las pruebas, y manual de usuario con capturas.
 1. Roadmap de limpieza — puntos **1, 2, 3, 4 y 5 CERRADOS**. Punto 6 con su **primera pasada hecha** (sección 32): boilerplate 100% idéntico consolidado; quedan 6 geometrías con fórmulas propias, sin tocar deliberadamente — no hay más trabajo pendiente salvo que en algún momento vuelvan a coincidir entre sí.
 2. Recomendación pendiente para el usuario: revisar en SAP los ~50 materiales que aparecieron con el mismo hueco de Hoja3 que 10101839, por si llevan tiempo sin condición de precio activa sin que nadie lo notara.

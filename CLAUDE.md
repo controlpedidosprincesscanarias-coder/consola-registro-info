@@ -25,7 +25,13 @@ Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app
   También contiene la integración con Catálogo Asignaciones y el catálogo DALI completo.
 - `app/comun/` — `tarifa_constants.py` (colores, fuentes, tablas fijas, `resource_path` y `RAIZ_PROYECTO`), `tarifa_core.py` (configuración, consola de log, barra de progreso), `sap_helpers.py` (funciones de negocio puras, sin tkinter) y `credenciales.py` (DPAPI, sin tkinter).
 - `app/ui/tarifa_dialogs.py` — ventanas modales.
-- `app/rinfo/crear_registro_info.py` — motor de RINFO: `GeneradorDesdeExistente` (desde un Purchasing existente) y `CreadorRINFO`, con sus ventanas. (Su antiguo autotest `--test` está ahora en `tests/test_casos_limite_pir.py`.)
+- `app/rinfo/` — motor de RINFO, repartido en la etapa 4 (nov 2026) sin cambiar el código:
+  - `comun_rinfo.py`: constantes, `_log`, `_safe_after` y funciones auxiliares (Excel, similitud de nombres, búsqueda de tarifas, Purchasing y listados). No importa de otros módulos de `app.rinfo`.
+  - `ventanas_rinfo.py`: ventanas que no dependen de otras (fechas, centros, teléfono, confirmaciones, materiales sin tarifa / para reactivar…). Importa solo de `comun_rinfo`.
+  - `creador_rinfo.py` (`CreadorRINFO`, RINFO nuevo) y `generador_existente.py` (`GeneradorDesdeExistente`, desde un Purchasing existente). Importan de `comun_rinfo` y de `ventanas_rinfo`.
+  - `crear_registro_info.py`: las ventanas del flujo (selección de tarifa, Purchasing encontrado, opciones sin Purchasing), que unen el Creador y el Generador, e `iniciar_crear_registro_info`. **Reexporta todos los nombres**, así que `from app.rinfo.crear_registro_info import X` sigue valiendo.
+  - En las pruebas, una función como `_log` se parchea con `_parchear_rinfo()`, que la cambia en todos los módulos de `app.rinfo` (cada uno tiene su propia referencia).
+  - El antiguo autotest `--test` está en `tests/test_casos_limite_pir.py`.
 - `app/tarifas/transformar_tarifa.py` — transforma la tarifa del proveedor al formato de trabajo.
 - `app/acciones/organizar_dali.py` — lógica de la Acción 1, sin tkinter.
 - `assets/` (en la raíz): `logo.png`, `logo.ico`, `logo_dali_articulos.png`, `logo_sap.png` y `marcar_borrado_sap.png`. Todos se usan y van dentro del `.exe` (`ASSETS_NECESARIOS` en `build_exe.py`). Las imágenes van en `assets/` y se cargan con `resource_path()`; no se incrustan en base64 en el código.
