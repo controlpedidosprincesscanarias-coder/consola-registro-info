@@ -12,7 +12,7 @@ Símbolos exportados:
     LOGO_B64                        — logo Princess en base64
     get_config_path / cargar_config / guardar_config
     TARIFA_NAME / FOLDER_TARIFAS / FOLDER_RECURSOS / FOLDER_PROYECTO
-    get_subcarpetas / crear_estructura_proyecto / buscar_tarifa
+    crear_estructura_proyecto / buscar_tarifa
     listar_xls / renombrar_a_tarifa
     ConsolaLog                      — widget Text con colores y scroll
     CanvasProgressBar               — barra de progreso animada con Canvas
@@ -273,14 +273,6 @@ TARIFA_NAME      = "TARIFA.xls"
 FOLDER_TARIFAS   = "TARIFAS"
 FOLDER_RECURSOS  = "RECURSOS"
 FOLDER_PROYECTO  = "PROYECTO"
-
-
-def get_subcarpetas(carpeta_proyecto):
-    """Devuelve las rutas de TARIFAS y RECURSOS dentro del proyecto."""
-    return (
-        os.path.join(carpeta_proyecto, FOLDER_TARIFAS),
-        os.path.join(carpeta_proyecto, FOLDER_RECURSOS),
-    )
 
 
 def crear_estructura_proyecto(escritorio):
