@@ -843,6 +843,21 @@ def _importar_modulo_real():
 _CRI = _importar_modulo_real()
 
 
+def _parchear_rinfo(nombre, valor):
+    """(nov 2026, etapa 4) crear_registro_info está repartido en varios módulos de app.rinfo
+    (comun_rinfo, ventanas_rinfo, creador_rinfo, generador_existente). Cada uno tiene su propia
+    referencia a funciones como _log o _safe_after, así que se parchean en todos los que la tengan
+    (antes se parcheaba solo el módulo crear_registro_info)."""
+    import contextlib
+    from unittest import mock
+    import sys as _sys
+    pila = contextlib.ExitStack()
+    for nom_mod, mod in list(_sys.modules.items()):
+        if nom_mod.startswith("app.rinfo.") and mod is not None and hasattr(mod, nombre):
+            pila.enter_context(mock.patch.object(mod, nombre, valor))
+    return pila
+
+
 @unittest.skipIf(_CRI is None, "crear_registro_info no importable (¿sin tkinter?)")
 class TC21_SolapamientoParcialPrecioDistinto(unittest.TestCase):
 
@@ -902,7 +917,7 @@ class TC21_SolapamientoParcialPrecioDistinto(unittest.TestCase):
         }
         gen._fila_h1_por_codigo = {}
 
-        with mock.patch.object(_CRI, "_log", lambda *a, **k: None):
+        with _parchear_rinfo("_log", lambda *a, **k: None):
             absorbidas = gen._actualizar_h3_heredados(
                 wb, ws1, {self.MAT}, [(self.MAT, "05")], {self.MAT: precio_nuevo})
             filas = gen._generar_filas_absorbidas_con_tarifa(wb, absorbidas, {})
@@ -1159,7 +1174,7 @@ class TC23_HeredadoIncoherenteSolapado(unittest.TestCase):
         gen._fila_h1_por_codigo = {}
 
         avisos = []
-        with mock.patch.object(_CRI, "_log",
+        with _parchear_rinfo("_log",
                                lambda p, m, n="INFO": avisos.append((n, m))):
             absorbidas = gen._actualizar_h3_heredados(
                 wb, ws1, {self.MAT}, [(self.MAT, "05")], {self.MAT: precio_nuevo})
@@ -1273,7 +1288,7 @@ class TC24_AvisoCambioPerdidoPorUM(unittest.TestCase):
         gen._parent = None
         gen._audit = {"materiales_modificados": {self.MAT}}
         avisos = []
-        with mock.patch.object(_CRI, "_log",
+        with _parchear_rinfo("_log",
                                lambda p, m, n="INFO": avisos.append((n, m))):
             gen._sincronizar_um_hoja3(wb, {self.MAT: ["COCOS", "PI"]})
         return wb[self.H3], avisos
@@ -1387,12 +1402,12 @@ class TC25_CierreFinValidezEnBaja(unittest.TestCase):
         gen._audit = {"materiales_modificados": set(), "materiales_sin_cambios": set()}
         gen._fila_h1_por_codigo = {self.MAT: 2}   # fila de Hoja 1 (la rellena un paso previo)
 
-        with mock.patch.object(_CRI, "_log", lambda *a, **k: None), \
-             mock.patch.object(_CRI, "_ventana_sin_tarifa",
+        with _parchear_rinfo("_log", lambda *a, **k: None), \
+             _parchear_rinfo("_ventana_sin_tarifa",
                                lambda parent, pend: [
                                    {"codigo": p["codigo"], "fila_h1": p["fila_h1"], "baja": True}
                                    for p in pend]), \
-             mock.patch.object(_CRI, "_safe_after",
+             _parchear_rinfo("_safe_after",
                                lambda w, fn, ms=0: fn()):
             gen._limpiar_marca_aj_heredados(wb, ws1, {self.MAT}, set())   # decide la baja (AJ=X)
             gen._propagar_borrado_h1_a_h2_h3(wb, ws1)                    # propaga a H2/H3 y cierra fechas
