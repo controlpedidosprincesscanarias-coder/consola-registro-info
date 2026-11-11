@@ -89,9 +89,12 @@ def main():
         "app/comun/tarifa_constants.py", "app/comun/tarifa_core.py", "app/comun/credenciales.py",
         "app/comun/sap_helpers.py", "app/ui/tarifa_dialogs.py", "app/rinfo/crear_registro_info.py",
         "app/tarifas/transformar_tarifa.py", "app/acciones/organizar_dali.py")]
-    logo_png    = os.path.join(base, "assets", "logo.png")
-    logo_ico    = os.path.join(base, "assets", "logo.ico")
-    logo_dali   = os.path.join(base, "assets", "logo_dali_articulos.png")
+    carpeta_assets = os.path.join(base, "assets")
+    logo_ico    = os.path.join(carpeta_assets, "logo.ico")
+    # (nov 2026) Todo lo de assets/ se usa y va dentro del .exe: los logos y las imágenes que
+    # antes estaban incrustadas en base64 en el código.
+    ASSETS_NECESARIOS = ("logo.png", "logo.ico", "logo_dali_articulos.png", "logo_sap.png",
+                         "marcar_borrado_sap.png")
 
     # ── Verificación de archivos obligatorios ────────────
     for f in [script_main] + modulos:
@@ -100,9 +103,11 @@ def main():
             sys.exit(1)
 
     # ── Verificación de assets (no bloquean, solo avisan) ─
-    tiene_png = os.path.isfile(logo_png)
-    tiene_ico = os.path.isfile(logo_ico)
-    tiene_logo_dali = os.path.isfile(logo_dali)
+    faltan = [a for a in ASSETS_NECESARIOS if not os.path.isfile(os.path.join(carpeta_assets, a))]
+    if faltan:
+        print(f"ERROR: faltan en assets/: {', '.join(faltan)}")
+        sys.exit(1)
+    tiene_ico = True
 
     print("=" * 60)
     print(f" COMPILANDO TARIFA FINDER ({app_version} - módulos completos) ")
@@ -117,12 +122,8 @@ def main():
     print("  ✔ pywin32")
     print("  ✔ pandas  (Acción 1 — organizar ARTICULOS DALI)")
     print("  ✔ xlrd    (lectura de .xls DALI)")
-    print(f"  {'✔' if tiene_png else '✘'} assets/logo.png"
-          + ("" if tiene_png else "  ← NO ENCONTRADO (se usará logo embebido)"))
-    print(f"  {'✔' if tiene_ico else '✘'} assets/logo.ico"
-          + ("" if tiene_ico else "  ← NO ENCONTRADO (icono genérico)"))
-    print(f"  {'✔' if tiene_logo_dali else '✘'} assets/logo_dali_articulos.png"
-          + ("" if tiene_logo_dali else "  ← NO ENCONTRADO (logo omitido en Acción 1)"))
+    for a in ASSETS_NECESARIOS:
+        print(f"  ✔ assets/{a}")
     print("=" * 60)
 
     cmd = [
@@ -150,6 +151,9 @@ def main():
         "--hidden-import", "PIL",
         "--hidden-import", "PIL.Image",
         "--hidden-import", "PIL.ImageTk",
+        # (nov 2026) Sin él, ImageTk falla dentro del .exe («No module named
+        # 'PIL._tkinter_finder'») y la cabecera muestra una «P» en vez del logo.
+        "--hidden-import", "PIL._tkinter_finder",
 
         # ── pandas + xlrd (Acción 1 — ARTICULOS DALI) ───
         "--hidden-import", "pandas",
@@ -163,14 +167,10 @@ def main():
         "--collect-submodules", "app",
     ]
 
-    # ── Assets: solo se añaden si existen ───────────────
-    if tiene_png:
-        cmd += ["--add-data", f"{logo_png}{os.pathsep}assets"]
-    if tiene_ico:
-        cmd += ["--add-data", f"{logo_ico}{os.pathsep}assets"]
-        cmd += ["--icon", logo_ico]  # icono del .exe y barra de título
-    if tiene_logo_dali:
-        cmd += ["--add-data", f"{logo_dali}{os.pathsep}assets"]
+    # ── Assets (todos obligatorios, comprobados arriba) ──
+    for a in ASSETS_NECESARIOS:
+        cmd += ["--add-data", f"{os.path.join(carpeta_assets, a)}{os.pathsep}assets"]
+    cmd += ["--icon", logo_ico]  # icono del .exe y barra de título
 
     # ── Archivo principal ────────────────────────────────
     cmd.append(script_main)

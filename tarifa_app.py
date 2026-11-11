@@ -16,7 +16,6 @@ import os
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
-import base64
 import threading
 import time
 
@@ -25,11 +24,11 @@ from app.comun.tarifa_constants import (
     C_ACCENT, C_ACCENT2, C_ACCENT_DIM,
     C_BG, C_TEXT, C_TEXT_LIGHT, C_MUTED, C_SUCCESS,
     C_ERROR, C_WARNING, C_LOG_BG,
-    FONT_SUB, FONT_LABEL, FONT_SMALL, SAP_LOGO_B64,
+    FONT_SUB, FONT_LABEL, FONT_SMALL, SAP_LOGO_PNG,
     TABLA_SUBFAMILIA_GRUPO_COMPRAS, TABLA_IGIC_GRUPO_COMPRAS,
 )
 from app.comun.tarifa_core import (
-    resource_path, LOGO_B64,
+    resource_path,
     cargar_config, guardar_config, TARIFA_NAME,
     FOLDER_TARIFAS, FOLDER_RECURSOS, buscar_tarifa, listar_xls,
     ConsolaLog, CanvasProgressBar,
@@ -43,7 +42,6 @@ from app.ui.tarifa_dialogs import (
     VentanaSAPFaltantes, VentanaResolverSAPDuplicados,
 )
 from app.rinfo.crear_registro_info import iniciar_crear_registro_info
-from app.acciones import organizar_dali as organizar_dali_datos
 from app.comun.sap_helpers import (
     CATALOGO_COLUMNAS, CATALOGO_CLAVES_SAP,
     CATALOGO_FILA_CABECERA, CATALOGO_PRIMERA_FILA_DATOS,
@@ -63,7 +61,7 @@ DALI_APP_API_BASE = "https://dali-proxy-api.centralcompras1-canarias.workers.dev
 # ─────────────────────────────────────────────────────────────────────────────
 
 class App(tk.Tk):
-    # SAP_LOGO_B64 centralizado en tarifa_constants.py
+    # SAP_LOGO_PNG (ruta de assets/logo_sap.png) centralizado en tarifa_constants.py
 
     def __init__(self):
         super().__init__()
@@ -141,13 +139,8 @@ class App(tk.Tk):
 
         # ── Logo ──────────────────────────────────────────────────────────
         try:
-            from io import BytesIO
             from PIL import Image, ImageTk
-            ruta_logo = resource_path("assets/logo.png")
-            if os.path.isfile(ruta_logo):
-                img = Image.open(ruta_logo)
-            else:
-                img = Image.open(BytesIO(base64.b64decode(LOGO_B64)))
+            img = Image.open(resource_path("assets/logo.png"))   # va siempre dentro del .exe
             img    = img.resize((54, 58), Image.LANCZOS).convert("RGBA")
             bg_img = Image.new("RGBA", img.size, (6, 13, 24, 255))
             bg_img.paste(img, mask=img.split()[3])
@@ -177,9 +170,8 @@ class App(tk.Tk):
 
         # ── Lado derecho: logo SAP + reloj ────────────────────────────────
         try:
-            from io import BytesIO as _BIO
             from PIL import Image as _Img, ImageTk as _ImgTk
-            _sap_pil = _Img.open(_BIO(base64.b64decode(SAP_LOGO_B64))).resize((72, 26), _Img.LANCZOS)
+            _sap_pil = _Img.open(SAP_LOGO_PNG).resize((72, 26), _Img.LANCZOS)
             _sap_bg  = _Img.new("RGBA", _sap_pil.size, (6, 13, 24, 255))
             (_sap_bg.paste(_sap_pil, mask=_sap_pil.split()[3])
              if _sap_pil.mode == "RGBA" else _sap_bg.paste(_sap_pil))
@@ -464,9 +456,8 @@ class App(tk.Tk):
         frm_sap_inner.pack(fill="both", expand=True)
 
         try:
-            from io import BytesIO as _BytesIO
             from PIL import Image as _Image, ImageTk as _ImageTk
-            _sap_pil = _Image.open(_BytesIO(base64.b64decode(SAP_LOGO_B64))).resize(
+            _sap_pil = _Image.open(SAP_LOGO_PNG).resize(
                 (72, 26), _Image.LANCZOS)
             self._sap_logo_img = _ImageTk.PhotoImage(_sap_pil)
             _sap_icon = tk.Label(frm_sap_inner, image=self._sap_logo_img,
@@ -5032,225 +5023,6 @@ class App(tk.Tk):
 
         threading.Thread(target=proceso, daemon=True).start()
 
-    def _ejecutar_transformacion_inc(self, ruta_inc):
-        """
-        Caso 2 — el archivo INC *.xlsx ya está procesado (es un .xlsx generado
-        por Acción 3). No se vuelve a transformar: se leen directamente los
-        códigos DALI que tienen col A vacía (SAP no asignado) y se abre
-        VentanaSAPFaltantes para completarlos.
-        Al guardar ≥1 código el archivo se renombra con prefijo INC.
-        Si se completan todos y no hay duplicados se quita también [INCOMPLETO].
-        El archivo NO se elimina — es el resultado final.
-        """
-        self._habilitar_btn_procesar(False)
-        self._btn_buscar.config(state="disabled")
-        self._habilitar_btn_resultado(False)
-
-        def proceso():
-            try:
-                from openpyxl import load_workbook as _lw
-
-                self.consola.separador("REVISIÓN SAP FALTANTES (archivo INC)")
-                self.log_consola(f"Leyendo: {os.path.basename(ruta_inc)}", "INFO")
-                self.after(0, lambda: self._barra.indeterminate("Leyendo INC..."))
-
-                # ── Leer SAP faltantes: filas donde col A está vacía y col B tiene DALI
-                # Estructura xlsx generado: A=SAP, B=COD_DALI, C=COD_PROV, D=DESC, E=FORMATO
-                # Los datos empiezan en fila 8 (filas 1-7 son cabecera)
-                _falt_sap    = []   # [(fila_xlsx, cod_dali), ...]
-                _dup_sap     = []
-                _dup_dali    = []
-                _hay_dups    = False
-
-                try:
-                    wb_inc = _lw(ruta_inc, read_only=True, data_only=True)
-                    ws_inc = wb_inc.active
-                    _vistos_sap  = {}
-                    _vistos_dali = {}
-                    for _row in ws_inc.iter_rows(min_row=8, values_only=False):
-                        _val_a = _row[0].value if _row[0] else None  # SAP
-                        _val_b = _row[1].value if len(_row) > 1 else None  # DALI
-                        if _val_b is None:
-                            continue
-                        try:
-                            _cod_dali = int(float(str(_val_b)))
-                        except (ValueError, TypeError):
-                            continue
-                        _fila = _row[0].row
-                        # SAP faltante: col A vacía o cero
-                        if not _val_a or str(_val_a).strip() in ("", "0", "None"):
-                            _falt_sap.append((_fila, _cod_dali))
-                        else:
-                            try:
-                                _cod_sap = int(float(str(_val_a)))
-                                if _cod_sap in _vistos_sap:
-                                    if _cod_sap not in _dup_sap:
-                                        _dup_sap.append(_cod_sap)
-                                else:
-                                    _vistos_sap[_cod_sap] = _fila
-                            except (ValueError, TypeError):
-                                pass
-                        if _cod_dali in _vistos_dali:
-                            if _cod_dali not in _dup_dali:
-                                _dup_dali.append(_cod_dali)
-                        else:
-                            _vistos_dali[_cod_dali] = _fila
-                    wb_inc.close()
-                    _hay_dups = bool(_dup_sap or _dup_dali)
-                except Exception as _e_lec:
-                    self.log_consola(f"Error leyendo INC: {_e_lec}", "ERROR")
-                    self.after(0, lambda: self._barra.reset("Error leyendo INC"))
-                    self.after(0, lambda err=str(_e_lec): messagebox.showerror(
-                        "Error al leer archivo INC",
-                        f"No se pudo leer el archivo:\n{os.path.basename(ruta_inc)}\n\n{err}"))
-                    return
-
-                self.log_consola(
-                    f"  └ {len(_falt_sap)} código(s) DALI sin SAP  |  "
-                    f"Duplicados SAP: {len(_dup_sap)}  DALI: {len(_dup_dali)}", "INFO")
-                self.after(0, lambda: self._barra.completado("Lectura INC completada"))
-                self.after(0, lambda: self._habilitar_btn_resultado(True))
-
-                if not _falt_sap:
-                    # No hay faltantes — solo informar
-                    self.consola.separador("FIN REVISIÓN SAP (sin faltantes)")
-                    self.after(0, lambda: messagebox.showinfo(
-                        "Sin SAP faltantes",
-                        f"El archivo INC no tiene códigos DALI sin SAP asignado.\n\n"
-                        f"El archivo no tiene códigos DALI sin SAP.\n\n✔  TARIFA PREPARADA PARA CREAR O MODIFICAR REGISTRO INFO SAP."))
-                    return
-
-                # ── Buscar listado DALI-SAP ───────────────────
-                _carpeta_raiz = self._carpeta_proyecto.get().strip()
-                _carpeta_rec  = os.path.join(_carpeta_raiz, "RECURSOS")
-                _ruta_listado = None
-                for _dir_busq in [_carpeta_raiz, _carpeta_rec]:
-                    if not os.path.isdir(_dir_busq):
-                        continue
-                    for _fn in os.listdir(_dir_busq):
-                        if (_fn.lower().endswith(".xlsx") and
-                                "LISTADO" in _fn.upper() and
-                                "DALI"    in _fn.upper() and
-                                "SAP"     in _fn.upper()):
-                            _ruta_listado = os.path.join(_dir_busq, _fn)
-                            break
-                    if _ruta_listado:
-                        break
-
-                # ── Leer descripciones del propio INC ─────────
-                _descripciones = {}
-                try:
-                    wb_d = _lw(ruta_inc, read_only=True, data_only=True)
-                    ws_d = wb_d.active
-                    for _frow, _dcod in _falt_sap:
-                        _descripciones[_dcod] = (
-                            str(ws_d.cell(_frow, 4).value or "").strip(),
-                            str(ws_d.cell(_frow, 5).value or "").strip(),
-                        )
-                    wb_d.close()
-                except Exception:
-                    pass
-
-                self.consola.separador("FIN REVISIÓN SAP (INC)")
-
-                if not _ruta_listado:
-                    self.log_consola("Listado DALI-SAP no encontrado en RECURSOS.", "WARN")
-                    self.after(0, lambda: messagebox.showwarning(
-                        "Listado no encontrado",
-                        f"{len(_falt_sap)} código(s) DALI sin SAP.\n\n"
-                        "No se encontró LISTADO CODIGOS DALI-SAP en RECURSOS.\n"
-                        "Añádelo y vuelve a ejecutar Acción 4."))
-                    return
-
-                # ── Mostrar diálogo SAP faltantes ─────────────
-                def _mostrar_dialogo():
-                    resp = messagebox.askyesnocancel(
-                        "Códigos SAP faltantes",
-                        f"Se encontraron {len(_falt_sap)} código(s) DALI sin código SAP.\n\n"
-                        "[SÍ]       →  Introducir ahora desde la aplicación\n"
-                        "[NO]       →  Abrir el archivo en Excel\n"
-                        "[CANCELAR] →  Ignorar por ahora",
-                        icon="warning")
-
-                    if resp is True:
-                        ven = VentanaSAPFaltantes(
-                            self, _falt_sap, _ruta_listado,
-                            consola_fn=self.log_consola,
-                            descripciones=_descripciones,
-                            ruta_tarifa=ruta_inc,
-                            catalogo_refresh_fn=self._refrescar_sap_catalogo_para_dali)
-                        self.wait_window(ven)
-
-                        if ven.guardado and ven.escritos_en_tarifa >= 1:
-                            _todos = (ven.escritos_en_tarifa == len(_falt_sap))
-                            try:
-                                import re as _re
-                                _dir  = os.path.dirname(ruta_inc)
-                                _base = os.path.basename(ruta_inc)
-                                if _todos and not _hay_dups:
-                                    # Completado: quitar [INCOMPLETO], añadir INC
-                                    _nuevo = _re.sub(
-                                        r'\[INCOMPLETO\]\s*', '', _base,
-                                        flags=_re.IGNORECASE).strip()
-                                    if not _nuevo.upper().startswith("INC "):
-                                        _nuevo = "INC " + _nuevo
-                                else:
-                                    # Parcial: mantener [INCOMPLETO], añadir INC
-                                    _nuevo = _base
-                                    if not _nuevo.upper().startswith("INC "):
-                                        _nuevo = "INC " + _nuevo
-                                _ruta_nueva = os.path.join(_dir, _nuevo)
-                                if _nuevo != _base:
-                                    if os.path.exists(_ruta_nueva):
-                                        os.remove(_ruta_nueva)
-                                        self.log_consola(
-                                            f"  🗑 Sustituido archivo anterior: {_nuevo}", "INFO")
-                                    os.rename(ruta_inc, _ruta_nueva)
-                                    self._ruta_resultado = _ruta_nueva
-                                    self.log_consola(
-                                        f"  ✔ Archivo renombrado → {_nuevo}", "OK")
-                                    if _todos and not _hay_dups:
-                                        # ── Enganche del catálogo DALI completo (2026-09-23) ──
-                                        # Caso 2 (archivo INC ya procesado por Acción 3):
-                                        # al quedar la tarifa completa aquí también hay que
-                                        # actualizar el código proveedor del catálogo -- antes
-                                        # este camino no lo hacía.
-                                        if self._catalogo_reciente_o_confirmar():
-                                            self._actualizar_codigo_proveedor_catalogo(_ruta_nueva)
-                                        messagebox.showinfo(
-                                            "Tarifa completada",
-                                            f"✔  Todos los códigos SAP completados "
-                                            f"y sin duplicados.\n\n"
-                                            f"Archivo renombrado a:\n{_nuevo}\n\n"
-                                            f"\n✔  TARIFA PREPARADA PARA CREAR O MODIFICAR REGISTRO INFO SAP.")
-                                    else:
-                                        _pend = len(_falt_sap) - ven.escritos_en_tarifa
-                                        self.log_consola(
-                                            f"  ⚠ {_pend} código(s) SAP aún pendiente(s)", "WARN")
-                            except Exception as _e_ren:
-                                self.log_consola(
-                                    f"  ✘ Error al renombrar: {_e_ren}", "WARN")
-
-                    elif resp is False:
-                        try:
-                            os.startfile(ruta_inc)
-                        except Exception:
-                            import subprocess
-                            subprocess.Popen(["start", "", ruta_inc], shell=True)
-
-                self.after(200, _mostrar_dialogo)
-
-            except Exception as e:
-                self.log_consola(f"ERROR en revisión INC: {e}", "ERROR")
-                self.after(0, lambda: self._barra.reset("Error en revisión INC"))
-                self.after(0, lambda err=str(e): messagebox.showerror(
-                    "Error", f"Se produjo un error:\n{err}"))
-            finally:
-                self.after(0, lambda: self._habilitar_btn_procesar(True))
-                self.after(0, lambda: self._btn_buscar.config(state="normal"))
-
-        threading.Thread(target=proceso, daemon=True).start()
-
     def _organizar_dali(self):
         """
         Acción 1 — Organizar artículos DALI (versión optimizada)
@@ -5258,6 +5030,9 @@ class App(tk.Tk):
         con pandas.merge en memoria y escribe el resultado de golpe con ws.append().
         Los estilos se aplican por rango, no celda a celda.
         """
+        # (nov 2026) Se importa aquí y no al arrancar: carga pandas (~la mitad del arranque)
+        # y solo lo usa esta acción.
+        from app.acciones import organizar_dali as organizar_dali_datos
         import threading
 
         carpeta = self._carpeta_proyecto.get().strip()

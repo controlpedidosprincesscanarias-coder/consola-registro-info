@@ -25,10 +25,12 @@ Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app
   También contiene la integración con Catálogo Asignaciones y el catálogo DALI completo.
 - `app/comun/` — `tarifa_constants.py` (colores, fuentes, tablas fijas, `resource_path` y `RAIZ_PROYECTO`), `tarifa_core.py` (configuración, consola de log, barra de progreso), `sap_helpers.py` (funciones de negocio puras, sin tkinter) y `credenciales.py` (DPAPI, sin tkinter).
 - `app/ui/tarifa_dialogs.py` — ventanas modales.
-- `app/rinfo/crear_registro_info.py` — motor de RINFO: `GeneradorDesdeExistente` (desde un Purchasing existente) y `CreadorRINFO`, con sus ventanas. Su autotest interno se lanza con `python -m app.rinfo.crear_registro_info --test`.
+- `app/rinfo/crear_registro_info.py` — motor de RINFO: `GeneradorDesdeExistente` (desde un Purchasing existente) y `CreadorRINFO`, con sus ventanas. (Su antiguo autotest `--test` está ahora en `tests/test_casos_limite_pir.py`.)
 - `app/tarifas/transformar_tarifa.py` — transforma la tarifa del proveedor al formato de trabajo.
 - `app/acciones/organizar_dali.py` — lógica de la Acción 1, sin tkinter.
-- `assets/` (logos e icono, en la raíz) y `tests/`.
+- `assets/` (en la raíz): `logo.png`, `logo.ico`, `logo_dali_articulos.png`, `logo_sap.png` y `marcar_borrado_sap.png`. Todos se usan y van dentro del `.exe` (`ASSETS_NECESARIOS` en `build_exe.py`). Las imágenes van en `assets/` y se cargan con `resource_path()`; no se incrustan en base64 en el código.
+- `tests/`.
+- **Arranque:** lo pesado (pandas) se importa dentro de la acción que lo usa, no al arrancar. No volver a importarlo arriba del todo en `tarifa_app.py`.
 - **Dependencias** (sin importaciones circulares, siempre con la ruta completa `from app.comun.tarifa_core import …`): `app.comun` no importa de otros paquetes del proyecto; `app.ui`, `app.rinfo` y `app.tarifas` importan de `app.comun`; `tarifa_app.py` importa de todos. Los módulos sin tkinter (`sap_helpers`, `credenciales`, `app/acciones`) no importan de la interfaz. Nada importa de `tarifa_app.py`.
 - **Trampa conocida:** no usar `__file__` para localizar archivos del proyecto (assets, `tarifa_config.json`). Usar `resource_path()` y `RAIZ_PROYECTO`, porque los módulos ya no están en la raíz.
 - **Saltos de línea:** `.gitattributes` guarda LF en el repositorio y Git pone CRLF al sacar los archivos en Windows; los `.bat` siempre con CRLF. Al editar desde Linux, no convertir archivos enteros.
@@ -51,7 +53,8 @@ Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app
 ```bash
 python -m unittest discover -s tests -v
 ```
-- 103 pruebas (desde la raíz). 18 de ellas importan `crear_registro_info` (que usa tkinter): sin tkinter se saltan. En Linux hay que lanzarlas con un Python que tenga tkinter y con `xvfb-run`.
+- 104 pruebas (desde la raíz). 18 de ellas importan `crear_registro_info` (que usa tkinter): sin tkinter se saltan. En Linux hay que lanzarlas con un Python que tenga tkinter y con `xvfb-run`.
 - Dependencias para probar: `pandas openpyxl xlrd pillow psutil`. Para compilar, además `pyinstaller pywin32`.
+- Código muerto: `vulture tarifa_app.py app --min-confidence 60`, comprobando cada resultado con `grep` (también en cadenas) antes de quitar nada.
 - `tests/test_crear_registro_info.py` prueba el código real a través de `sap_helpers.py` y de `crear_registro_info`; no se deben reimplementar funciones dentro de la prueba.
 - Comprobación de la compilación: `build_exe.py` también funciona en Linux (genera un ejecutable de Linux). Sirve para ver que PyInstaller incluye todo `app/` y que la app arranca.

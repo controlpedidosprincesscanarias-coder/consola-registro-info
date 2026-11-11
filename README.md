@@ -48,6 +48,7 @@ python -m unittest discover -s tests -v
 | `app/acciones/organizar_dali.py` | Lógica de la Acción 1 (sin interfaz) |
 | `app/comun/` | Constantes, configuración, consola, `sap_helpers.py` y `credenciales.py` |
 | `app/ui/tarifa_dialogs.py` | Ventanas modales |
+| `assets/` | Logos, icono e imágenes de ayuda (van dentro del `.exe`) |
 | `tests/` | Pruebas automáticas |
 | `build_exe.py`, `COMPILAR_TARIFA.bat`, `_bat_helper.py` | Compilación |
 | `HISTORIAL_REORGANIZACION_RINFO.md` | Historial de cambios y próximos pasos |

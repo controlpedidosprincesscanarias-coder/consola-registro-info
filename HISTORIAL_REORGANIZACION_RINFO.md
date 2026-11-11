@@ -1024,6 +1024,27 @@ El proyecto se subió a GitHub (`controlpedidosprincesscanarias-coder/consola-re
 
 ---
 
+## 44. Etapa 3: limpieza a fondo y arranque más rápido (11 nov 2026) — PR en GitHub
+
+Petición de Víctor: «limpiar bien la aplicación, hacerla más ágil, reorganizar y quitar los archivos que no correspondan».
+- **Código muerto (~1.090 líneas)**, comprobado con `vulture` y con `grep` (también en cadenas):
+  - en `tarifa_dialogs.py`, `VentanaSeleccionTarifaRI` (~670 líneas) y `VentanaAbrirTarifaEdicion` (~150), que no se abrían desde ningún sitio;
+  - `App._ejecutar_transformacion_inc` (~220 líneas, sin llamadas);
+  - `escribir_fila_con_formato`, `_sanear_nombre_archivo` y `get_subcarpetas`.
+- **Autotest PIR fuera del programa:** el bloque «TESTS EDGE CASES SAP PIR» (~300 líneas, T01–T09, `--test`) vivía al final de `crear_registro_info.py` y se cargaba en cada arranque. Pasa sin cambios a `tests/test_casos_limite_pir.py`. T07–T09 no estaban cubiertos en otro sitio.
+- **Imágenes fuera del código (~95 KB de base64):**
+  - la captura de `VentanaMaterialesParaReactivar` pasa a `assets/marcar_borrado_sap.png`;
+  - el logo SAP, a `assets/logo_sap.png`;
+  - el logo de la tarifa en Excel era idéntico a `assets/logo_dali_articulos.png` y ahora se lee de ahí;
+  - sobraba el respaldo en base64 del logo de la cabecera.
+- **Assets que no se usaban** (~4,4 MB): `corona.png`, «logo princess.png», «logo blanco horizontal.png» y el `.jpg` del logo negativo. `build_exe.py` mete todos los assets necesarios y se para si falta alguno.
+- **Bug real** (commit propio): al `.exe` le faltaba el *hidden import* `PIL._tkinter_finder`. ImageTk fallaba dentro del ejecutable y la cabecera mostraba «P» en vez del logo. Visto compilando con PyInstaller en Linux, también con `main`. **Confirmar en Windows** que ahora sale el logo (seguramente ya pasaba en el `.exe` de Windows).
+- **Arranque:** pandas solo se carga al usar la Acción 1. Importar `tarifa_app.py` pasa de 0,29 s a 0,14 s.
+- **Comprobado:** 104 pruebas; el logo se inserta en una hoja de tarifa; la app arranca; el ejecutable compilado muestra el logo.
+- **Propuesta, sin hacer:** el `.exe` es `--onefile` (48 MB) y en cada arranque descomprime todo en una carpeta temporal, que es lo que más tarda. Con `--onedir` arrancaría bastante más rápido, pero se distribuiría una carpeta en vez de un solo archivo. Lo decide Víctor.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
    - ~~etapa 2: carpetas por capas~~ hecha (sección 43);
