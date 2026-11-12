@@ -75,8 +75,9 @@ class CatalogoDali:
                  bg=C_DARK, fg=C_ACCENT2, font=FONT_SUB).pack(anchor="w")
         tk.Label(
             frm,
-            text="Se usan para descargar automáticamente el catálogo\n"
-                 "actualizado antes de esta acción. La contraseña se guarda\n"
+            text="Se usan para descargar el catálogo actualizado y para\n"
+                 "enviar a la web los cambios de las Acciones 2, 3 y 4.\n"
+                 "La contraseña se guarda\n"
                  "cifrada: solo tu usuario de Windows, en este equipo,\n"
                  "puede leerla. No se envía a ningún otro sitio.",
             bg=C_DARK, fg=C_MUTED, font=FONT_SMALL, justify="left",
@@ -646,9 +647,12 @@ class CatalogoDali:
         """
         self._adquirir_lock_catalogo_con_aviso()
         try:
-            return self._regenerar_catalogo_dali_completo_impl()
+            resultado = self._regenerar_catalogo_dali_completo_impl()
         finally:
             self._catalogo_lock.release()
+        # Etapa 6 (v10.2.50): enviar a Catálogo Asignaciones lo que haya cambiado (en segundo plano).
+        self._publicar_catalogo_web("regenerar el catálogo (Acción 2 o 3)")
+        return resultado
 
     def _regenerar_catalogo_dali_completo_impl(self):
         """
@@ -1061,6 +1065,8 @@ class CatalogoDali:
                 f"duplicados: {_e_ref}", "WARN")
         finally:
             self._catalogo_lock.release()
+        # Etapa 6 (v10.2.50): enviar a Catálogo Asignaciones los datos SAP cambiados.
+        self._publicar_catalogo_web("resolver un código SAP duplicado")
 
     def _actualizar_codigo_proveedor_catalogo(self, ruta_tarifa):
         """
@@ -1071,9 +1077,12 @@ class CatalogoDali:
         """
         self._adquirir_lock_catalogo_con_aviso()
         try:
-            return self._actualizar_codigo_proveedor_catalogo_impl(ruta_tarifa)
+            resultado = self._actualizar_codigo_proveedor_catalogo_impl(ruta_tarifa)
         finally:
             self._catalogo_lock.release()
+        # Etapa 6 (v10.2.50): enviar a Catálogo Asignaciones el precio y el código de proveedor cambiados.
+        self._publicar_catalogo_web("completar la tarifa (Acción 4)", os.path.basename(str(ruta_tarifa or "")) or None)
+        return resultado
 
     def _actualizar_codigo_proveedor_catalogo_impl(self, ruta_tarifa):
         """

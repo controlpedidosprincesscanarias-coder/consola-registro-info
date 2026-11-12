@@ -141,11 +141,20 @@ def ruta_cache_por_defecto():
 
 
 class Cache:
-    """Copia del catálogo de la web: {hasta, articulos: {codigo_dali: {campo: valor}}}."""
+    """Copia del catálogo de la web, guardada en el PC.
+
+    - hasta: hora (del servidor) de la última sincronización; la próxima vez solo se pide lo posterior.
+    - publicado_hasta: hora de la sincronización que siguió al último envío aplicado desde este PC. Lo que
+      cambió en la web después se considera «editado en la web» (o enviado por otro compañero).
+    - protegidos: artículos editados en la web que se dejaron fuera de un envío: siguen protegidos en los
+      siguientes hasta que se incluyan a propósito o el catálogo local coincida con la web.
+    """
 
     def __init__(self, ruta=None):
         self.ruta = ruta or ruta_cache_por_defecto()
         self.hasta = None
+        self.publicado_hasta = None
+        self.protegidos = set()
         self.articulos = {}
 
     def cargar(self):
@@ -153,16 +162,19 @@ class Cache:
             with open(self.ruta, encoding="utf-8") as f:
                 datos = json.load(f)
             self.hasta = datos.get("hasta")
+            self.publicado_hasta = datos.get("publicado_hasta")
+            self.protegidos = {int(c) for c in datos.get("protegidos") or []}
             self.articulos = {int(k): v for k, v in (datos.get("articulos") or {}).items()}
         except (OSError, ValueError, TypeError, AttributeError):
-            self.hasta, self.articulos = None, {}
+            self.hasta, self.publicado_hasta, self.protegidos, self.articulos = None, None, set(), {}
         return self
 
     def guardar(self):
         os.makedirs(os.path.dirname(self.ruta), exist_ok=True)
         tmp = self.ruta + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
-            json.dump({"hasta": self.hasta, "articulos": {str(k): v for k, v in self.articulos.items()}}, f,
+            json.dump({"hasta": self.hasta, "publicado_hasta": self.publicado_hasta,
+                       "protegidos": sorted(self.protegidos), "articulos": {str(k): v for k, v in self.articulos.items()}}, f,
                       ensure_ascii=False)
         os.replace(tmp, self.ruta)
 
@@ -194,7 +206,7 @@ class Cache:
 
 
 # ── Diferencias ───────────────────────────────────────────────────────────────────────────────────────
-def calcular_diferencias(local, web, desde_sincronizacion=None):
+def calcular_diferencias(local, web, desde_sincronizacion=None, protegidos=()):
     """Lo que difiere entre el catálogo local y la copia de la web, por grupo.
 
     Devuelve {grupo: [ {codigo_dali, campos: {campo: (web, local)}, nuevo, editado_en_web, proveedor} ]}.
@@ -203,7 +215,7 @@ def calcular_diferencias(local, web, desde_sincronizacion=None):
     - accion3 y accion4 de un artículo nuevo y todo accion4: un valor VACÍO en local no borra el de la web
       (puede que esa tarifa o ese listado no se haya pasado nunca por esta Consola).
     - editado_en_web: el artículo cambió en la web (o lo envió otro compañero) después de
-      `desde_sincronizacion` (la sincronización anterior).
+      `desde_sincronizacion` (Cache.publicado_hasta), o está en `protegidos` (Cache.protegidos).
     - El código DALI y su descripción solo se cargan desde la Consola (decisión de Víctor, 12 nov 2026):
       la descripción local siempre manda, aunque el artículo se haya tocado en la web.
     """
@@ -211,7 +223,8 @@ def calcular_diferencias(local, web, desde_sincronizacion=None):
     for cod in sorted(local):
         loc = local[cod]
         w = web.get(cod)
-        editado = bool(w and desde_sincronizacion and (w.get("modificado_en") or "") > desde_sincronizacion)
+        editado = bool(w and ((desde_sincronizacion and (w.get("modificado_en") or "") > desde_sincronizacion)
+                              or cod in protegidos))
         for grupo, campos in GRUPOS.items():
             distintos = {}
             for campo in campos:
@@ -247,6 +260,23 @@ def filas_para_enviar(diferencias, grupo, incluir_editados=False):
             continue                              # sin proveedor asignado no hay tarifa con la que cuadrar
         por_proveedor.setdefault(clave, []).append(fila)
     return por_proveedor
+
+
+def actualizar_protegidos(cache, diferencias, incluir_editados):
+    """Tras un envío aplicado: los editados en la web que se dejaron fuera quedan protegidos; si se
+    incluyeron, dejan de estarlo. Los protegidos que ya no tienen diferencias se quitan."""
+    con_diferencias = {d["codigo_dali"] for difs in diferencias.values() for d in difs}
+    editados = {d["codigo_dali"] for difs in diferencias.values() for d in difs if d["editado_en_web"]}
+    if incluir_editados:
+        cache.protegidos -= editados
+    else:
+        cache.protegidos |= editados
+    cache.protegidos &= con_diferencias
+
+
+def contar(diferencias, incluir_editados=True):
+    """{grupo: nº de artículos con diferencias} (sin los editados en la web si incluir_editados=False)."""
+    return {g: sum(len(v) for v in filas_para_enviar(diferencias, g, incluir_editados).values()) for g in GRUPOS}
 
 
 def en_lotes(filas, tamano=FILAS_POR_LOTE):

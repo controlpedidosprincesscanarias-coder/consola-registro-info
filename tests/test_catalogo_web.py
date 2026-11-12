@@ -187,6 +187,25 @@ class TestCacheYDiferencias(unittest.TestCase):
         self.assertEqual(W.filas_para_enviar(dif, "accion3", incluir_editados=True),
                          {None: [{"codigo_dali": 5, "codigo_sap": "S2"}]})
 
+    def test_protegidos_siguen_protegidos(self):
+        cache = W.Cache(os.path.join(self.dir.name, "p.json"))
+        cache.aplicar_pagina([_art(5, codigo_sap="S1", modificado_en="2026-11-12T09:00:00.000Z"),
+                              _art(6, codigo_sap="T1")])
+        base = {c: None for c in set().union(*W.GRUPOS.values())}
+        local = {5: dict(base, activo=True, codigo_sap="S2"), 6: dict(base, activo=True, codigo_sap="T2")}
+        dif = W.calcular_diferencias(local, cache.articulos, "2026-11-11T00:00:00.000Z")
+        self.assertEqual(W.contar(dif, False)["accion3"], 1)
+        W.actualizar_protegidos(cache, dif, incluir_editados=False)
+        self.assertEqual(cache.protegidos, {5})
+        cache.guardar()
+        cache = W.Cache(cache.ruta).cargar()
+        # la sincronización siguiente ya es posterior al cambio en la web: sigue protegido
+        dif = W.calcular_diferencias(local, cache.articulos, "2026-11-13T00:00:00.000Z", cache.protegidos)
+        self.assertEqual(W.filas_para_enviar(dif, "accion3"), {None: [{"codigo_dali": 6, "codigo_sap": "T2"}]})
+        # si se incluye a propósito, deja de estarlo
+        W.actualizar_protegidos(cache, dif, incluir_editados=True)
+        self.assertEqual(cache.protegidos, set())
+
     def test_en_lotes(self):
         self.assertEqual([len(x) for x in W.en_lotes(list(range(901)), 400)], [400, 400, 101])
 
