@@ -57,6 +57,8 @@ GRUPOS = {
                 "grupo_compras_sap", "nombre_grupo_compras_sap"),
     "accion4": ("precio", "codigo_proveedor"),
 }
+# Solo se cargan desde la Consola (no se editan en la web): siempre manda lo de la Consola.
+SOLO_DESDE_CONSOLA = ("nombre_articulo",)
 NOMBRE_GRUPO = {"accion2": "Datos DALI", "accion3": "Datos SAP", "accion4": "Precio y código de proveedor"}
 
 
@@ -196,10 +198,14 @@ def calcular_diferencias(local, web, desde_sincronizacion=None):
     """Lo que difiere entre el catálogo local y la copia de la web, por grupo.
 
     Devuelve {grupo: [ {codigo_dali, campos: {campo: (web, local)}, nuevo, editado_en_web, proveedor} ]}.
-    - Solo los campos distintos. Un artículo que no está en la web es «nuevo» (solo en accion2).
-    - accion4: un precio o código de proveedor VACÍO en local no borra el de la web (puede que esa tarifa no
-      se haya pasado nunca por esta Consola).
-    - editado_en_web: el artículo cambió en la web después de `desde_sincronizacion` (la sincronización anterior).
+    - Solo los campos distintos. Un artículo que no está en la web es «nuevo»: va entero en accion2 (alta) y,
+      en accion3 y accion4, con los campos que tenga rellenos (se aplican después del alta, en ese orden).
+    - accion3 y accion4 de un artículo nuevo y todo accion4: un valor VACÍO en local no borra el de la web
+      (puede que esa tarifa o ese listado no se haya pasado nunca por esta Consola).
+    - editado_en_web: el artículo cambió en la web (o lo envió otro compañero) después de
+      `desde_sincronizacion` (la sincronización anterior).
+    - El código DALI y su descripción solo se cargan desde la Consola (decisión de Víctor, 12 nov 2026):
+      la descripción local siempre manda, aunque el artículo se haya tocado en la web.
     """
     resultado = {g: [] for g in GRUPOS}
     for cod in sorted(local):
@@ -207,18 +213,16 @@ def calcular_diferencias(local, web, desde_sincronizacion=None):
         w = web.get(cod)
         editado = bool(w and desde_sincronizacion and (w.get("modificado_en") or "") > desde_sincronizacion)
         for grupo, campos in GRUPOS.items():
-            if w is None and grupo != "accion2":
-                continue                          # se da de alta con la Acción 2; lo demás, en el siguiente envío
             distintos = {}
             for campo in campos:
                 vl = loc.get(campo)
                 vw = None if w is None else w.get(campo)
-                if grupo == "accion4" and vl is None:
+                if vl is None and (grupo == "accion4" or (w is None and grupo == "accion3")):
                     continue
-                if vl != vw:
+                if w is None and grupo == "accion2":
+                    distintos[campo] = (None, vl)
+                elif vl != vw:
                     distintos[campo] = (vw, vl)
-            if w is None and grupo == "accion2":
-                distintos = {c: (None, loc.get(c)) for c in campos}
             if distintos:
                 resultado[grupo].append({"codigo_dali": cod, "campos": distintos, "nuevo": w is None,
                                          "editado_en_web": editado, "proveedor": loc.get("proveedor")})
@@ -230,10 +234,13 @@ def filas_para_enviar(diferencias, grupo, incluir_editados=False):
     {proveedor: [filas]}; para el resto, {None: [filas]}."""
     por_proveedor = {}
     for d in diferencias[grupo]:
+        campos = d["campos"]
         if d["editado_en_web"] and not incluir_editados and not d["nuevo"]:
-            continue
+            campos = {c: v for c, v in campos.items() if c in SOLO_DESDE_CONSOLA}
+            if not campos:
+                continue
         fila = {"codigo_dali": d["codigo_dali"]}
-        for campo, (_web, local) in d["campos"].items():
+        for campo, (_web, local) in campos.items():
             fila[campo] = ("SI" if local else "NO") if campo == "activo" else local
         clave = d["proveedor"] if grupo == "accion4" else None
         if grupo == "accion4" and not clave:

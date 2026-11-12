@@ -160,19 +160,32 @@ class TestCacheYDiferencias(unittest.TestCase):
         self.assertTrue(a2[2]["editado_en_web"])                  # cambió en la web tras la última sincronización
         self.assertEqual([d["codigo_dali"] for d in dif["accion3"]], [1])
         self.assertEqual(dif["accion3"][0]["campos"], {"codigo_sap": ("S1", "S9")})
-        # accion4: el precio vacío del 2 no borra el de la web; el 3 (nuevo) va en el siguiente envío
-        self.assertEqual([d["codigo_dali"] for d in dif["accion4"]], [1])
+        # accion4: el precio vacío del 2 no borra el de la web; el 3 (nuevo) lleva su precio tras el alta
+        self.assertEqual([d["codigo_dali"] for d in dif["accion4"]], [1, 3])
         self.assertEqual(dif["accion4"][0]["campos"], {"precio": (1.0, 1.2)})
 
+        # el 2 se tocó en la web, pero su descripción DALI solo se carga desde la Consola: va igual
         a2_filas = W.filas_para_enviar(dif, "accion2")
-        self.assertEqual([f["codigo_dali"] for f in a2_filas[None]], [3])     # el editado en la web, fuera
+        self.assertEqual([f["codigo_dali"] for f in a2_filas[None]], [2, 3])
+        self.assertEqual(a2_filas[None][0], {"codigo_dali": 2, "nombre_articulo": "Pera conferencia"})
         a2_todas = W.filas_para_enviar(dif, "accion2", incluir_editados=True)
         self.assertEqual(sorted(f["codigo_dali"] for f in a2_todas[None]), [2, 3])
         nuevo = next(f for f in a2_todas[None] if f["codigo_dali"] == 3)
         self.assertEqual(nuevo["activo"], "SI")                   # «activo» viaja como SI/NO, igual que en el Excel
         self.assertEqual(nuevo["nombre_articulo"], "Nuevo")
         a4 = W.filas_para_enviar(dif, "accion4")
-        self.assertEqual(a4, {"PROV A": [{"codigo_dali": 1, "precio": 1.2}]})
+        self.assertEqual(a4, {"PROV A": [{"codigo_dali": 1, "precio": 1.2}, {"codigo_dali": 3, "precio": 5.0}]})
+
+    def test_editado_en_web_no_pisa_lo_sap(self):
+        cache = W.Cache(os.path.join(self.dir.name, "c.json"))
+        cache.aplicar_pagina([_art(5, nombre_articulo="Leche", codigo_sap="S1",
+                                   modificado_en="2026-11-12T09:00:00.000Z")])
+        base = {c: None for c in set().union(*W.GRUPOS.values())}
+        local = {5: dict(base, nombre_articulo="Leche", activo=True, codigo_sap="S2")}
+        dif = W.calcular_diferencias(local, cache.articulos, desde_sincronizacion="2026-11-11T00:00:00.000Z")
+        self.assertEqual(W.filas_para_enviar(dif, "accion3"), {})
+        self.assertEqual(W.filas_para_enviar(dif, "accion3", incluir_editados=True),
+                         {None: [{"codigo_dali": 5, "codigo_sap": "S2"}]})
 
     def test_en_lotes(self):
         self.assertEqual([len(x) for x in W.en_lotes(list(range(901)), 400)], [400, 400, 101])
