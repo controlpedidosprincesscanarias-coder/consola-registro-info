@@ -32,6 +32,8 @@ La **consola** de la derecha muestra cada paso con su hora y un color por nivel:
 
 **Catálogo Asignaciones:** la primera vez que hace falta descargar su catálogo, la app pide tu usuario y tu contraseña. La contraseña se guarda **cifrada**: solo tu usuario de Windows, en ese equipo, puede leerla. Si la contraseña deja de valer, se borra y se vuelve a pedir.
 
+**Cambios en Catálogo Asignaciones (desde v10.2.50):** después de las Acciones 2, 3 y 4 (y de resolver un código SAP duplicado), la app envía a la web **solo lo que ha cambiado**: altas y datos DALI, datos SAP, y precio y código de proveedor de la tarifa. Antes de cambiar nada muestra un resumen; lo que se haya cambiado en la web desde tu último envío queda fuera salvo que marques la casilla, y lo que la web no puede aplicar (otro proveedor asignado, otro código de proveedor) sale para corregirlo. Si eliges «Ahora no» o no hay conexión, los cambios vuelven a salir la próxima vez. Hace falta el permiso «Escribir desde la Consola Registro Info» en Catálogo Asignaciones. El código DALI y su descripción solo se cargan desde aquí. El Excel `catalogo-dali-completo.xlsx` se sigue escribiendo igual mientras se comprueba que los dos coinciden (fase 1).
+
 ## Actualizaciones
 Al abrirse, la app comprueba si hay una versión nueva publicada en GitHub. Si la hay, muestra las novedades y ofrece **Actualizar ahora**: descarga el `.exe` nuevo, comprueba que es el publicado (SHA-256), lo pone en el sitio del actual y se vuelve a abrir sola. La carpeta del proyecto y la contraseña guardada no se tocan. La versión anterior se borra sola en el siguiente arranque, y la consola lo indica.
 
@@ -69,6 +71,7 @@ python -m unittest discover -s tests -v
 | `assets/` | Logos, icono, imágenes de ayuda y el manual con su índice (van dentro del `.exe`) |
 | `docs/` | Manual de usuario (`.docx` y `.pdf`) y su fuente (`docs/manuales_fuente/`, ver su README) |
 | `tests/` | Pruebas automáticas |
+| `app/comun/catalogo_web.py`, `app/principal/publicar_catalogo_web.py`, `app/ui/ventana_publicar_catalogo.py` | Envío de los cambios a Catálogo Asignaciones (v10.2.50) |
 | `build_exe.py`, `compilacion/`, `.github/workflows/compilar.yml` | Compilación (en GitHub, con versión automática) |
 | `COMPILAR_TARIFA.bat`, `_bat_helper.py` | Compilación local en Windows |
 | `HISTORIAL_REORGANIZACION_RINFO.md` | Historial de cambios y próximos pasos |

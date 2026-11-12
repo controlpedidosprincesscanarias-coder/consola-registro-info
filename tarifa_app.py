@@ -38,13 +38,15 @@ from app.principal.accion_listado_dali import AccionListadoDali
 from app.principal.accion_listado_sap import AccionListadoSap
 from app.principal.catalogo_dali import CatalogoDali
 from app.principal.accion_tarifa import AccionesTarifa
+from app.principal.publicar_catalogo_web import PublicarCatalogoWeb
 from app.principal.catalogo_dali import DALI_APP_API_BASE  # noqa: F401
 
 
 # (nov 2026, etapa 4) Los métodos de App están repartidos por temas en app/principal/ (mixins):
 # interfaz, Acción 1 (organizar DALI), Acción 2 (listado DALI), Acción 3 (listado SAP), catálogo
 # DALI y Acciones 4/6 (tarifa). Aquí quedan __init__, la cabecera y el pie (usan APP_VERSION).
-class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap, CatalogoDali, AccionesTarifa, tk.Tk):
+class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap, CatalogoDali, AccionesTarifa,
+          PublicarCatalogoWeb, tk.Tk):
     # SAP_LOGO_PNG (ruta de assets/logo_sap.png) centralizado en tarifa_constants.py
 
     def __init__(self):
@@ -71,6 +73,10 @@ class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap,
         # Acción 3 justo cuando el cierre de una transformación aún estaba
         # escribiendo el código proveedor de esa tarifa en el catálogo.
         self._catalogo_lock = threading.Lock()
+        # Etapa 6 (v10.2.50): envío a Catálogo Asignaciones de lo cambiado (ver publicar_catalogo_web.py).
+        self._publicacion_web_estado = threading.Lock()
+        self._publicacion_web_activa = False
+        self._publicacion_web_pendiente = None
         self._carpeta_proyecto = tk.StringVar(
             value=self.config_data.get("carpeta_proyecto", ""))
         self._ruta_tarifa      = None

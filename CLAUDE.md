@@ -31,17 +31,19 @@ App de escritorio para Windows (Python + Tkinter) de la Central de Compras: prep
   Un 404 (ninguna Release publicada) no es un error. Desde el código (`python tarifa_app.py`) nunca se actualiza. **El repositorio tiene que seguir siendo público** y no se borran ni se renombran Releases, igual que en el Organizador.
 - **Datos:** carpeta de proyecto en la unidad de red (`TARIFAS/`, `RECURSOS/`), elegida en la app y guardada en `tarifa_config.json`, junto al `.exe` o al script. Ese archivo **no se sube nunca** (está en `.gitignore`).
 - **Catálogo Asignaciones** (repo `dali-sap-articulos-app`): antes de algunas acciones se descarga su catálogo a través del Worker `DALI_APP_API_BASE` (`app/principal/catalogo_dali.py`), con el usuario y la contraseña de cada persona.
+- **Etapa 6: la Consola escribe en Catálogo Asignaciones** (v10.2.50; en la web, v1.20.63 y su `docs/propuestas/etapa6-consola-escribe-catalogo.md`). Tras regenerar el catálogo (Acciones 2 y 3), completar una tarifa (Acción 4) o resolver un SAP duplicado, `_publicar_catalogo_web()` (`app/principal/publicar_catalogo_web.py`, en su propio hilo; si ya hay uno, se repite una vez al acabar) compara `RECURSOS/catalogo-dali-completo.xlsx` con una copia de la web guardada en `%LOCALAPPDATA%\ConsolaRegistroInfo\catalogo_web.json`, que solo pide lo cambiado (`GET /admin/catalogo/cambios?desde=`). Envía solo lo distinto a `POST /admin/catalogo/lote`, primero simulando, con la ventana de resumen (`app/ui/ventana_publicar_catalogo.py`). La lógica, sin tkinter, en `app/comun/catalogo_web.py` (`tests/test_catalogo_web.py`, `tests/test_publicar_catalogo_web.py`). Reglas: nunca se borra nada en la web; un precio o código de proveedor vacío en local no borra el de la web; lo editado en la web (o enviado por otro compañero) queda fuera por defecto y sigue protegido (`Cache.protegidos`); el código DALI y su descripción solo se cargan desde la Consola (decisión de Víctor, 12 nov 2026), así que la descripción local siempre manda. **Fase 1:** el Excel se sigue escribiendo igual y la consola dice si al final coinciden.
 
 ## Estructura
 Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app.py` sigue en la raíz como punto de arranque: lo usan `COMPILAR_TARIFA.bat`, `_bat_helper.py` (lee `APP_VERSION`) y `build_exe.py`. Cada módulo conserva su nombre de siempre; para encontrar una función: `grep -rn "def nombre" tarifa_app.py app`.
-- `tarifa_app.py` (~200 líneas) — punto de arranque y clase `App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap, CatalogoDali, AccionesTarifa, tk.Tk)`. Aquí quedan `__init__`, la cabecera y el pie, porque usan `APP_VERSION`, que **tiene que seguir en este archivo** (lo leen `_bat_helper.py` y `COMPILAR_TARIFA.bat`).
+- `tarifa_app.py` (~200 líneas) — punto de arranque y clase `App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap, CatalogoDali, AccionesTarifa, PublicarCatalogoWeb, tk.Tk)`. Aquí quedan `__init__`, la cabecera y el pie, porque usan `APP_VERSION`, que **tiene que seguir en este archivo** (lo leen `_bat_helper.py` y `COMPILAR_TARIFA.bat`).
 - `app/principal/` — los métodos de `App`, repartidos por temas en clases *mixin* (etapa 4, nov 2026, sin cambiar el código). Se llaman siempre como `self.metodo()`, así que un método puede vivir en cualquiera de ellas:
   - `interfaz.py`: construcción de la ventana, consola de log, botones y acciones sencillas (carpeta, buscar `TARIFA.xls`, abrir resultado). El botón 7 (tarifa vacía) está en construcción.
   - `accion_organizar_dali.py`: Acción 1. Su lógica está en `app/acciones/organizar_dali.py`.
   - `accion_listado_dali.py`: Acción 2.
   - `accion_listado_sap.py`: Acción 3.
   - `accion_tarifa.py`: Acciones 4 y 6 (TARIFA final, archivos INC / [INCOMPLETO], reinscripción SAP, botón Registro Info).
-  - `catalogo_dali.py`: Catálogo DALI completo y Catálogo Asignaciones (`DALI_APP_API_BASE`).
+  - `catalogo_dali.py`: Catálogo DALI completo y Catálogo Asignaciones (`DALI_APP_API_BASE`, que desde v10.2.50 vive en `app/comun/catalogo_web.py`).
+  - `publicar_catalogo_web.py`: envío a Catálogo Asignaciones de lo cambiado (etapa 6, v10.2.50).
   - Un método nuevo va al mixin de su tema. Dos mixins no pueden tener un método con el mismo nombre, porque ganaría el primero de la lista sin avisar.
 - `app/comun/` — `manual.py` (abrir y consultar el manual), `tarifa_constants.py` (colores, fuentes, tablas fijas, `resource_path` y `RAIZ_PROYECTO`), `tarifa_core.py` (configuración, consola de log, barra de progreso), `sap_helpers.py` (funciones de negocio puras, sin tkinter), `credenciales.py` (DPAPI, sin tkinter) y `actualizaciones.py` (actualización automática, sin tkinter).
 - `app/ui/` — `tarifa_dialogs.py` (ventanas modales: selección de .xls, crear proyecto, SAP duplicados y SAP faltantes), `ventana_actualizacion.py` (aviso de versión nueva), `ventana_consulta_manual.py` («Consultar el manual») y `ventana_notas_version.py` (novedades de la versión al pulsar el número de versión de la cabecera o del pie; las pide a la Release de GitHub de esa versión con `actualizaciones.notas_de_version`).
@@ -81,7 +83,7 @@ Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app
 ```bash
 python -m unittest discover -s tests -v
 ```
-- 133 pruebas (desde la raíz). 18 de ellas importan `crear_registro_info` (que usa tkinter): sin tkinter se saltan. En Linux hay que lanzarlas con un Python que tenga tkinter y con `xvfb-run`.
+- 152 pruebas (desde la raíz). 18 de ellas importan `crear_registro_info` (que usa tkinter): sin tkinter se saltan. En Linux hay que lanzarlas con un Python que tenga tkinter y con `xvfb-run`.
 - Dependencias para probar: `pandas openpyxl xlrd pillow psutil`. Para compilar, además `pyinstaller pywin32`.
 - Código muerto: `vulture tarifa_app.py app --min-confidence 60`, comprobando cada resultado con `grep` (también en cadenas) antes de quitar nada.
 - `tests/test_crear_registro_info.py` prueba el código real a través de `sap_helpers.py` y de `crear_registro_info`; no se deben reimplementar funciones dentro de la prueba.
