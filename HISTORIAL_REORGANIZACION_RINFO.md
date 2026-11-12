@@ -1159,6 +1159,22 @@ Petición de Víctor: en todas las aplicaciones se pueden ver las notas de la ve
 
 ---
 
+## 52. Etapa 6: la Consola envía sus cambios a Catálogo Asignaciones (12 nov 2026) — PR en GitHub
+
+Petición de Víctor: que el LISTADO DALI–SAP y el catálogo completo dejen de ser Excel compartidos y la Consola escriba directamente en la web, **solo con las modificaciones** («que la comunicación sea solo la necesaria»). La parte de la web es Catálogo Asignaciones v1.20.63 (`POST /admin/catalogo/lote`, `GET /admin/catalogo/cambios`, permiso «Escribir desde la Consola Registro Info»). Esto es la fase 1 (doble escritura).
+- `app/comun/catalogo_web.py` (sin tkinter): conexión con la web (misma sesión por cookie que la descarga del catálogo), copia de la web en el PC (`%LOCALAPPDATA%\ConsolaRegistroInfo\catalogo_web.json`: la primera vez se descarga entera, después solo lo cambiado), lectura de `catalogo-dali-completo.xlsx` por cabecera, normalización igual que la web (también el redondeo del precio), diferencias por grupo (datos DALI, datos SAP, precio y código de proveedor por proveedor) y envío por lotes de 400.
+- `app/principal/publicar_catalogo_web.py`: se lanza tras `_regenerar_catalogo_dali_completo` (Acciones 2 y 3), `_actualizar_codigo_proveedor_catalogo` (Acción 4) y `_refrescar_sap_catalogo_para_dali` (SAP duplicado), en su propio hilo. Si ya hay un envío en marcha, se repite una sola vez al acabar (dos tarifas seguidas = una ventana más, no dos a la vez). Las credenciales son las de siempre (DPAPI).
+- `app/ui/ventana_publicar_catalogo.py`: resumen tras simular. Lo editado en la web desde el último envío queda fuera por defecto (casilla para incluirlo) y sigue protegido en los envíos siguientes; los irregulares que la web no aplica (proveedor asignado distinto, código de proveedor distinto) se listan para corregirlos (decisión 5). «Ahora no» no envía nada: la diferencia sigue ahí y vuelve a salir.
+- Orden de aplicación: altas y datos DALI → datos SAP → precio y código de proveedor (un artículo nuevo lleva todo en el mismo envío). Un precio o código de proveedor vacío en local no borra el de la web. Nunca se borra nada en la web.
+- Decisión de Víctor (12 nov 2026, durante el trabajo): el código DALI y su descripción solo se cargan desde la Consola; en la web solo se edita lo de SAP. Por eso la descripción local siempre se envía, aunque el artículo se haya tocado en la web. (La web se adapta en su v1.20.64.)
+- Al terminar se vuelve a comparar y la consola dice si la web y el catálogo local coinciden, o cuántos quedan distintos y por qué (comparación de la fase 1).
+- Un 403 explica que falta el permiso; un 401 borra las credenciales guardadas, como la descarga.
+- Pruebas: `tests/test_catalogo_web.py` (12) y `tests/test_publicar_catalogo_web.py` (7), con una web falsa; 152 en total. Ventana vista en pantalla virtual.
+- **Por probar en Windows con datos reales:** la primera sincronización (~30.000 artículos, una sola vez por equipo), una Acción 2 o 3 y una tarifa reales con un usuario con el permiso, y comprobar en la web (Administración) el registro de envíos.
+- **Manual:** pendiente de regenerar con la próxima versión (ventana de resumen y textos nuevos de la consola).
+
+---
+
 ## Próximos pasos, en orden de prioridad
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
    - ~~etapa 2: carpetas por capas~~ hecha (sección 43);

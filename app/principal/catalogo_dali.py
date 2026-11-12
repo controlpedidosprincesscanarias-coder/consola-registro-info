@@ -40,7 +40,8 @@ from app.comun.sap_helpers import (
 # cambia algún día (redespliegue del Worker con otro nombre), solo hay
 # que actualizarla aquí.
 # (Hasta nov 2026, en tarifa_app.py.)
-DALI_APP_API_BASE = "https://dali-proxy-api.centralcompras1-canarias.workers.dev"
+# Desde v10.2.50 la URL está en app/comun/catalogo_web.py (la usa también el envío de cambios a la web).
+from app.comun.catalogo_web import DALI_APP_API_BASE  # noqa: E402
 
 
 class CatalogoDali:
