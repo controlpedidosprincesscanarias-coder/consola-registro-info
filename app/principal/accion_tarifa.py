@@ -482,6 +482,8 @@ class AccionesTarifa:
         self._habilitar_btn_resultado(False)
 
         def proceso():
+            # (13 nov 2026) Antes de leer el catálogo, lo cambiado en la web (SAP, precio, código de proveedor)
+            self._traer_cambios_web("generar la TARIFA (Acción 4)")
             try:
                 from app.tarifas.transformar_tarifa import transformar
             except ImportError:
@@ -1510,6 +1512,7 @@ class AccionesTarifa:
 
         def proceso():
             _barra_finalizada = {"v": False}   # red de seguridad, ver finally: más abajo
+            self._traer_cambios_web("la reinscripción SAP")   # (13 nov 2026) lo cambiado en la web, antes de leer
             try:
                 self.consola.separador("REINSCRIPCIÓN SAP DESDE EL CATÁLOGO (archivo INC)")
                 self.log_consola(f"Archivo INC: {os.path.basename(ruta_inc)}", "INFO")

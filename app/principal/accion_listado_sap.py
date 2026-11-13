@@ -754,6 +754,8 @@ class AccionListadoSap:
         # ── 6. Proceso en hilo ────────────────────────────────────────
         def proceso():
             self.consola.separador("INICIO ACTUALIZACIÓN SAP")
+            # (13 nov 2026) Primero lo cambiado en la web (p. ej. un código SAP corregido allí), para completarlo
+            self._traer_cambios_web("la Acción 3")
             self.log_consola("Iniciando actualización listado materiales SAP...", "INFO")
             self.after(0, lambda: self._barra.indeterminate("Leyendo Productos.xlsx..."))
 

@@ -45,6 +45,7 @@ class AccionAsignarSap:
         self._barra.indeterminate("Leyendo el catálogo...")
 
         def _cargar():
+            self._traer_cambios_web("la Acción 8")   # (13 nov 2026) los SAP puestos en la web ya no salen pendientes
             try:
                 lista = asignar_sap.pendientes(ruta_cat)
                 ruta_prod = os.path.join(carpeta, FOLDER_RECURSOS, "Productos.xlsx")

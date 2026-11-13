@@ -6,14 +6,18 @@ Central Compras Princess Canarias · La idea y el desarrollo de la aplicación, 
 son de Víctor Alejandro Martín Andrade (VAMA).
 
 Se abre (siempre en el hilo principal) después de que la web haya «simulado» el envío: muestra cuántos
-artículos cambian de cada grupo, los que se tocaron en la web (fuera por defecto, con una casilla para
-incluirlos) y los irregulares que la web no aplicará (para corregirlos). Devuelve (aplicar, incluir_editados).
+artículos cambian de cada grupo y los irregulares que la web no aplicará (para corregirlos).
+Devuelve (aplicar, True).
+
+(13 nov 2026, petición de Víctor) Ya no hay casilla «sustituir lo de la web por lo de la Consola»: antes de abrir
+esta ventana, lo cambiado en la web ya ha bajado al Excel y, en cada dato, gana la última modificación. Los ✎ que
+quedan son artículos tocados también en la web en los que el cambio de la Consola es más reciente.
 """
 import tkinter as tk
 
 from app.comun import catalogo_web as W
 from app.comun.tarifa_constants import (
-    C_ACCENT, C_ACCENT2, C_CARD, C_DARK, C_LOG_BG, C_LOG_FG, C_MUTED, C_TEXT_LIGHT, C_WARNING,
+    C_ACCENT, C_ACCENT2, C_DARK, C_LOG_BG, C_LOG_FG, C_MUTED, C_TEXT_LIGHT, C_WARNING,
     FONT_BOLD, FONT_LABEL, FONT_LOG, FONT_SMALL, FONT_SUB,
 )
 
@@ -85,12 +89,11 @@ def pedir_confirmacion(parent, diferencias, simulaciones, motivo):
     tk.Label(frm, text=f"Después de: {motivo}. Solo se envía lo que es distinto en la web.",
              bg=C_DARK, fg=C_MUTED, font=FONT_SUB).pack(anchor="w", pady=(2, 10))
 
-    var_editados = tk.BooleanVar(value=False)
     lbl_resumen = tk.Label(frm, bg=C_DARK, fg=C_TEXT_LIGHT, font=FONT_LABEL, justify="left")
     lbl_resumen.pack(anchor="w")
 
     def _pintar_resumen():
-        n = W.contar(diferencias, var_editados.get())
+        n = W.contar(diferencias, True)
         nuevos = sum(1 for d in diferencias["accion2"] if d["nuevo"])
         texto = "\n".join(f"• {W.NOMBRE_GRUPO[g]}: {n[g]} artículo(s)" for g in W.GRUPOS)
         if nuevos:
@@ -100,14 +103,11 @@ def pedir_confirmacion(parent, diferencias, simulaciones, motivo):
     _pintar_resumen()
 
     if editados:
-        tk.Label(frm, text=f"✎ {len(editados)} artículo(s) se cambiaron en la web (o los envió otro compañero) "
-                           "desde tu último envío.\nPor defecto, sus datos SAP, su precio y su código de proveedor "
-                           "NO se tocan; la descripción DALI sí,\nporque solo se carga desde la Consola.",
+        tk.Label(frm, text=f"✎ {len(editados)} artículo(s) se cambiaron también en la web (o los envió otro "
+                           "compañero) desde tu último envío.\nLo cambiado en la web ya se ha copiado al catálogo; "
+                           "aquí solo queda lo que la Consola cambió después\n(en cada dato gana la última "
+                           "modificación) y la descripción DALI, que solo se carga desde la Consola.",
                  bg=C_DARK, fg=C_WARNING, font=FONT_SMALL, justify="left").pack(anchor="w", pady=(10, 2))
-        tk.Checkbutton(frm, text="Incluirlos también (sustituir lo de la web por lo de la Consola)",
-                       variable=var_editados, command=_pintar_resumen, bg=C_DARK, fg=C_TEXT_LIGHT,
-                       selectcolor=C_CARD, activebackground=C_DARK, activeforeground=C_ACCENT2,
-                       font=FONT_LABEL).pack(anchor="w")
 
     if irregulares:
         tk.Label(frm, text=f"⚠ {len(irregulares)} artículo(s) que la web NO cambiará (revísalos y corrígelos):",
@@ -146,4 +146,4 @@ def pedir_confirmacion(parent, diferencias, simulaciones, motivo):
     sw, sh = win.winfo_screenwidth(), win.winfo_screenheight()
     win.geometry(f"{w}x{h}+{(sw - w) // 2}+{max(40, (sh - h) // 3)}")
     win.wait_window()
-    return resultado["aplicar"], bool(var_editados.get())
+    return resultado["aplicar"], True

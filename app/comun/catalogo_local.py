@@ -230,6 +230,37 @@ def escribir_codigos_sap(ruta, codigos):
         wb.close()
 
 
+def escribir_campos(ruta, cambios):
+    """(13 nov 2026) Escribe en el catálogo lo que baja de Catálogo Asignaciones: {dali_int: {columna_local: valor}}
+    (columnas como en CATALOGO_COLUMNAS: cod_sap, desc_sap, precio, cod_prov…), buscando por código DALI. Solo toca
+    esas celdas. El código SAP se guarda como número (como el resto de la Consola); el precio, como número.
+    Devuelve (celdas_escritas, dali_no_encontrados). Si el archivo está abierto en Excel, wb.save lanza
+    PermissionError y no se cambia nada."""
+    if not cambios:
+        return 0, []
+    wb, ws, mapa = abrir_para_editar(ruta)
+    try:
+        fila_de, _ = mapas_dali_sap(ws, mapa)
+        escritas, no_encontrados = 0, []
+        for dali, campos in cambios.items():
+            fila = fila_de.get(dali)
+            if fila is None:
+                no_encontrados.append(dali)
+                continue
+            for campo, valor in campos.items():
+                if campo not in mapa:
+                    continue
+                if campo == "cod_sap":
+                    valor = _como_numero(valor)
+                ws.cell(row=fila, column=mapa[campo]).value = valor
+                escritas += 1
+        if escritas:
+            wb.save(ruta)
+        return escritas, no_encontrados
+    finally:
+        wb.close()
+
+
 def conservar_sap_local(ruta_nuevo, tabla_sap_local):
     """Tras descargar el catálogo de la web (que sustituye al local): los artículos que en el catálogo LOCAL tenían
     código SAP y en el descargado no tienen ninguno conservan sus datos SAP locales. Sin LISTADO, un código SAP

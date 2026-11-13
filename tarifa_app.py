@@ -81,6 +81,8 @@ class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap,
         self._publicacion_web_estado = threading.Lock()
         self._publicacion_web_activa = False
         self._publicacion_web_pendiente = None
+        # (13 nov 2026) La copia de la web (catalogo_web.json) la usan el envío y la bajada antes de las acciones
+        self._cache_web_lock = threading.RLock()
         self._carpeta_proyecto = tk.StringVar(
             value=self.config_data.get("carpeta_proyecto", ""))
         self._ruta_tarifa      = None
