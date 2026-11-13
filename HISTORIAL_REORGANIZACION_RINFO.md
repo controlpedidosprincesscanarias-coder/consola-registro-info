@@ -1292,6 +1292,17 @@ Captura de Víctor: «desde las últimas actualizaciones, debo pulsar 2 veces en
 
 ---
 
+## 62. ⚠️ Listas de productos.xlsx con otras columnas vació la Categoría valoración (13 nov 2026) — PR en GitHub
+
+Registro de Víctor del 13 nov 2026 (12:09–12:34, v10.2.56): tras asignar 4 códigos SAP en «Códigos SAP faltantes», descargó los listados de SAP y pulsó «Ya están en RECURSOS». La Acción 3 que se lanzó sola dijo «7466 código(s) con Categoría valoración distinta según el centro» (con nombres de centro como «GUAYARMINA PRINCESS (0110)»), «0 materiales con Categoría valoración desde Listas de productos.xlsx» y «7159 código(s) SAP sin coincidencia», y envió a Catálogo Asignaciones «Datos SAP: 7159 cambiado(s)».
+- **Causa:** `_leer_categoria_valoracion` leía por posición: A = código SAP y F = Categoría valoración. La exportación nueva traía en la A «QUESO BRIE (10100050)» (descripción y código, como SAP exporta los campos con clave) y en la F el centro. Ningún código casó, así que la Acción 3 limpió la columna K del catálogo (como hace siempre antes de rellenar) y la dejó vacía, y el envío a la web mandó esos 7.159 cambios. Ya estaba así antes; salió ahora porque la exportación tenía otras columnas.
+- **Arreglo** (`app/comun/sap_helpers.py`): `leer_listas_productos` busca las columnas por su cabecera («Producto» y «Categoría valoración», sin importar acentos) y saca el código de «DESCRIPCIÓN (código)» (`clave_entre_parentesis`). Sin esas cabeceras usa A y F como siempre, **sin** sacar nada de paréntesis, para no colar el código del centro como categoría. `comprobar_listas_productos` para la Acción 3 (y el cruce de la Acción 8) **antes de escribir** si el listado no casa con Productos.xlsx (menos de la mitad de sus códigos) o no trae ninguna categoría, con un mensaje que dice cómo volver a descargarlo. Los conflictos por centro se resumen en 20 líneas (el registro tenía 7.500).
+- ⚠️ **Datos en producción:** el catálogo local y la web tienen ahora vacía la Categoría valoración de esos 7.159 materiales. **Se recupera** pasando la Acción 3 con la versión que lleva este arreglo y un Listas de productos.xlsx que tenga las columnas «Producto» y «Categoría valoración»: rellena la columna K y la Consola envía a la web solo esas diferencias. Es idempotente (repetirla no cambia nada más). Hasta entonces, no pasar la Acción 3.
+- **Pruebas:** `tests/test_listas_productos.py` (6): formato de siempre, la exportación con «DESCRIPCIÓN (código)» y otras columnas, el archivo sin cabeceras conocidas (se para), vacío (se para), los paréntesis, y que la Acción 3 lanza el error y lo dice en la consola. 205 en total (incluye la sección 61, que va en la misma rama).
+- **Por probar con datos reales:** el Listas de productos.xlsx que se descargó ese día (si sus cabeceras no son «Producto» y «Categoría valoración», la Acción 3 se parará y habrá que ver sus nombres).
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Acción «Asignar SAP pendientes»~~ hecha (sección 55). ~~Regenerar el manual~~ hecho (sección 56).
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
