@@ -103,6 +103,8 @@ class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap,
             self.after(300, self._buscar)
         else:
             self.log_consola("No hay carpeta de proyecto configurada. Seleccione o cree una.", "WARN")
+        # (v10.2.54) Si el proyecto todavía tiene «LISTADO CODIGOS DALI - SAP.xlsx», se pasa una vez al catálogo.
+        threading.Thread(target=self._pasar_listado_al_catalogo, daemon=True, name="PasarListado").start()
 
     # ── HEADER ────────────────────────────────────────────────────────────
     def _build_header(self):

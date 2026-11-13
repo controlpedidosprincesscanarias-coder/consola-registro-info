@@ -14,6 +14,7 @@ from tkinter import messagebox
 import datetime as _dt_mod          # módulo completo — usado en lógica de fechas de baja
 from datetime import datetime
 import openpyxl
+from app.comun.catalogo_local import abrir_como_listado  # v10.2.54: catálogo con forma de LISTADO
 # normalizar_codigo_sap vive en sap_helpers.py (sin tkinter) para que
 # también pueda importarla test_crear_registro_info.py sin arrastrar
 # la UI. Ver ese fichero para la implementación y el porqué.
@@ -208,7 +209,7 @@ class CreadorRINFO:
         self._escribir_correlativos(wb)
 
         # ── 7. Cruzar con LISTADO CODIGOS DALI - SAP y rellenar columnas ─────
-        self._barra("indeterminate", "Cruzando con LISTADO CODIGOS DALI-SAP...")
+        self._barra("indeterminate", "Cruzando con el catálogo DALI-SAP...")
         self._cruzar_con_listado_dali(wb)
 
         # ── 7b. Rellenar Hoja 2 — Datos org.compr.p.reg.info ─────────────────
@@ -453,7 +454,7 @@ class CreadorRINFO:
             return
 
         ws_rinfo = wb[self.HOJA_PRINCIPAL]
-        nombre_listado = "LISTADO CODIGOS DALI - SAP.xlsx"
+        nombre_listado = "catalogo-dali-completo.xlsx"   # v10.2.54 (antes, el LISTADO)
 
         # -- Localizar LISTADO CODIGOS DALI - SAP.xlsx ────────────────────────
         # (antes ~35 líneas propias; consolidado en _localizar_ruta_listado_dali)
@@ -466,15 +467,14 @@ class CreadorRINFO:
             self._aplicar_valores_fijos(ws_rinfo)
             return
 
-        _log(self._parent, f"LISTADO DALI-SAP localizado: {ruta_listado}", "INFO")
+        _log(self._parent, f"Catálogo DALI-SAP localizado: {ruta_listado}", "INFO")
 
         # -- Cargar diccionario codigo_SAP --> (desc, unidad, grp, desc_grp) ──
         # Datos reales desde fila 8 (fila 7 = cabeceras).
         # La clave col D (indice 3) es int en el LISTADO; se normaliza a string.
         diccionario = {}
         try:
-            wb_listado = openpyxl.load_workbook(ruta_listado,
-                                                 read_only=True, data_only=True)
+            wb_listado = abrir_como_listado(ruta_listado)
             ws_listado = wb_listado.active
             for row in ws_listado.iter_rows(min_row=8, values_only=True):
                 if not row or len(row) < 4 or row[3] is None:
@@ -492,7 +492,7 @@ class CreadorRINFO:
                 diccionario[clave] = (desc_sap, unidad, grp, desc_grp)
             wb_listado.close()
             _log(self._parent,
-                 f"LISTADO DALI-SAP cargado: {len(diccionario)} entradas.", "INFO")
+                 f"Catálogo DALI-SAP cargado: {len(diccionario)} entradas.", "INFO")
         except Exception as e:
             _log(self._parent,
                  f"Error al leer '{nombre_listado}': {e}", "ERROR")
@@ -622,7 +622,7 @@ class CreadorRINFO:
         diccionario_h2 = {}
         if ruta_listado:
             try:
-                wb_l  = openpyxl.load_workbook(ruta_listado, read_only=True, data_only=True)
+                wb_l  = abrir_como_listado(ruta_listado)
                 ws_l  = wb_l.active
                 for row in ws_l.iter_rows(min_row=8, values_only=True):
                     if not row or len(row) < 4 or row[3] is None:
@@ -869,8 +869,7 @@ class CreadorRINFO:
         dic_listado = {}   # clave_SAP → unidad_SAP
         if ruta_listado:
             try:
-                wb_l = openpyxl.load_workbook(ruta_listado,
-                                               read_only=True, data_only=True)
+                wb_l = abrir_como_listado(ruta_listado)
                 ws_l = wb_l.active
                 for row in ws_l.iter_rows(min_row=8, values_only=True):
                     if not row or len(row) < 7 or row[3] is None:

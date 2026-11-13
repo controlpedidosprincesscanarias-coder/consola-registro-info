@@ -978,68 +978,34 @@ def _safe_after(widget, fn, delay: int = 0):
 #    5. Mostrar ventana de confirmación.
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _localizar_ruta_listado_dali(carpeta_tarifas, carpeta_proyecto=None, parent=None):
+def _localizar_ruta_catalogo(carpeta_tarifas, carpeta_proyecto=None, parent=None):
     """
-    Localiza el fichero LISTADO CODIGOS DALI - SAP.xlsx: primero por
-    ruta exacta (raíz del proyecto, RECURSOS, TARIFAS) y si no aparece,
-    por patrón de nombre en esas mismas 3 carpetas (cubre variantes de
-    mayúsculas/guiones bajos). Devuelve la ruta encontrada, o None si
-    no existe en ningún sitio. No abre ni carga el fichero.
+    Localiza el catálogo completo (RECURSOS/catalogo-dali-completo.xlsx), que desde v10.2.54 sustituye al
+    «LISTADO CODIGOS DALI - SAP.xlsx» (decisión de Víctor, 13 nov 2026). Busca en RECURSOS del proyecto (por
+    defecto, la carpeta padre de TARIFAS). Devuelve la ruta, o None si no existe. No abre el fichero: se lee con
+    app.comun.catalogo_local.abrir_como_listado, que da las filas con la misma forma que tenía el LISTADO (desde
+    la fila 8, columnas A..O), así que los cruces de RINFO no cambian.
 
-    Función de módulo (no método) porque la usan dos clases distintas
-    sin relación de herencia entre sí: GeneradorDesdeExistente (flujo
-    "desde Purchasing existente") y CreadorRINFO (flujo "crear desde
-    cero"). `parent` es opcional, solo para el log de "encontrado por
-    patrón" (pasar self._parent si se quiere ese log).
-
-    Antes esta misma lógica de localización (~30 líneas) estaba
-    copiada y pegada en _cargar_listado_dali, _cruzar_con_listado_dali,
-    _rellenar_hoja2 y _rellenar_hoja3 — con una inconsistencia real
-    entre copias: solo _cargar_listado_dali NO usaba el fallback de
-    carpeta_proyecto que las otras tres sí usaban. Consolidado aquí
-    con la versión más defensiva.
-
-    NOTA: una primera versión de esta consolidación la dejó como método
-    de GeneradorDesdeExistente, lo que rompió el flujo "crear desde
-    cero" (CreadorRINFO no tiene ese método → AttributeError silencioso
-    en el hilo de fondo → app "colgada" sin error visible). Corregido
-    convirtiéndola en función de módulo independiente de self.
+    Función de módulo (no método) porque la usan dos clases distintas sin relación de herencia entre sí:
+    GeneradorDesdeExistente y CreadorRINFO (una primera versión como método rompió el flujo «crear desde cero»).
     """
+    from app.comun import catalogo_local
     if carpeta_proyecto is None:
         carpeta_proyecto = os.path.dirname(carpeta_tarifas)
-    nombre_listado = "LISTADO CODIGOS DALI - SAP.xlsx"
+    ruta = catalogo_local.localizar_catalogo(carpeta_proyecto, carpeta_tarifas)
+    if ruta is None and parent is not None:
+        _log(parent, "catalogo-dali-completo.xlsx no encontrado en RECURSOS.", "WARN")
+    return ruta
 
-    ruta = os.path.join(carpeta_proyecto, nombre_listado)
-    if not os.path.isfile(ruta):
-        ruta = os.path.join(carpeta_proyecto, FOLDER_RECURSOS, nombre_listado)
-    if not os.path.isfile(ruta):
-        ruta = os.path.join(carpeta_tarifas, nombre_listado)
-    if not os.path.isfile(ruta):
-        _pat = re.compile(r'listado.*codigos.*dali.*sap.*\.xlsx$', re.IGNORECASE)
-        for carpeta_scan in (
-            carpeta_proyecto,
-            os.path.join(carpeta_proyecto, FOLDER_RECURSOS),
-            carpeta_tarifas,
-        ):
-            try:
-                for entry in os.scandir(carpeta_scan):
-                    if entry.is_file() and _pat.match(entry.name):
-                        ruta = entry.path
-                        if parent is not None:
-                            _log(parent,
-                                 f"LISTADO encontrado por patrón: {entry.name}", "INFO")
-                        break
-            except (PermissionError, FileNotFoundError):
-                continue
-            if os.path.isfile(ruta):
-                break
 
-    return ruta if os.path.isfile(ruta) else None
+# Nombre de siempre (lo importan creador_rinfo, generador_existente y crear_registro_info).
+_localizar_ruta_listado_dali = _localizar_ruta_catalogo
+
 
 def _localizar_ruta_productos(carpeta_tarifas, carpeta_proyecto=None, parent=None):
     """
     Localiza el fichero Productos.xlsx (maestro de materiales SAP/MM03),
-    con la misma estrategia que _localizar_ruta_listado_dali: ruta exacta
+    con la misma estrategia que tenía el antiguo localizador del LISTADO: ruta exacta
     en raíz del proyecto, RECURSOS y TARIFAS, y si no aparece, por patrón
     de nombre en esas mismas 3 carpetas. Devuelve la ruta encontrada, o
     None si no existe en ningún sitio.

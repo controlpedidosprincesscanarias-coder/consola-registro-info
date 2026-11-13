@@ -18,6 +18,7 @@ import datetime as _dt_mod          # módulo completo — usado en lógica de f
 from datetime import datetime
 from copy import copy
 import openpyxl
+from app.comun.catalogo_local import abrir_como_listado  # v10.2.54: catálogo con forma de LISTADO
 # normalizar_codigo_sap vive en sap_helpers.py (sin tkinter) para que
 # también pueda importarla test_crear_registro_info.py sin arrastrar
 # la UI. Ver ese fichero para la implementación y el porqué.
@@ -259,13 +260,13 @@ class GeneradorDesdeExistente:
             self._carpeta_tarifas, getattr(self, "_carpeta_proyecto", None), self._parent)
         if ruta is None:
             _log(self._parent,
-                 "LISTADO CODIGOS DALI-SAP no encontrado — "
+                 "catalogo-dali-completo.xlsx no encontrado — "
                  "columnas de cruce quedarán vacías.", "WARN")
             return {}
 
         diccionario = {}
         try:
-            wb_l = openpyxl.load_workbook(ruta, read_only=True, data_only=True)
+            wb_l = abrir_como_listado(ruta)   # catálogo con forma de LISTADO (v10.2.54)
             ws_l = wb_l.active
             for row in ws_l.iter_rows(min_row=8, values_only=True):
                 if not row or len(row) < 4 or row[3] is None:
@@ -287,9 +288,9 @@ class GeneradorDesdeExistente:
                                       ind_imp, grp_comp, desc_grp_c)
             wb_l.close()
             _log(self._parent,
-                 f"LISTADO DALI-SAP cargado: {len(diccionario)} entradas.", "INFO")
+                 f"Catálogo DALI-SAP cargado: {len(diccionario)} entradas.", "INFO")
         except Exception as e:
-            _log(self._parent, f"Error al leer LISTADO: {e}", "ERROR")
+            _log(self._parent, f"Error al leer el catálogo: {e}", "ERROR")
             return diccionario
 
         # ── Fallback a Productos.xlsx para materiales sin cruce DALI ──────
@@ -982,7 +983,7 @@ class GeneradorDesdeExistente:
                  f"({n_igic_marcados_nuevo} heredada(s) marcada(s) como Nueva para SAP).",
                  "OK")
         else:
-            _log(self._parent, "Hoja2 — IGIC: sin discrepancias frente al LISTADO.", "INFO")
+            _log(self._parent, "Hoja2 — IGIC: sin discrepancias frente al catálogo.", "INFO")
 
         if hasattr(self, "_audit"):
             self._audit["n_igic_actualizados"] = n_igic_actualizados
@@ -3821,7 +3822,7 @@ class GeneradorDesdeExistente:
         #   modificar el registro existente, igual que ya hace con teléfono
         #   (10b) y fechas (10b2).
         self._barra("set", "Sincronizando UM en Hoja 1 (cols N/P)...", 88, 100)
-        _log(self._parent, "Sincronizando UM en Hoja 1 (cols N/P) frente al LISTADO...", "INFO")
+        _log(self._parent, "Sincronizando UM en Hoja 1 (cols N/P) frente al catálogo...", "INFO")
         self._sincronizar_um_hoja1(ws, diccionario)
 
         # ── 10c. Replicar formato de última fila existente a las filas nuevas ──
@@ -3846,7 +3847,7 @@ class GeneradorDesdeExistente:
         #   las filas heredadas frente al LISTADO CODIGOS DALI-SAP y marca la
         #   fila como Nueva (Z) cuando corresponda.
         self._barra("set", "Sincronizando UM en Hoja 3 (cols R/S)...", 91, 100)
-        _log(self._parent, "Sincronizando UM en Hoja 3 (cols R/S) frente al LISTADO...", "INFO")
+        _log(self._parent, "Sincronizando UM en Hoja 3 (cols R/S) frente al catálogo...", "INFO")
         self._sincronizar_um_hoja3(wb, diccionario)
 
         # ── 10e. Resumen de validación SAP previo al guardado ────────────────

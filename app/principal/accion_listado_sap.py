@@ -207,7 +207,7 @@ class AccionListadoSap:
 
     def _auditar_sap_duplicados_listado(self, ws):
         """
-        Escanea TODO el LISTADO CODIGOS DALI - SAP.xlsx (no solo lo que
+        Escanea TODO el catálogo (con forma de LISTADO, v10.2.54) (no solo lo que
         se esté tecleando en ese momento) buscando códigos SAP asignados
         a más de un código DALI distinto -- el problema real reportado
         por el usuario no es un DALI concreto, sino que dos DALI
@@ -307,9 +307,12 @@ class AccionListadoSap:
         No devuelve nada -- es el ultimo tramo del try de proceso(),
         nada se usa despues (solo el except que envuelve a proceso()).
         """
-        import openpyxl
+        from app.comun import catalogo_local
         # ── CRUCE Y ESCRITURA EN DESTINO ─────────────────────────────
-        self.log_consola("Abriendo destino: LISTADO CODIGOS DALI - SAP.xlsx", "INFO")
+        # v10.2.54: ya no hay «LISTADO CODIGOS DALI - SAP.xlsx». El cruce de siempre se hace sobre un libro EN
+        # MEMORIA con la misma forma (filas desde la 8, columnas A..O) sacado del catálogo, y al final los datos
+        # SAP se pasan al catálogo por código DALI (regenerándolo). La lógica de abajo no cambia.
+        self.log_consola("Abriendo destino: catalogo-dali-completo.xlsx", "INFO")
         self.after(0, lambda: self._barra.indeterminate("Cruzando y escribiendo..."))
 
         # Pre-normalizar tablas de lookup a uppercase para acceso O(1).
@@ -317,7 +320,7 @@ class AccionListadoSap:
         TABLA_SUBFAMILIA_U = {k.upper(): v for k, v in TABLA_SUBFAMILIA_GRUPO_COMPRAS.items()}
         TABLA_IGIC_U       = {k.upper(): v for k, v in TABLA_IGIC_GRUPO_COMPRAS.items()}
 
-        wb_dest = openpyxl.load_workbook(ruta_destino)
+        wb_dest = catalogo_local.libro_formato_listado(ruta_destino)
         ws_dest = wb_dest.active
 
         # ── LIMPIEZA PREVIA: borrar columnas E:N desde fila 8 hasta la última con datos ──
@@ -473,31 +476,16 @@ class AccionListadoSap:
         # actualizado, buscando cualquier SAP asignado a más de un DALI.
         self._auditar_sap_duplicados_listado(ws_dest)
 
-        self._proteger_hoja_destino(ws_dest, os.path.basename(ruta_destino))
-
-        try:
-            wb_dest.save(ruta_destino)
-            wb_dest.close()
-        except PermissionError:
-            wb_dest.close()
-            self.log_consola(
-                "ERROR: No se pudo guardar — el archivo está abierto en Excel.", "ERROR")
-            self.after(0, lambda: self._barra.reset("Error al guardar"))
-            self.after(0, lambda: messagebox.showerror(
-                "Archivo bloqueado por Excel",
-                "❌  No se pudo guardar el archivo destino:\n\n"
-                "   LISTADO CODIGOS DALI - SAP.xlsx\n\n"
-                "El archivo está abierto en Excel.\n\n"
-                "📋  Cierre el archivo en Excel y vuelva a ejecutar\n"
-                "    la Acción 3."))
-            return
+        # v10.2.54: los datos SAP cruzados pasan al catálogo (por código DALI) al regenerarlo, más abajo.
+        tabla_sap = catalogo_local.tabla_sap_desde_libro(ws_dest)
+        wb_dest.close()
 
         # ── Resumen en consola ────────────────────────────────────────
         # Constante: máximo de entradas detalle a mostrar por categoría.
         # El resto se resume en "… y N más" para evitar miles de repaints.
         _CAP = 30
 
-        self.log_consola(f"Destino guardado: LISTADO CODIGOS DALI - SAP.xlsx", "OK")
+        self.log_consola("Cruce terminado: se guarda en catalogo-dali-completo.xlsx", "OK")
         self.log_consola(f"  └ {act_productos} materiales actualizados desde Productos.xlsx", "OK")
         self.log_consola(f"  └ {act_categoria} materiales con Categoría valoración desde Listas de productos.xlsx", "OK")
         self.log_consola(f"  └ {act_dali} artículos cruzados con ARTICULOS_DALI", "OK")
@@ -598,10 +586,25 @@ class AccionListadoSap:
                 messagebox.showinfo(titulo, "\n".join(lineas))
 
         try:
-            self._regenerar_catalogo_dali_completo()
+            self._regenerar_catalogo_dali_completo(tabla_sap=tabla_sap)
+        except PermissionError:
+            self.log_consola(
+                "ERROR: No se pudo guardar — catalogo-dali-completo.xlsx está abierto en Excel.", "ERROR")
+            self.after(0, lambda: self._barra.reset("Error al guardar"))
+            self.after(0, lambda: messagebox.showerror(
+                "Archivo bloqueado por Excel",
+                "❌  No se pudo guardar:\n\n"
+                "   RECURSOS/catalogo-dali-completo.xlsx\n\n"
+                "El archivo está abierto en Excel.\n\n"
+                "📋  Ciérrelo y vuelva a ejecutar la Acción 3."))
+            return
         except Exception as _e_cat:
             self.log_consola(
-                f"  ⚠  No se pudo regenerar catalogo-dali-completo.xlsx: {_e_cat}", "WARN")
+                f"  ⚠  No se pudo guardar catalogo-dali-completo.xlsx: {_e_cat}", "ERROR")
+            self.after(0, lambda: self._barra.reset("Error al guardar"))
+            self.after(0, lambda err=str(_e_cat): messagebox.showerror(
+                "Error al guardar el catálogo", f"No se pudo guardar el catálogo:\n\n{err}"))
+            return
 
         if conflictos_categoria:
             def _mostrar_conflictos_categoria(conf=conflictos_categoria):
@@ -633,7 +636,7 @@ class AccionListadoSap:
         Origen 1 : RECURSOS/Productos.xlsx           (fecha = última modificación del archivo)
         Origen 2 : RECURSOS/ARTICULOS_DALI.xlsx       (fecha = celda B3, texto "ACTUALIZADO …")
         Origen 3 : RECURSOS/Listas de productos.xlsx
-        Destino  : <raíz proyecto>/LISTADO CODIGOS DALI - SAP.xlsx
+        Destino  : RECURSOS/catalogo-dali-completo.xlsx (v10.2.54; antes, el LISTADO CODIGOS DALI - SAP)
 
         Cruce 1 — col D destino ↔ col B Productos.xlsx:
           C (Descripción producto)              → E  (DESCRIPCION SAP)
@@ -667,7 +670,8 @@ class AccionListadoSap:
         ruta_productos = os.path.join(recursos_path, "Productos.xlsx")
         ruta_dali      = os.path.join(recursos_path, "ARTICULOS_DALI.xlsx")
         ruta_listas    = os.path.join(recursos_path, "Listas de productos.xlsx")
-        ruta_destino   = os.path.join(carpeta, "LISTADO CODIGOS DALI - SAP.xlsx")
+        # v10.2.54: el destino es el catálogo completo (ya no hay LISTADO)
+        ruta_destino   = os.path.join(recursos_path, "catalogo-dali-completo.xlsx")
 
         # ── 1. Verificar archivos de origen ──────────────────────────
         faltantes = []
@@ -747,7 +751,7 @@ class AccionListadoSap:
                 f"      {fecha_dali}\n\n"
                 f"   📄 Listas de productos.xlsx\n\n"
                 "Destino:\n"
-                f"   LISTADO CODIGOS DALI - SAP.xlsx\n\n"
+                f"   RECURSOS/catalogo-dali-completo.xlsx\n\n"
                 "¿Desea continuar?"):
             self.log_consola("Actualización SAP cancelada por el usuario.", "WARN")
             return
@@ -758,8 +762,8 @@ class AccionListadoSap:
                 "Destino no encontrado",
                 "❌  No se encontró el archivo destino:\n\n"
                 f"   {ruta_destino}\n\n"
-                "Verifique que 'LISTADO CODIGOS DALI - SAP.xlsx'\n"
-                "esté en la raíz de la carpeta del proyecto.")
+                "Ejecute primero la Acción 2 (artículos DALI), que crea el catálogo\n"
+                "RECURSOS/catalogo-dali-completo.xlsx.")
             return
 
         # ── 5. Diccionarios de referencia (equivalentes al VBA) ───────

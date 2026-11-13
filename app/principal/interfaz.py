@@ -791,32 +791,6 @@ class InterfazApp:
 
     # ── Acciones ──────────────────────────────────────────────
 
-    def _proteger_hoja_destino(self, ws_dest, nombre_archivo="destino"):
-        """
-        Protege la hoja de 'LISTADO CODIGOS DALI - SAP.xlsx' contra edición,
-        independientemente de si se encontró bloqueada o desbloqueada al
-        abrirla. Se llama justo antes de cada guardado que toca este archivo
-        (Acción 2 y Acción 3), para garantizar que SIEMPRE quede protegida
-        al terminar el proceso.
-
-        Con sheet=True, openpyxl deja por defecto BLOQUEADAS todas las
-        acciones de edición (formatear celdas, insertar/borrar filas y
-        columnas, ordenar, autofiltro, etc.) — es el comportamiento
-        equivalente a "Proteger hoja" en Excel con todas las casillas
-        desmarcadas. Protegida con contraseña ("Princess2026", la misma
-        que se usa siempre para este archivo) — openpyxl la hashea
-        automáticamente al asignarla, no se guarda en texto plano en el
-        propio .xlsx.
-        """
-        try:
-            ws_dest.protection.sheet = True
-            ws_dest.protection.password = "Princess2026"
-            self.log_consola(f"  └ Hoja protegida (edición bloqueada) en {nombre_archivo}", "OK")
-        except Exception as _e_prot:
-            self.log_consola(
-                f"  ⚠  No se pudo proteger la hoja en {nombre_archivo}: {_e_prot}",
-                "WARN")
-
     def _wip(self):
         messagebox.showinfo(
             "En construcci\xf3n",
