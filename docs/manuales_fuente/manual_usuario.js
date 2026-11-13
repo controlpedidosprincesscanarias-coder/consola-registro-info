@@ -121,8 +121,10 @@ s.push(...leyenda([[1, "**Buscar** (código, descripción, proveedor o familia, 
   [2, "Los artículos pendientes. Los que ya tienen código asignado salen en **verde** si el código está en Productos.xlsx y en **naranja** si no."],
   [3, "Elige un artículo, escribe aquí su **código SAP** y pulsa **Intro** (o **Asignar**): se asigna y pasa al siguiente sin código. **Quitar** deshace la asignación del elegido."],
   [4, "Lo que dice **Productos.xlsx** del código que escribes, para que compruebes que es el correcto."],
-  [5, "**Guardar en el catálogo** lo asignado. Las filas guardadas desaparecen y puedes seguir con las demás."]]));
+  [5, "**Guardar en el catálogo** lo asignado. Las filas guardadas desaparecen y puedes seguir con las demás."],
+  [6, "**Código DALI**, **descripción** y **unidad** del artículo elegido, para **pegarlos en SAP al crear el material**: pulsa **📋 Copiar** junto al que necesites (o selecciona el texto). Con el clic derecho sobre la tabla puedes copiar también el proveedor o la fila entera, y Ctrl+C copia la descripción."]]));
 s.push(...pasos(["Pulsa **8 · Asignar SAP pendientes**.",
+  "Si el material aún no existe en SAP, elige el artículo y copia su descripción y su unidad (botones **📋 Copiar**) para pegarlas en SAP al crearlo.",
   "Busca o filtra el artículo, escribe su código SAP y pulsa **Intro**. Repite con los que quieras.",
   "Pulsa **Guardar en el catálogo**. Si un código ya lo tiene otro artículo, te pregunta cuál es el correcto (la misma ventana que en el capítulo 6).",
   "La consola completa sola los datos SAP de esos artículos con Productos.xlsx y Listas de productos.xlsx (como la Acción 3) y envía los cambios a Catálogo Asignaciones (capítulo 8)."]));
