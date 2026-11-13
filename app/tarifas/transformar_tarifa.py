@@ -373,7 +373,10 @@ def _cruzar_con_listado_dali_sap(ws, ruta_xls, ultima, log_fn=None) -> list:
                 _cod_dali   = _row[0]      # col A del listado = CODIGO DALI
                 _cod_sap    = _row[3]      # col D del listado = CODIGO SAP-TEST
                 _desc_sap   = _row[4]      # col E del listado = DESCRIPCION SAP-TEST
-                _unidad_sap = _row[5]      # col F del listado = UNIDAD SAP
+                # col G = UNIDAD SAP. Hasta v10.2.52 se leía la F, que desde la inserción de columnas de
+                # 2026-08 es «Texto UM (expl.)»: la descripción salía «… - Kilogramo» en vez de «… - KG»
+                # (mismo fallo que el de los INC corregido en la sección 496 del historial).
+                _unidad_sap = _row[6] if len(_row) > 6 else None
                 if _cod_dali is None:
                     continue
                 try:
