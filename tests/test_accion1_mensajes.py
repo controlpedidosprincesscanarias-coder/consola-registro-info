@@ -21,7 +21,8 @@ MODULOS = ("app/principal/accion_organizar_dali.py", "app/principal/accion_lista
 class TestMessageboxAccion1(unittest.TestCase):
     def test_messagebox_solo_arriba_del_todo(self):
         for rel in MODULOS:
-            arbol = ast.parse(open(os.path.join(RAIZ, rel), encoding="utf-8").read())
+            with open(os.path.join(RAIZ, rel), encoding="utf-8") as f:
+                arbol = ast.parse(f.read())
             arriba = [n for n in arbol.body if isinstance(n, ast.ImportFrom) and n.module == "tkinter"
                       and any(a.name == "messagebox" for a in n.names)]
             self.assertTrue(arriba, f"{rel}: falta `from tkinter import messagebox` arriba del todo")

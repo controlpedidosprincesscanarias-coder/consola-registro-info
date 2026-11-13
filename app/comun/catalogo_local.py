@@ -319,7 +319,7 @@ def migrar_listado(carpeta_proyecto, ahora=None):
                 f.write(f"{dali:<12} | {campo:<18} | {str(v_lst or ''):<40} | {v_cat or ''}\n")
             if solo_listado:
                 f.write("\nCódigos DALI con código SAP en el LISTADO que no están en el catálogo "
-                        "(no se han pasado; se darán de alta con la Acción 2 si siguen en DALI):\n")
+                        "(no se han pasado; se darán de alta con la Acción 1 si siguen en DALI):\n")
                 f.write(", ".join(solo_listado) + "\n")
 
     if diferencias:

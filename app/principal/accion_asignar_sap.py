@@ -37,7 +37,7 @@ class AccionAsignarSap:
             messagebox.showwarning(
                 "Catálogo no encontrado",
                 "No se encontró RECURSOS/catalogo-dali-completo.xlsx.\n\n"
-                "Ejecute la Acción 2 (o descárguelo de Catálogo Asignaciones) y vuelva a intentarlo.")
+                "Ejecute la Acción 1 (o descárguelo de Catálogo Asignaciones) y vuelva a intentarlo.")
             return
         self._pasar_listado_al_catalogo()
         self.consola.separador("ASIGNAR SAP PENDIENTES")

@@ -741,7 +741,8 @@ class AccionListadoSap:
                 "Destino no encontrado",
                 "❌  No se encontró el archivo destino:\n\n"
                 f"   {ruta_destino}\n\n"
-                "Ejecute primero la Acción 2 (artículos DALI), que crea el catálogo\n"
+                "Ejecute primero la Acción 1 (artículos DALI) y pulse «Actualizar\n"
+                "Catálogo Asignaciones» al final: así se crea el catálogo\n"
                 "RECURSOS/catalogo-dali-completo.xlsx.")
             return
 

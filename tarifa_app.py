@@ -44,7 +44,7 @@ from app.principal.catalogo_dali import DALI_APP_API_BASE  # noqa: F401
 
 
 # (nov 2026, etapa 4) Los métodos de App están repartidos por temas en app/principal/ (mixins):
-# interfaz, Acción 1 (organizar DALI), Acción 2 (listado DALI), Acción 3 (listado SAP), catálogo
+# interfaz, Acción 1 (organizar DALI), paso de ARTICULOS_DALI al catálogo (antes Acción 2), Acción 3 (listado SAP), catálogo
 # DALI y Acciones 4/6 (tarifa). Aquí quedan __init__, la cabecera y el pie (usan APP_VERSION).
 class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap, CatalogoDali, AccionesTarifa,
           PublicarCatalogoWeb, AccionAsignarSap, tk.Tk):

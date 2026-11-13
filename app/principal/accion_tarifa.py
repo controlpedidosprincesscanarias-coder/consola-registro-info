@@ -965,7 +965,7 @@ class AccionesTarifa:
                 "Catálogo no encontrado",
                 "❌  No se encontró el archivo\n"
                 "   RECURSOS/catalogo-dali-completo.xlsx\n\n"
-                "Ejecute la Acción 2 (o descárguelo de Catálogo Asignaciones)\n"
+                "Ejecute la Acción 1 (o descárguelo de Catálogo Asignaciones)\n"
                 "y vuelva a intentarlo."))
             return None, None
 

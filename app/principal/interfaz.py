@@ -223,14 +223,11 @@ class InterfazApp:
         frm_acc = tk.Frame(pad, bg=C_SIDEBAR)
         frm_acc.pack(fill="x", pady=(3, 0))
 
+        # (13 nov 2026, petición de Víctor) La Acción 1 termina actualizando el catálogo y Catálogo Asignaciones
+        # (ventana_volcado_dali.py): ya no hay botón 2. Los demás conservan su número.
         self._boton_accion(
-            frm_acc, "1", "Organizar artículos DALI - Generar ARTICULOS_DALI", "📋",
+            frm_acc, "1", "Organizar artículos DALI y actualizar Catálogo Asignaciones", "📋",
             self._organizar_dali, strip_color="#2E8B57"
-        ).pack(fill="x", pady=(0, 2))
-
-        self._boton_accion(
-            frm_acc, "2", "Actualizar listado artículos DALI", "🔄",
-            self._actualizar_listado_dali, strip_color="#1A9B7C"
         ).pack(fill="x", pady=(0, 2))
 
         self._boton_accion(
