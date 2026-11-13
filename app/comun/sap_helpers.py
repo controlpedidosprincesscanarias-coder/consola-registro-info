@@ -322,3 +322,36 @@ def debe_cerrar_fin_validez(fecha_i, fecha_j, hoy, fecha_cierre):
     empieza_a_tiempo = fecha_i is None or fecha_i <= fecha_cierre
     return bool(vigente and empieza_a_tiempo)
 
+
+
+def leer_productos_xlsx(ruta_productos):
+    """
+    Lee Productos.xlsx (maestro de materiales de SAP) y devuelve (tabla_productos, filas_prod):
+    {codigo_sap_str: (desc_prod, texto_um, unidad_base, grp_prod, desc_grp, tipo_producto)}.
+    Clave = col B; C descripción, D tipo de producto, F grupo, G descripción del grupo, I unidad base y
+    J texto UM (expl.). Datos desde la fila 2. Movido sin cambios desde AccionListadoSap._leer_productos_sap
+    (v10.2.56) para usarlo también en «Asignar SAP pendientes».
+    """
+    import openpyxl
+    wb_prod = openpyxl.load_workbook(ruta_productos, read_only=True, data_only=True)
+    ws_prod = wb_prod.active
+    tabla_productos = {}
+    filas_prod = 0
+    for fila in ws_prod.iter_rows(min_row=2, values_only=True):
+        if all(v is None for v in fila):
+            continue
+        clave = fila[1] if len(fila) > 1 else None
+        if clave is None or str(clave).strip() == "":
+            continue
+        clave = str(clave).strip()
+        tipo_producto = fila[3] if len(fila) > 3 else None   # D
+        desc_prod     = fila[2] if len(fila) > 2 else None   # C
+        grp_prod      = fila[5] if len(fila) > 5 else None   # F
+        desc_grp      = fila[6] if len(fila) > 6 else None   # G
+        unidad_base   = fila[8] if len(fila) > 8 else None   # I
+        texto_um      = fila[9] if len(fila) > 9 else None   # J
+        tabla_productos[clave] = (desc_prod, texto_um, unidad_base,
+                                   grp_prod, desc_grp, tipo_producto)
+        filas_prod += 1
+    wb_prod.close()
+    return tabla_productos, filas_prod

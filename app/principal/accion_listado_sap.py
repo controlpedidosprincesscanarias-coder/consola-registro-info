@@ -20,6 +20,7 @@ from app.comun.tarifa_constants import (
 from app.comun.tarifa_core import (
     FOLDER_RECURSOS,
 )
+from app.comun.sap_helpers import leer_productos_xlsx
 from app.ui.tarifa_dialogs import (
     VentanaResolverSAPDuplicados,
 )
@@ -51,33 +52,11 @@ class AccionListadoSap:
         deduplica pero el recuento de filas real debe conservarse tal cual
         -- se usa más adelante en la celda H5 y en el resumen final.
         """
-        import openpyxl
         # ── LECTURA 1: Productos.xlsx ─────────────────────────────────
         # Clave cruce: col B (índice 1) → Código producto SAP
         self.log_consola("Leyendo Productos.xlsx...", "INFO")
-        wb_prod = openpyxl.load_workbook(ruta_productos, read_only=True, data_only=True)
-        ws_prod = wb_prod.active
-
-        tabla_productos = {}
-        filas_prod = 0
-        for fila in ws_prod.iter_rows(min_row=2, values_only=True):
-            if all(v is None for v in fila):
-                continue
-            clave = fila[1] if len(fila) > 1 else None
-            if clave is None or str(clave).strip() == "":
-                continue
-            clave = str(clave).strip()
-            tipo_producto = fila[3] if len(fila) > 3 else None   # D
-            desc_prod     = fila[2] if len(fila) > 2 else None   # C
-            grp_prod      = fila[5] if len(fila) > 5 else None   # F
-            desc_grp      = fila[6] if len(fila) > 6 else None   # G
-            unidad_base   = fila[8] if len(fila) > 8 else None   # I
-            texto_um      = fila[9] if len(fila) > 9 else None   # J
-            tabla_productos[clave] = (desc_prod, texto_um, unidad_base,
-                                       grp_prod, desc_grp, tipo_producto)
-            filas_prod += 1
-
-        wb_prod.close()
+        # (v10.2.56) La lectura está en sap_helpers.leer_productos_xlsx (sin cambios), para compartirla.
+        tabla_productos, filas_prod = leer_productos_xlsx(ruta_productos)
         self.log_consola(f"  └ {filas_prod} productos cargados (Productos.xlsx)", "OK")
 
         if filas_prod == 0:
