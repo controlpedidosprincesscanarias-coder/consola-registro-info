@@ -1282,6 +1282,16 @@ Peticiones de Víctor del 13 nov 2026:
 
 ---
 
+## 61. Acción 6: «Abrir en Excel» a la primera (13 nov 2026) — PR en GitHub
+
+Captura de Víctor: «desde las últimas actualizaciones, debo pulsar 2 veces en abrir para que se abra». La consola registraba las dos pulsaciones («Acción 6 — Abriendo en Excel» dos veces), así que el clic llegaba y el archivo se mandaba abrir las dos veces.
+- **Causa probable:** la ventana de la Acción 6 es modal (`grab_set`) y Windows no deja que un programa recién abierto le quite el primer plano. Excel se abría **detrás** de la Consola y la segunda pulsación solo lo traía delante (con el archivo ya abierto, Excel se activa). No se ha podido reproducir sin Windows.
+- **Arreglo:** `abrir_con_su_programa(ruta)` (`app/comun/tarifa_core.py`) llama antes a `AllowSetForegroundWindow(ASFW_ANY)` para que Excel pueda ponerse delante; fuera de Windows, `xdg-open`. En la Acción 6, tras abrir el archivo, la ventana suelta el modo modal y se cierra (lo siguiente se hace en Excel), y la consola dice «Edítalo en Excel, guárdalo y ciérralo; después, Acción 4». «Abrir resultado» (Acción 5) usa la misma función.
+- **Pruebas:** `tests/test_abrir_con_su_programa.py` (3): el permiso va antes de abrir, fuera de Windows no falla, y en la ventana de la Acción 6 un solo clic abre el archivo una vez y cierra la ventana. 199 en total.
+- **Por probar en Windows:** que Excel salga delante a la primera, en la Acción 6 y en la Acción 5.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Acción «Asignar SAP pendientes»~~ hecha (sección 55). ~~Regenerar el manual~~ hecho (sección 56).
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:

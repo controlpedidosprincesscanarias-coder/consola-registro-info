@@ -18,6 +18,7 @@ import threading
 from app.comun.tarifa_core import (
     TARIFA_NAME,
     FOLDER_TARIFAS,
+    abrir_con_su_programa,
 )
 from app.ui.tarifa_dialogs import (
     VentanaSAPFaltantes,
@@ -156,14 +157,20 @@ class AccionesTarifa:
             self.log_consola(
                 f"Acción 6 — Abriendo en Excel: {os.path.basename(ruta)}", "INFO")
             try:
-                os.startfile(ruta)
-            except AttributeError:
-                import subprocess
-                subprocess.Popen(["xdg-open", ruta])
+                abrir_con_su_programa(ruta)
             except Exception as _e:
                 messagebox.showerror("Error al abrir",
                                      f"No se pudo abrir el archivo:\n{_e}",
                                      parent=top)
+                return
+            # (13 nov 2026) Lo siguiente se hace en Excel: se suelta el modo modal y se cierra esta ventana, para que
+            # Excel quede delante a la primera (antes había que pulsar dos veces).
+            self.log_consola("   └ Edítalo en Excel, guárdalo y ciérralo; después, Acción 4.", "INFO")
+            try:
+                top.grab_release()
+            except tk.TclError:
+                pass
+            top.after(200, top.destroy)
 
         def _cerrar(_evt=None):
             top.destroy()
