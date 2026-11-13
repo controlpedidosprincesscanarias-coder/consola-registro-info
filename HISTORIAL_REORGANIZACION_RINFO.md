@@ -1314,6 +1314,16 @@ Registro de Víctor de las 12:59–13:03 (v10.2.58) y sus archivos (catálogo, P
 
 ---
 
+## 64. Calendario en «Fechas de validez del Registro Info» (13 nov 2026) — PR en GitHub
+
+Petición de Víctor (con captura): «establecer calendario para no tener que escribir las fechas manualmente con su desplegable; la norma de pegado de las fechas en formato no debe cambiar para el RINFO».
+- Botón 📅 junto a «Inicio» y «Fin» en `VentanaFechasRINFO` (`app/rinfo/ventanas_rinfo.py`). Abre `app/comun/selector_fecha.py`: calendario propio (sin dependencias nuevas, solo tkinter y `calendar`), en el mes de la fecha que haya en la casilla, con desplegables de mes y año, ◀ ▶, «Hoy» y semanas de lunes a domingo.
+- Al pulsar un día se escribe en la casilla como **dd.mm.aaaa**, el formato de siempre: la validación (`_parsear_fecha`) y lo que se pega en la hoja 3 del RINFO no cambian. La casilla se sigue pudiendo escribir a mano.
+- **Pruebas:** `tests/test_selector_fecha.py` (3): formato y lectura, semanas que empiezan en lunes, y en la ventana real, elegir en el calendario y confirmar devuelve `("01.10.2026", "31.03.2027")`. 213 en total.
+- **Por probar en Windows:** el aspecto del calendario y el icono 📅.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Acción «Asignar SAP pendientes»~~ hecha (sección 55). ~~Regenerar el manual~~ hecho (sección 56).
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
