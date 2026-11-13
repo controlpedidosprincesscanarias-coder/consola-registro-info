@@ -134,6 +134,20 @@ class VentanaActualizacion(tk.Toplevel):
         try:
             act.sustituir_exe(nuevo, ruta_exe)
             act.lanzar(ruta_exe)
+        except act.ExeEnUso:
+            # Unidad de red: no deja renombrar el .exe abierto ([WinError 32]). Se termina al cerrar.
+            try:
+                act.sustituir_al_cerrar(nuevo, ruta_exe)
+            except Exception as e:  # noqa: BLE001
+                self._fallo(f"No se pudo preparar la actualización al cerrar: {e}")
+                return
+            self._log(f"Actualización a v {self._info['version']}: la carpeta del programa no deja cambiarlo "
+                      "mientras está abierto (unidad de red). La Consola se cierra, se actualiza y se vuelve "
+                      "a abrir sola en unos segundos.", "OK")
+            self._poner_estado("Cerrando para terminar de actualizar: la Consola se volverá a abrir sola "
+                               "en unos segundos.")
+            self.after(2500, lambda: (self._app.destroy(), os._exit(0)))
+            return
         except Exception as e:  # noqa: BLE001
             self._fallo(str(e))
             return

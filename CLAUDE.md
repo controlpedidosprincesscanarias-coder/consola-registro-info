@@ -26,6 +26,7 @@ App de escritorio para Windows (Python + Tkinter) de la Central de Compras: prep
   1. Al arrancar, en segundo plano y sin iniciar sesión, se consulta `releases/latest`. Los borradores no salen ahí, así que una versión no llega a nadie hasta que se pulsa «Publish release».
   2. Si hay una más nueva, se avisa con las novedades. «Actualizar ahora» descarga `TARIFA_Finder.exe` a la **misma carpeta** (`.nuevo.exe`) y comprueba el SHA-256 con el `.sha256` publicado: sin `.sha256` o con hash distinto no se instala.
   3. Después renombra el `.exe` en uso a `.anterior.exe`, coloca el nuevo, lo abre con el entorno de PyInstaller limpio (`entorno_limpio`) y cierra el viejo.
+     En una unidad de red (G:) Windows no deja renombrar el `.exe` abierto ([WinError 32], 13 nov 2026): `sustituir_exe` lanza `ExeEnUso` sin tocar nada y `sustituir_al_cerrar` lanza oculto un `.cmd` de `%TEMP%` que espera a que se cierre la Consola, mueve `.nuevo.exe` sobre el `.exe`, lo abre y se borra solo (espera con `ping`, no con `timeout`, que sin consola no espera).
   4. Al arrancar, la versión nueva borra el `.anterior.exe` y lo dice en la consola. Si aún está en uso, lo reintenta cada 10 s, hasta 6 veces.
 
   Un 404 (ninguna Release publicada) no es un error. Desde el código (`python tarifa_app.py`) nunca se actualiza. **El repositorio tiene que seguir siendo público** y no se borran ni se renombran Releases, igual que en el Organizador.

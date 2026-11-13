@@ -12,6 +12,10 @@ Cómo funciona (cada compañero tiene su propia copia del .exe en su PC):
      («<nombre>.nuevo.exe»), se comprueba su SHA-256 con el .sha256 publicado (si no coincide, se
      borra y no se toca nada) y se sustituye: el .exe en uso se renombra a «<nombre>.anterior.exe»
      (Windows deja renombrar un .exe abierto), el nuevo ocupa su sitio, se abre y se cierra el viejo.
+     En una unidad de red Windows NO deja renombrarlo abierto ([WinError 32], visto el 13 nov 2026 al
+     pasar de la 10.2.50 a la 10.2.54): entonces `sustituir_exe` lanza ExeEnUso sin haber tocado nada y
+     `sustituir_al_cerrar` deja un pequeño .cmd en %TEMP% que espera a que se cierre la Consola, pone
+     el nuevo en su sitio, la vuelve a abrir y se borra solo.
   4. En el arranque siguiente se borran los restos (.anterior.exe / .nuevo.exe).
 tarifa_config.json (carpeta del proyecto y contraseña cifrada) está junto al .exe y no se toca.
 Solo se actualiza el .exe compilado; ejecutando «python tarifa_app.py» nunca.
@@ -21,6 +25,7 @@ Víctor Alejandro Martín Andrade (VAMA).
 """
 import hashlib
 import json
+import ntpath
 import os
 import re
 import ssl
@@ -195,9 +200,15 @@ def descargar_y_verificar(info, ruta_exe, progreso=None, abrir=_abrir):
     return nuevo
 
 
+class ExeEnUso(RuntimeError):
+    """No se pudo renombrar el .exe en uso (pasa en las unidades de red). No se ha tocado nada:
+    se puede terminar con sustituir_al_cerrar()."""
+
+
 def sustituir_exe(ruta_nuevo, ruta_exe):
     """Pone el .exe nuevo en el sitio del actual (renombrando el actual a «.anterior.exe»).
-    Si falla a mitad, deja el actual como estaba y lanza RuntimeError."""
+    Si no se puede renombrar el actual, lanza ExeEnUso; si falla después, deja el actual como estaba
+    y lanza RuntimeError."""
     _, anterior = rutas(ruta_exe)
     try:
         if os.path.exists(anterior):
@@ -207,7 +218,7 @@ def sustituir_exe(ruta_nuevo, ruta_exe):
     try:
         os.replace(ruta_exe, anterior)
     except OSError as e:
-        raise RuntimeError(f"No se pudo renombrar el programa actual: {e}")
+        raise ExeEnUso(f"No se pudo renombrar el programa actual: {e}")
     try:
         os.replace(ruta_nuevo, ruta_exe)
     except OSError as e:
@@ -216,6 +227,69 @@ def sustituir_exe(ruta_nuevo, ruta_exe):
         except OSError:
             pass
         raise RuntimeError(f"No se pudo colocar la versión nueva: {e}")
+
+
+def _cmd(texto):
+    """Ruta para un .cmd entre comillas: «%» se escribe «%%» (si no, cmd lo tomaría por una variable)."""
+    return str(texto).replace("%", "%%")
+
+
+def script_sustituir_al_cerrar(ruta_nuevo, ruta_exe, pid, espera_max=90, intentos=60):
+    """Texto del .cmd que termina la actualización cuando el .exe no se puede renombrar abierto.
+
+    1. Espera (hasta `espera_max` s) a que termine el proceso `pid` (la Consola actual).
+    2. Mueve «.nuevo.exe» sobre el .exe, reintentando cada segundo hasta `intentos` veces (en el .exe de
+       PyInstaller de un solo archivo, el proceso que lo arrancó lo suelta un instante después).
+    3. Abre el .exe (el nuevo o, si no se pudo mover, el de siempre, para no dejar a nadie sin Consola).
+    4. Se borra a sí mismo.
+    Para esperar usa «ping» y no «timeout»: sin consola, «timeout» falla al momento y el bucle no esperaría."""
+    carpeta = ntpath.dirname(ruta_exe)       # el .cmd solo se usa en Windows
+    lineas = [
+        "@echo off",
+        "chcp 65001 >nul",
+        "setlocal",
+        f'set "NUEVO={_cmd(ruta_nuevo)}"',
+        f'set "EXE={_cmd(ruta_exe)}"',
+        "set /a N=0",
+        ":esperar",
+        f'tasklist /FI "PID eq {int(pid)}" /NH 2>nul | find " {int(pid)} " >nul',
+        "if errorlevel 1 goto mover",
+        "set /a N+=1",
+        f"if %N% geq {int(espera_max)} goto mover",
+        "ping -n 2 127.0.0.1 >nul",
+        "goto esperar",
+        ":mover",
+        "set /a M=0",
+        ":reintentar",
+        'move /y "%NUEVO%" "%EXE%" >nul 2>&1',
+        "if not errorlevel 1 goto abrir",
+        "set /a M+=1",
+        f"if %M% geq {int(intentos)} goto abrir",
+        "ping -n 2 127.0.0.1 >nul",
+        "goto reintentar",
+        ":abrir",
+        f'start "" /d "{_cmd(carpeta)}" "%EXE%"',
+        '(goto) 2>nul & del "%~f0"',
+        "",
+    ]
+    return "\r\n".join(lineas)
+
+
+def sustituir_al_cerrar(ruta_nuevo, ruta_exe, pid=None, carpeta_temp=None, popen=None):
+    """Deja el .cmd de script_sustituir_al_cerrar en %TEMP% y lo lanza oculto, sin esperar. Quien llama
+    debe cerrar la Consola justo después. Devuelve la ruta del .cmd."""
+    import tempfile
+    pid = os.getpid() if pid is None else pid
+    carpeta_temp = carpeta_temp or tempfile.gettempdir()
+    script = os.path.join(carpeta_temp, f"actualizar_consola_{pid}.cmd")
+    with open(script, "w", encoding="utf-8", newline="") as f:
+        f.write(script_sustituir_al_cerrar(ruta_nuevo, ruta_exe, pid))
+    flags = 0
+    if sys.platform.startswith("win"):
+        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+    (popen or subprocess.Popen)(["cmd.exe", "/c", script], cwd=carpeta_temp, close_fds=True,
+                                creationflags=flags, env=entorno_limpio())
+    return script
 
 
 def entorno_limpio(entorno=None):

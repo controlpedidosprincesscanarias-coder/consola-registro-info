@@ -1258,6 +1258,17 @@ Víctor dio el visto bueno a dos cosas que ofrecí al repasar los pendientes:
 
 ---
 
+## 59. La actualización automática falla si el `.exe` está en una unidad de red (13 nov 2026) — PR en GitHub
+
+Captura de Víctor al actualizar de la 10.2.50 a la 10.2.54: «Actualización no completada: No se pudo renombrar el programa actual: [WinError 32] El proceso no tiene acceso al archivo porque está siendo utilizado por otro proceso: 'G:\\…\\CODIGO\\TARIFA_Finder.exe' -> '…TARIFA_Finder.anterior.exe'».
+- **Causa:** la actualización (sección 48) renombra el `.exe` abierto a `.anterior.exe`. En un disco local Windows lo deja; en una carpeta compartida de red (G:), no. Ya estaba así desde la sección 48: las pruebas en Windows (sección 50) se hicieron con el `.exe` en disco local.
+- **Arreglo** (`app/comun/actualizaciones.py`): si ese renombrado falla, `sustituir_exe` lanza `ExeEnUso` (hija de `RuntimeError`) sin haber tocado nada, y `sustituir_al_cerrar` deja en `%TEMP%` un `actualizar_consola_<pid>.cmd` y lo lanza oculto. El script espera a que termine la Consola (hasta 90 s), mueve `.nuevo.exe` sobre el `.exe` (hasta 60 reintentos, uno por segundo: el proceso de arranque de PyInstaller lo suelta un instante después), abre el `.exe` (el nuevo o, si no se pudo mover, el de siempre) y se borra solo. Espera con `ping` y no con `timeout`, que sin consola falla al momento. La ventana (`app/ui/ventana_actualizacion.py`) lo explica y cierra la Consola, que se vuelve a abrir sola. En disco local todo sigue igual.
+- **Pruebas** (`tests/test_actualizaciones.py`, 3 nuevas, 189 en total): renombrado con WinError 32 → `ExeEnUso` y el `.exe` intacto; texto del `.cmd` (rutas con espacios, tilde y `%`, espera al PID, sin `timeout`, sin bucles sin fin, se borra solo); y que se lanza oculto con el entorno de PyInstaller limpio.
+- **Para la 10.2.54 que ya ha fallado:** esa versión ya tiene el fallo, así que la primera vez hay que terminar a mano (cerrar la Consola; en `CODIGO`, renombrar `TARIFA_Finder.exe` a `TARIFA_Finder.anterior.exe` y `TARIFA_Finder.nuevo.exe` a `TARIFA_Finder.exe`; abrirla). A partir de la versión que lleve este arreglo, las siguientes se instalan solas también en G:.
+- **Por probar en Windows:** actualizar con el `.exe` en G: (de la versión con el arreglo a la siguiente).
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Acción «Asignar SAP pendientes»~~ hecha (sección 55). ~~Regenerar el manual~~ hecho (sección 56).
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
