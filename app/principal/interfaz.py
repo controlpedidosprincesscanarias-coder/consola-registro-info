@@ -258,6 +258,12 @@ class InterfazApp:
         self._boton_accion(
             frm_acc, "7", "Generar Listado Tarifa Proveedor Vacia", "📄",
             self._wip, strip_color="#5A4A7A", wip=True
+        ).pack(fill="x", pady=(0, 2))
+
+        # (v10.2.56) Acción 8: todos los códigos DALI activos sin SAP, para asignarlos (accion_asignar_sap.py)
+        self._boton_accion(
+            frm_acc, "8", "Asignar SAP pendientes (DALI activos sin SAP)", "🧩",
+            self._asignar_sap_pendientes, strip_color="#1A6B5A"
         ).pack(fill="x", pady=(0, 0))
 
     # ── CONSOLA + ACCESOS RÁPIDOS ─────────────────────────────────────────
