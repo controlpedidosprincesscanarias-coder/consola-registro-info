@@ -277,6 +277,7 @@ def pasos(app):
     from app.comun.tarifa_core import listar_xls
     from app.ui import ventana_login, ventana_publicar_catalogo
     from app.ui.ventana_asignar_sap import VentanaAsignarSap
+    from app.ui.ventana_listados_sap import VentanaListadosSap
     from app.comun import asignar_sap
     tarifa = os.path.join(TARIFAS, "SUMINISTROS DEMO SL [11-11-2026].xlsx")
     win_tarifas = RUTA_WIN + "\\TARIFAS"
@@ -310,6 +311,7 @@ def pasos(app):
                     (de_clase(v, "Text"), 4, "ir"), (boton(v, "Actualizar la web"), 5, "t"), (boton(v, "Ahora no"), 6, "t")]),
         ("c_asignar_sap", lambda: VentanaAsignarSap(app, asignar_sap.pendientes(CATALOGO), PRODUCTOS_DEMO, lambda n, r: None),
          marcas_asignar_sap),
+        ("c_listados_sap", lambda: VentanaListadosSap(app, ["10509099"], RECURSOS), marcas_listados_sap),
         ("c_rinfo_tarifa", lambda: cri.VentanaSeleccionTarifa(app, cri._listar_tarifas_validas(TARIFAS), TARIFAS), lambda v: [(de_clase(v, "Treeview"), 1, "ir"), (boton(v, "Continuar"), 2, "t")]),
         ("c_rinfo_purchasing", lambda: cri.VentanaPurchasingEncontrado(app, tarifa, os.path.basename(tarifa), "SUMINISTROS DEMO SL",
                                                                       "SUMINISTROS DEMO SL", "1009999",
@@ -367,18 +369,35 @@ SIMS_DEMO = {"accion4": {"irregulares": [{"codigo_dali": 10003, "tipo": "codigo_
 
 def marcas_asignar_sap(v):
     B = buscar
-    v._tabla.selection_set("10011"); v._al_elegir(); v._var_sap.set("10509011"); v._asignar()
-    v._var_sap.set("10509099"); v._asignar()
-    v.update()                                   # que la tabla termine de elegir la fila siguiente
-    v._var_sap.set("10509012")                   # código a medio confirmar: se ve lo que dice Productos.xlsx
+    filas = v._filas_visibles()
+    cab = lambda col: v._rejilla.grid_slaves(row=0, column=col)[0]   # noqa: E731  (cabecera de la columna)
+    v._vars[filas[0]].set("10509011")            # en Productos.xlsx
+    v._vars[filas[1]].set("10509099")            # no está en Productos.xlsx: se avisa, pero se guarda
+    v._vars[filas[2]].set("10509012")
+    v._celdas_sap[filas[3]].focus_set()
     v.update()
     return [
         (caja_de(v, [B(v, "Buscar"), B(v, "Quitar filtros")]), 1, "tr"),
-        (de_clase(v, "Treeview"), 2, "ir"),
-        (v._ent_sap, 3, "ir"),
-        (v._lbl_productos, 4, "r"),
+        (caja_de(v, [cab(0), cab(4)]), 2, "ir"),
+        (caja_de(v, [cab(5)] + [v._celdas_sap[d] for d in filas[:4]]), 3, "b"),
+        (caja_de(v, [cab(6)] + [v._estados[d] for d in filas[:3]]), 4, "b"),
         (v._btn_guardar, 5, "in"),
-        (caja_de(v, [B(v, "Código DALI", "Label"), B(v, "Copiar", "Button", n=2)]), 6, "r"),
+    ]
+
+
+def marcas_listados_sap(v):
+    B = buscar
+    for w in widgets(v):                          # la ruta de ejemplo, como se ve en Windows
+        if w.winfo_class() == "Label" and texto(w).strip() == RECURSOS:
+            w.configure(text="   " + RUTA_WIN + "\\RECURSOS")
+    v.update()
+    return [
+        (B(v, "Has asignado"), 1, "ir"),
+        (B(v, "1.  En SAP"), 2, "r"),
+        (B(v, "2.  Pulsa"), 3, "l"),
+        (B(v, "3.  Nombre de fichero"), 4, "l"),
+        (B(v, "Ya están en RECURSOS", "Button"), 5, "ir"),
+        (B(v, "Más tarde", "Button"), 6, "ir"),
     ]
 
 

@@ -69,7 +69,7 @@ class AccionAsignarSap:
         ven = VentanaAsignarSap(self, lista, productos,
                                 lambda nuevos, resolver: self._guardar_sap_asignados(ruta_cat, lista, productos,
                                                                                      nuevos, resolver),
-                                consola_fn=self.log_consola)
+                                consola_fn=self.log_consola, listados_fn=self._avisar_listados_sap)
         self.wait_window(ven)
         self.log_consola(f"  └ Asignar SAP pendientes: {ven.guardados} código(s) guardados en esta sesión.", "OK")
 

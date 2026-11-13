@@ -1,7 +1,7 @@
 // Manual de usuario de la Consola Registro Info SAP (TARIFA Finder).
 // La idea y el desarrollo de la aplicación, incluidas sus pruebas, son de Víctor Alejandro Martín Andrade,
 // para el Departamento de Central de Compras de Princess Hotels en Canarias.
-const V = process.env.VERSION || "v 10.2.52";
+const V = process.env.VERSION || "v 10.2.56";
 const L = require("./lib.js");
 const { p, vineta, pasos, h1, h2, imagen, leyenda, recuadro, tabla, flujo, portada, indice, generar } = L;
 const fecha = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
@@ -14,7 +14,7 @@ s.push(...indice([
   ["2. Ponerla en marcha", "Dónde se guarda, inicio de sesión y actualizaciones"],
   ["3. La ventana principal", "Panel de acciones, consola, consulta del manual y accesos rápidos"],
   ["4. Preparar el proyecto", "Carpetas TARIFAS y RECURSOS y qué archivos van en cada una"],
-  ["5. El catálogo DALI / SAP (Acciones 1, 2, 3 y 8)", "ARTICULOS_DALI, catálogo completo y códigos SAP pendientes"],
+  ["5. El catálogo DALI / SAP (Acciones 1, 2, 3 y 8)", "ARTICULOS_DALI, catálogo completo, códigos SAP pendientes y listados de SAP"],
   ["6. Generar la TARIFA (Acciones 4, 5 y 6)", "De la tarifa del proveedor a la TARIFA final; códigos SAP faltantes y duplicados"],
   ["7. Crear el Registro Info (RINFO)", "Con un Purchasing Info Records existente o desde cero, y cargarlo en SAP"],
   ["8. Cambios en Catálogo Asignaciones", "Qué se envía a la web y cómo revisarlo antes"],
@@ -88,8 +88,8 @@ s.push(h2("Qué archivos van en cada carpeta"));
 s.push(...tabla(["Archivo", "Carpeta", "De dónde sale"], [
   ["ARTICULOS1.xls y ARTICULOS2.xls", "RECURSOS", "Exportados de DALI (los usa la Acción 1 y luego se borran)"],
   ["ARTICULOS_DALI.xlsx", "RECURSOS", "Lo genera la Acción 1"],
-  ["Productos.xlsx", "RECURSOS", "Exportado de SAP (lista de materiales, transacción ME3N o ME2M)"],
-  ["Listas de productos.xlsx", "RECURSOS", "Exportado de SAP (categoría de valoración por centro)"],
+  ["Productos.xlsx", "RECURSOS", "Exportado de SAP, aplicación «Gestionar datos maestros de producto» (capítulo 5, «Descargar los listados de SAP»)"],
+  ["Listas de productos.xlsx", "RECURSOS", "Exportado de SAP, aplicación «Lista de productos» (categoría de valoración por centro)"],
   ["Proveedores.xlsx", "RECURSOS", "Proveedores de SAP con su código (para el Registro Info)"],
   ["catalogo-dali-completo.xlsx", "RECURSOS", "El catálogo de artículos DALI / SAP. Lo mantienen las Acciones 2, 3 y 8 y la ventana de códigos SAP faltantes (se puede descargar de Catálogo Asignaciones)"],
   ["Tarifa del proveedor (.xls)", "TARIFAS", "La que envía el proveedor"],
@@ -112,25 +112,32 @@ s.push(h2("Acción 2 — Actualizar listado artículos DALI"));
 s.push(p("Pasa al catálogo los datos de DALI de **ARTICULOS_DALI.xlsx** (descripción, unidad, familia, proveedor asignado, activo…), código a código. Los artículos nuevos de DALI se añaden. El **código SAP**, el **código de proveedor** y el **precio** de cada artículo se conservan; si un artículo cambia de proveedor asignado, su código de proveedor y su precio se vacían y la consola lo avisa como «CASO IRREGULAR»."));
 s.push(h2("Acción 3 — Actualizar listado materiales SAP"));
 s.push(p("Lee **Productos.xlsx** y **Listas de productos.xlsx** de RECURSOS y vuelve a rellenar los datos SAP del catálogo (descripción, unidad, grupo de productos, categoría de valoración, IGIC, grupo de compras…) de cada artículo que tenga código SAP. Si un material tiene categorías distintas según el centro, toma la más frecuente y lo dice en la consola. Si un mismo código SAP está en dos artículos, te pregunta cuál es el correcto."));
-s.push(h2("Descargar el catálogo de Catálogo Asignaciones"));
-s.push(p("Antes de las Acciones 2 y 3, y al cerrar una TARIFA, la consola puede preguntarte si quieres **descargar** antes el catálogo actualizado desde la web (por si otros compañeros han cambiado algo). Usa la sesión con la que entraste. Si en tu PC hay códigos SAP que todavía no se han enviado a la web, se conservan."));
+s.push(...recuadro("nota", "Ya no pregunta si descargar el catálogo", ["Hasta la versión 10.2.54, antes de las Acciones 2 y 3 y al cerrar una TARIFA la consola preguntaba si el catálogo «puede estar desactualizado» y ofrecía descargarlo de la web. Ya no hace falta: la consola trabaja directamente con Catálogo Asignaciones, envía solo lo cambiado y no pisa lo que otros compañeros hayan editado en la web (capítulo 8)."]));
 s.push(h2("Acción 8 — Asignar SAP pendientes"));
-s.push(p("Abre la lista de **todos los artículos DALI activos que no tienen código SAP**, para que vayas escribiendo sus códigos en el orden que quieras."));
+s.push(p("Abre la tabla de **todos los artículos DALI activos que no tienen código SAP**, igual que la de «Códigos SAP faltantes» de la Acción 4: escribes el código SAP de cada uno en su fila, en el orden que quieras."));
 s.push(...imagen("c_asignar_sap", 17, "Asignar SAP pendientes (datos de ejemplo)."));
-s.push(...leyenda([[1, "**Buscar** (código, descripción, proveedor o familia, sin importar mayúsculas ni acentos) y filtros por **Proveedor** y **Familia**. **Quitar filtros** vuelve a la lista completa."],
-  [2, "Los artículos pendientes. Los que ya tienen código asignado salen en **verde** si el código está en Productos.xlsx y en **naranja** si no."],
-  [3, "Elige un artículo, escribe aquí su **código SAP** y pulsa **Intro** (o **Asignar**): se asigna y pasa al siguiente sin código. **Quitar** deshace la asignación del elegido."],
-  [4, "Lo que dice **Productos.xlsx** del código que escribes, para que compruebes que es el correcto."],
-  [5, "**Guardar en el catálogo** lo asignado. Las filas guardadas desaparecen y puedes seguir con las demás."],
-  [6, "**Código DALI**, **descripción** y **unidad** del artículo elegido, para **pegarlos en SAP al crear el material**: pulsa **📋 Copiar** junto al que necesites (o selecciona el texto). Con el clic derecho sobre la tabla puedes copiar también el proveedor o la fila entera, y Ctrl+C copia la descripción."]]));
+s.push(...leyenda([[1, "**Buscar** (código, descripción, proveedor o familia, sin importar mayúsculas ni acentos) y filtros por **Proveedor** y **Familia**. **Quitar filtros** vuelve a la lista completa. Lo que hayas escrito no se pierde al filtrar."],
+  [2, "**Código DALI**, **descripción**, **formato**, proveedor y familia de cada artículo. Se pueden **seleccionar y copiar** para pegarlos en SAP al crear el material: Ctrl+C copia la celda, y con el **clic derecho** copias el código, la descripción, el formato, el proveedor o la fila entera."],
+  [3, "**CÓDIGO SAP (introducir)**: escribe el código y pulsa **Intro** (o la flecha abajo) para pasar a la fila siguiente. Deja en blanco los que no quieras asignar ahora."],
+  [4, "Lo que dice **Productos.xlsx** del código: en **verde** si está (con su descripción y unidad), en **naranja** si no está o si lo has escrito en dos artículos, y en **rojo** si no es un código válido."],
+  [5, "**Guardar en el catálogo** lo escrito. Las filas guardadas desaparecen y puedes seguir con las demás."]]));
 s.push(...pasos(["Pulsa **8 · Asignar SAP pendientes**.",
-  "Si el material aún no existe en SAP, elige el artículo y copia su descripción y su unidad (botones **📋 Copiar**) para pegarlas en SAP al crearlo.",
-  "Busca o filtra el artículo, escribe su código SAP y pulsa **Intro**. Repite con los que quieras.",
+  "Si el material aún no existe en SAP, copia su descripción y su formato (clic derecho → Copiar) para pegarlos en SAP al crearlo.",
+  "Busca o filtra los artículos y escribe sus códigos SAP en la columna **CÓDIGO SAP (introducir)**.",
   "Pulsa **Guardar en el catálogo**. Si un código ya lo tiene otro artículo, te pregunta cuál es el correcto (la misma ventana que en el capítulo 6).",
-  "La consola completa sola los datos SAP de esos artículos con Productos.xlsx y Listas de productos.xlsx (como la Acción 3) y envía los cambios a Catálogo Asignaciones (capítulo 8)."]));
-s.push(...recuadro("importante", "Si un código no está en Productos.xlsx", ["Se guarda igualmente (sale en naranja). Para completar sus datos SAP:",
-  "1) descarga de SAP **Productos.xlsx** y **Listas de productos.xlsx** actualizados; 2) guárdalos en **RECURSOS**; 3) pulsa de nuevo la **Acción 3**."]));
+  "La consola completa sola los datos SAP de los que están en Productos.xlsx (como la Acción 3) y envía los cambios a Catálogo Asignaciones (capítulo 8). Si alguno **no está en Productos.xlsx**, te guía para descargar los listados de SAP (apartado siguiente)."]));
 s.push(...recuadro("consejo", "Sin prisa", ["No hace falta completarlos todos de una vez: guarda cuando quieras y cierra. La próxima vez solo saldrán los que sigan sin código. Si cierras con códigos sin guardar, la consola te pregunta."]));
+
+s.push(h2("Descargar los listados de SAP (Productos y Listas de productos)"));
+s.push(p("Cuando guardas códigos SAP (Acción 8 o «Códigos SAP faltantes» de la Acción 4) de materiales que **todavía no están en Productos.xlsx** —normalmente, materiales recién creados en SAP—, los códigos se envían ya a Catálogo Asignaciones, pero sus **datos SAP** (descripción, unidad, grupos y categoría de valoración) solo llegan con los listados descargados de SAP **después** de crearlos. Por eso la consola abre esta ventana:"));
+s.push(...imagen("c_listados_sap", 16, "Faltan los listados de SAP actualizados (datos de ejemplo)."));
+s.push(...leyenda([[1, "Los códigos que no están en Productos.xlsx."],
+  [2, "La aplicación de SAP de cada listado: **Productos.xlsx** se descarga en **«Gestionar datos maestros de producto»** y **Listas de productos.xlsx** en **«Lista de productos»**."],
+  [3, "Pulsa **Ir** para cargar la tabla y, a la derecha de su barra, el botón **⌄** de exportar (el último, «Abrir menú») → **Exportar como…**."],
+  [4, "Deja el **nombre de fichero** que se indica («Productos» o «Listas de productos») y el formato **Microsoft Excel** (*.xlsx), y pulsa **Exportar**. Guarda los dos archivos en **RECURSOS**, sustituyendo a los anteriores (con **📂 Abrir RECURSOS** se abre la carpeta). Debajo se ve si cada archivo ya se ha descargado de nuevo."],
+  [5, "**Ya están en RECURSOS: actualizar ahora**: la consola lanza sola la **Acción 3**, que completa los datos SAP en el catálogo y en la web."],
+  [6, "**Más tarde**: la consola avisa de que la web queda **parcialmente actualizada** (tiene los códigos SAP, pero no sus datos SAP) hasta que descargues los listados y pulses la Acción 3."]]));
+s.push(...recuadro("importante", "Exportar como Excel", ["Exporta siempre con «Exportar como…» y el formato **Microsoft Excel** (*.xlsx), y con el nombre exacto: **Productos** y **Listas de productos**. Con otro nombre o formato, la consola no los encuentra."]));
 
 // ── 6 ──────────────────────────────────────────────────────────────────────
 s.push(h1("6. Generar la TARIFA (Acciones 4, 5 y 6)"));
@@ -142,7 +149,7 @@ s.push(...pasos(["Deja la tarifa del proveedor (el **.xls** que envía) en **TAR
 s.push(...imagen("c_seleccion_xls", 11, "Elegir la tarifa del proveedor."));
 s.push(...leyenda([[1, "Los **.xls** que hay en TARIFAS."], [2, "**Usar este archivo**: lo renombra a TARIFA.xls y sigue."]]));
 s.push(h2("Códigos SAP faltantes"));
-s.push(p("Si algún código DALI de la tarifa no tiene SAP en el catálogo, se abre esta ventana para escribirlo. Lo que guardes se escribe a la vez en el catálogo y en la tarifa, y se envía a Catálogo Asignaciones. Para los artículos sin SAP que no son de esta tarifa, usa la **Acción 8** (capítulo 5)."));
+s.push(p("Si algún código DALI de la tarifa no tiene SAP en el catálogo, se abre esta ventana para escribirlo. Lo que guardes se escribe a la vez en el catálogo y en la tarifa, y se envía a Catálogo Asignaciones. Si algún código no está todavía en Productos.xlsx, después te guía para descargar los listados de SAP (capítulo 5). Para los artículos sin SAP que no son de esta tarifa, usa la **Acción 8** (capítulo 5)."));
 s.push(...imagen("c_sap_faltantes", 16, "Códigos DALI sin SAP asignado (datos de ejemplo)."));
 s.push(...leyenda([[1, "Código DALI, descripción y formato de cada artículo sin SAP."], [2, "Escribe aquí su **código SAP**. Deja en blanco los que no quieras completar ahora."], [3, "**Guardar en el catálogo**."]]));
 s.push(h2("Códigos SAP duplicados"));
@@ -222,13 +229,16 @@ s.push(h2("Actualizaciones"));
 s.push(...imagen("c_actualizacion", 11, "Aviso de versión nueva (ejemplo)."));
 s.push(...leyenda([[1, "Las **novedades** de la versión nueva."], [2, "**Actualizar ahora**: descarga, comprueba que es la versión oficial (SHA-256), sustituye el programa y se vuelve a abrir solo."], [3, "**Más tarde**: te lo volverá a ofrecer la próxima vez que la abras."]]));
 s.push(...recuadro("nota", "Qué pasa con la versión anterior", ["Al abrirse la versión nueva, borra sola la anterior (TARIFA_Finder.anterior.exe) y lo dice en la consola: «Versión anterior borrada». Tu carpeta del proyecto, tu contraseña guardada y tu copia del catálogo de la web no se tocan."]));
+s.push(...recuadro("nota", "Si tienes la consola en una carpeta de red", ["En una carpeta compartida (por ejemplo, en G:) Windows no deja cambiar el programa mientras está abierto. Desde la versión 10.2.56, la consola se cierra, termina de actualizarse sola y **se vuelve a abrir en unos segundos**. Si la actualización desde una versión anterior se quedó a medias («No se pudo renombrar el programa actual… [WinError 32]»): cierra la consola, cambia el nombre de **TARIFA_Finder.exe** a TARIFA_Finder.anterior.exe y el de **TARIFA_Finder.nuevo.exe** a TARIFA_Finder.exe, y ábrela."]));
 
 // ── 10 ─────────────────────────────────────────────────────────────────────
 s.push(h1("10. Consulta rápida y problemas frecuentes"));
 s.push(...tabla(["Si ves…", "Qué significa", "Qué hacer"], [
   ["«TARIFA.xls NO ENCONTRADA»", "No hay ninguna tarifa .xls en TARIFAS", "Copia el .xls del proveedor en TARIFAS y pulsa Buscar"],
   ["La tarifa sale como [INCOMPLETO]", "Faltan códigos SAP o hay duplicados", "Completa los SAP (ventana que se abre) o usa la Acción 6, y repite la Acción 4"],
-  ["«DALI sin DESCRIPCION/UNIDAD SAP»", "El material tiene código SAP pero el catálogo no tiene sus datos de SAP", "Exporta Productos.xlsx de SAP a RECURSOS y pasa la Acción 3"],
+  ["«DALI sin DESCRIPCION/UNIDAD SAP»", "El material tiene código SAP pero el catálogo no tiene sus datos de SAP", "Descarga de SAP Productos.xlsx y Listas de productos.xlsx a RECURSOS (capítulo 5) y pasa la Acción 3"],
+  ["Ventana «Faltan los listados de SAP actualizados»", "Has guardado códigos SAP que aún no están en Productos.xlsx", "Descarga los dos listados de SAP a RECURSOS y pulsa «Ya están en RECURSOS» (capítulo 5)"],
+  ["«La web queda PARCIALMENTE actualizada»", "Dejaste los listados de SAP para más tarde", "Cuando los descargues a RECURSOS, pulsa la Acción 3"],
   ["Artículos DALI activos sin código SAP", "Aún no tienen material SAP asignado", "Asígnalos con la Acción 8"],
   ["«CASO IRREGULAR»", "El DALI tiene asignado otro proveedor en DALI", "Revisa en DALI el proveedor asignado de esos códigos"],
   ["«No se encontró Purchasing Info Records compatible»", "En TARIFAS no hay un Purchasing de ese proveedor", "Descárgalo de SAP (7 pasos) o crea el RINFO desde cero"],

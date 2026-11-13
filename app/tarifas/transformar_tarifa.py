@@ -425,14 +425,18 @@ def _cruzar_con_listado_dali_sap(ws, ruta_xls, ultima, log_fn=None) -> list:
             _log(log_fn,
                  "     La columna D conserva la descripción original de TARIFA.xls para esos artículos.",
                  "WARN")
+            # (13 nov 2026) Pasos correctos, de Víctor: ya no la transacción ME3N
             _log(log_fn,
-                 "     → Actualiza el archivo Productos en la carpeta RECURSOS:", "WARN")
+                 "     → Actualiza Productos.xlsx y Listas de productos.xlsx en la carpeta RECURSOS:", "WARN")
             _log(log_fn,
-                 "       1. En SAP: transacción ME3N (o ME2M) → ejecutar → exportar lista de materiales.", "WARN")
+                 "       1. En SAP: «Gestionar datos maestros de producto» (Productos) y «Lista de productos»"
+                 " (Listas de productos).", "WARN")
             _log(log_fn,
-                 "       2. Guardar el fichero descargado como  Productos.xlsx  dentro de  RECURSOS/", "WARN")
+                 "       2. «Ir», botón ⌄ de exportar (el último de la derecha) → «Exportar como…» → Excel (*.xlsx).",
+                 "WARN")
             _log(log_fn,
-                 "       3. Volver a ejecutar Acción 4 (Procesar y generar TARIFA).", "WARN")
+                 "       3. Guardar los dos archivos en RECURSOS/, pulsar la Acción 3 y volver a ejecutar la"
+                 " Acción 4.", "WARN")
     else:
         _log(log_fn, "  └ Mapa vacío — revisa los mensajes [DIAG] anteriores.", "WARN")
 

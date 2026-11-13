@@ -93,7 +93,10 @@ def main():
     # «Consultar el manual» (se regeneran con docs/manuales_fuente/generar.sh).
     ASSETS_NECESARIOS = ("logo.png", "logo.ico", "logo_dali_articulos.png", "logo_sap.png",
                          "marcar_borrado_sap.png", "Manual_Usuario_ConsolaRegistroInfo.pdf",
-                         "manual_indice.json")
+                         "manual_indice.json",
+                         # (13 nov 2026) guía «Faltan los listados de SAP actualizados» (compilacion/generar_guia_sap.py)
+                         "guia_sap_apps.png", "guia_sap_barra.png", "guia_sap_exportar_productos.png",
+                         "guia_sap_exportar_listas.png")
 
     # ── Verificación de archivos obligatorios ────────────
     for f in [script_main] + modulos:

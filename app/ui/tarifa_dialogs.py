@@ -412,6 +412,7 @@ class VentanaSAPFaltantes(tk.Toplevel):
         self._entradas     = {}               # {fila_xlsx: (cod_dali, tk.StringVar)}
         self._descripciones = descripciones or {}
         self._escritos_en_tarifa = 0          # cuántos SAP se volcaron al xlsx tarifa
+        self._nuevos_sap = {}                 # {dali: sap} guardados en el catálogo
 
         self._build_ui()
         self._centrar(parent)
@@ -749,6 +750,7 @@ class VentanaSAPFaltantes(tk.Toplevel):
                     wb.close()
                     _soltar()
                 self._guardado = True
+                self._nuevos_sap = dict(nuevos)   # (13 nov 2026) para el aviso de los listados de SAP
                 self._log(f"  └ Catálogo guardado: {escritos} SAP escritos.", "OK")
 
                 # ── Enviar a Catálogo Asignaciones los DALI cuyo SAP ha cambiado
@@ -797,11 +799,6 @@ class VentanaSAPFaltantes(tk.Toplevel):
                     if nf:
                         msg += f"\n\n⚠  {len(nf)} código(s) DALI no encontrados en el catálogo:\n"
                         msg += ", ".join(str(d) for d in nf)
-                    if not et and not self._ruta_tarifa:
-                        msg += ("\n\n📋  Recuerda:\n"
-                                "  1. Actualiza el archivo Productos en RECURSOS.\n"
-                                "  2. Ejecuta de nuevo Acción 3 (Actualizar materiales SAP).\n"
-                                "  3. Ejecuta de nuevo Acción 4 (Procesar y generar TARIFA).")
                     messagebox.showinfo("Guardado correctamente", msg)
                     self.destroy()
 
@@ -851,5 +848,10 @@ class VentanaSAPFaltantes(tk.Toplevel):
     @property
     def escritos_en_tarifa(self):
         return self._escritos_en_tarifa
+
+    @property
+    def nuevos_sap(self):
+        """{dali: sap} guardados en el catálogo (para App._avisar_listados_sap)."""
+        return dict(self._nuevos_sap)
 
 

@@ -37,10 +37,6 @@ class AccionListadoDali:
                                    "Seleccione primero la carpeta del Proyecto.")
             return
 
-        if not self._confirmar_catalogo_actualizado():
-            self.log_consola(
-                "Actualización DALI cancelada por el usuario (catálogo desactualizado).", "WARN")
-            return
 
         # ── Rutas ────────────────────────────────────────────────
         ruta_origen   = os.path.join(carpeta, FOLDER_RECURSOS, "ARTICULOS_DALI.xlsx")
