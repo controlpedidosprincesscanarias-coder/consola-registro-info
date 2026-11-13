@@ -335,7 +335,7 @@ class VentanaResolverSAPDuplicados(tk.Toplevel):
             for cod_dali, es_existente, fila, desc in candidatos:
                 var = tk.BooleanVar(value=False)
                 self._checks[(cod_sap, cod_dali)] = var
-                origen = (f"ya en el listado, fila {fila}" if es_existente
+                origen = (f"ya en el catálogo, fila {fila}" if es_existente
                           else "recién introducido en este lote")
                 texto = f"Borrar de DALI {int(cod_dali):06d}"
                 if desc:

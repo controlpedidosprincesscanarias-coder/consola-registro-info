@@ -233,7 +233,7 @@ class AccionListadoSap:
 
         self.log_consola(
             f"  ⚠ {len(conflictos)} código(s) SAP duplicados detectados en "
-            f"el LISTADO completo -- pidiendo resolución al usuario...",
+            f"el catálogo completo -- pidiendo resolución al usuario...",
             "WARN")
 
         def _mostrar():
@@ -245,7 +245,7 @@ class AccionListadoSap:
 
         if not a_borrar:
             self.log_consola(
-                "  ⚠ Auditoría de duplicados del LISTADO cancelada o sin "
+                "  ⚠ Auditoría de duplicados del catálogo cancelada o sin "
                 "cambios -- quedan sin resolver.", "WARN")
             return 0
 
@@ -257,7 +257,7 @@ class AccionListadoSap:
                     limpiados += 1
         self.log_consola(
             f"  ✔ {limpiados} código(s) SAP duplicados limpiados del "
-            f"LISTADO.", "OK")
+            f"catálogo.", "OK")
         return limpiados
 
     def _cruzar_y_escribir_listado_sap(self, ruta_destino, tabla_productos,

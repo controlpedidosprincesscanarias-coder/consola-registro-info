@@ -1071,7 +1071,7 @@ class GeneradorDesdeExistente:
                         n_ah_borrado_fail += 1
                         _log(self._parent,
                              f"  H2 fila {fila_num} [material {clave_mat_borrado}, borrado]: "
-                             f"AH vacía y sin match en LISTADO DALI-SAP — no se pudo "
+                             f"AH vacía y sin match en el catálogo DALI-SAP — no se pudo "
                              f"completar el indicador de impuestos.", "WARN")
 
         n_normalizadas = n_af_normalizadas + n_aj_normalizadas + n_ah_borrado_ok
@@ -1080,7 +1080,7 @@ class GeneradorDesdeExistente:
                  f"Hoja2 — Normalización obligatorios: {n_af_normalizadas} AF, "
                  f"{n_aj_normalizadas} AJ, {n_ah_borrado_ok} AH (borrado) "
                  f"rellenada(s)"
-                 f"{f' | {n_ah_borrado_fail} AH (borrado) sin match en LISTADO' if n_ah_borrado_fail else ''}.",
+                 f"{f' | {n_ah_borrado_fail} AH (borrado) sin match en el catálogo' if n_ah_borrado_fail else ''}.",
                  "WARN")
         else:
             _log(self._parent,
@@ -1352,7 +1352,7 @@ class GeneradorDesdeExistente:
              + f", K={n_filas_h3_existentes + 1}–{n_filas_h3_existentes + _n_escritas_h3}"
              f" (consecutivo global desde 1, entero),"
              f" I={self._fecha_inicio} / J={self._fecha_fin},"
-             f" {matches_listado} cruces LISTADO (R/S),"
+             f" {matches_listado} cruces con el catálogo (R/S),"
              f" {matches_tarifa} cruces tarifa (O).", "OK")
 
         return siguiente_fila_h3
@@ -1525,7 +1525,7 @@ class GeneradorDesdeExistente:
             _log(self._parent,
                  f"  ⚠ {len(z_perdidos)} material(es) con el cambio de fecha/PRECIO "
                  f"SIN REGISTRAR en SAP: la unidad de medida de su condición "
-                 f"difiere de la del LISTADO y, al corregirla en la misma fila, "
+                 f"difiere de la del catálogo y, al corregirla en la misma fila, "
                  f"se ha quitado la marca Nueva para que la carga no falle -- SAP "
                  f"ignora una modificación de validez/precio sin esa marca, así "
                  f"que SU PRECIO NUEVO NO ESTARÁ VIGENTE tras cargar este RINFO. "

@@ -641,10 +641,10 @@ class CreadorRINFO:
                     diccionario_h2[clave] = (desc_sap, grp_prod, ind_imp, grp_comp, desc_grp_c)
                 wb_l.close()
                 _log(self._parent,
-                     f"LISTADO para Hoja2 cargado: {len(diccionario_h2)} entradas.", "INFO")
+                     f"Catálogo para Hoja2 cargado: {len(diccionario_h2)} entradas.", "INFO")
             except Exception as e:
                 _log(self._parent,
-                     f"Error al leer LISTADO para Hoja2: {e} — columnas de cruce vacías.", "WARN")
+                     f"Error al leer el catálogo para Hoja2: {e} — columnas de cruce vacías.", "WARN")
         else:
             _log(self._parent,
                  "LISTADO no encontrado — Hoja2 sin datos de cruce (H, I, K, L, AH).", "WARN")
@@ -750,7 +750,7 @@ class CreadorRINFO:
         _log(self._parent,
              f"Hoja2 rellenada: {len(filas_expandidas)} filas "
              f"({len(filas_h1)} artículos × {NUM_BLOQUES} bloques) — "
-             f"centros: {codigos_str} — {matches} cruces LISTADO.", "OK")
+             f"centros: {codigos_str} — {matches} cruces con el catálogo.", "OK")
 
     # ── Paso 7c: Relleno completo de Hoja 3 ──────────────────────────────────
     def _renumerar_col_k_h3(self, wb) -> None:
@@ -884,10 +884,10 @@ class CreadorRINFO:
                     dic_listado[clave] = unidad
                 wb_l.close()
                 _log(self._parent,
-                     f"LISTADO para Hoja3 cargado: {len(dic_listado)} entradas.", "INFO")
+                     f"Catálogo para Hoja3 cargado: {len(dic_listado)} entradas.", "INFO")
             except Exception as exc:
                 _log(self._parent,
-                     f"Error al leer LISTADO para Hoja3: {exc} — cols R/S vacías.", "WARN")
+                     f"Error al leer el catálogo para Hoja3: {exc} — cols R/S vacías.", "WARN")
         else:
             _log(self._parent,
                  "LISTADO no encontrado — Hoja3 sin cruce R/S (UNIDAD SAP).", "WARN")
@@ -1030,7 +1030,7 @@ class CreadorRINFO:
              f"Hoja3 rellenada: {_n_h3_escritas} fila(s)"
              + (f" ({saltadas_dup_h3_cr} omitida(s) por duplicado funcional)" if saltadas_dup_h3_cr else "")
              + f", I={self._fecha_inicio} / J={self._fecha_fin},"
-             f" {matches_listado} cruces LISTADO (R/S),"
+             f" {matches_listado} cruces con el catálogo (R/S),"
              f" {matches_tarifa} cruces tarifa (O).", "OK")
 
     def _aplicar_valores_fijos(self, ws_rinfo) -> None:

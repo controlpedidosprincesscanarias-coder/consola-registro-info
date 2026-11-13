@@ -418,7 +418,7 @@ def _cruzar_con_listado_dali_sap(ws, ruta_xls, ultima, log_fn=None) -> list:
         # ── Aviso cuando algún SAP no tiene descripción ni unidad en el listado
         if _sin_desc_und:
             _log(log_fn,
-                 f"  ⚠  {len(_sin_desc_und)} código(s) DALI sin DESCRIPCION/UNIDAD SAP en el listado: "
+                 f"  ⚠  {len(_sin_desc_und)} código(s) DALI sin DESCRIPCION/UNIDAD SAP en el catálogo: "
                  + ", ".join(str(d) for d in _sin_desc_und[:10])
                  + (" ..." if len(_sin_desc_und) > 10 else ""),
                  "WARN")
