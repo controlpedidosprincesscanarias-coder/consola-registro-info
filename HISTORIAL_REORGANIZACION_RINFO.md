@@ -1324,6 +1324,17 @@ Petición de Víctor (con captura): «establecer calendario para no tener que es
 
 ---
 
+## 65. Fechas de validez del Registro Info según el periodo de la tarifa (13 nov 2026) — PR en GitHub
+
+Registro de Víctor de las 13:53–13:58 (v10.2.60): la tarifa de PRO A PRO dice «4º TRIMESTRE 2026», pero el Registro Info se creó con `inicio=01.01.2026 fin=31.12.2026`, que es justo lo que la ventana proponía por defecto (año en curso). Resultado en el RINFO: «absorción TOTAL» de periodos anteriores, 430 periodos cerrados y 530 vigencias recortadas (las que llegaban al 31.03.2027). Propuesta aceptada por Víctor («sí, perfecto»):
+- **Fechas propuestas** (`app/comun/fechas_tarifa.py`, sin tkinter): del periodo de la tarifa (celda C3, «Periodo:», la escribe la Acción 4): trimestres («4º TRIMESTRE 2026», «T4», «4T», «IV TRIMESTRE»), semestres, meses o rangos de meses («OCT-DIC 2026», «Octubre 2026 - Marzo 2027», también cruzando de año), dos fechas («01/10/2026 - 31/03/2027») o el año suelto. Si no se entiende, las últimas fechas usadas en este PC (`%LOCALAPPDATA%\ConsolaRegistroInfo\ultimas_fechas_rinfo.json`); si no hay, el año en curso, como antes. La ventana dice de dónde salen.
+- **Aviso al confirmar:** si las fechas no coinciden con el periodo de la tarifa, o si el inicio es anterior a hoy y la tarifa no indica periodo, se pide confirmación con el motivo; «No» deja corregirlas. Si coinciden con la tarifa no pregunta nada (aunque el inicio sea anterior a hoy: es la retroactividad de la propia tarifa).
+- El formato que se pega en el RINFO (dd.mm.aaaa) no cambia. `VentanaFechasRINFO(parent, on_confirm, periodo="")`: los dos sitios que la abren (`crear_registro_info.py`) le pasan el periodo de la tarifa elegida.
+- **Pruebas:** `tests/test_fechas_tarifa.py` (6): periodos de ejemplo, propuesta, avisos del caso del registro, últimas fechas, lectura de C3 y la ventana real (propone 01.10.2026 – 31.12.2026, pregunta si se cambia a 01.01.2026 y no pregunta con las del periodo). 219 en total.
+- ⚠️ **El RINFO de PRO A PRO del 13 nov (13:58)** se generó con 01.01.2026 – 31.12.2026: no importarlo en SAP si esas no eran las fechas buenas; volver a crearlo.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Acción «Asignar SAP pendientes»~~ hecha (sección 55). ~~Regenerar el manual~~ hecho (sección 56).
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
