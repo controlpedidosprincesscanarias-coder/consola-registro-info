@@ -349,7 +349,7 @@ class ClienteCatalogo:
         return self._peticion("POST", "/admin/catalogo/lote", cuerpo)
 
 
-# ── Acceso a la Consola (v10.2.52) ───────────────────────────────────────────────────────────────────
+# ── Acceso a la Consola (v10.2.50) ───────────────────────────────────────────────────────────────────
 # Decisión de Víctor (13 nov 2026): solo entra en la Consola quien inicia sesión en Catálogo Asignaciones con una
 # cuenta activa (la web ya no deja entrar a las inactivas), de administrador y con el permiso «Escribir desde la
 # Consola Registro Info» (el administrador principal los tiene todos, como en la web). No se anota nada.

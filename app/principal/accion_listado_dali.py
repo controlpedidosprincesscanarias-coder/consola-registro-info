@@ -8,7 +8,7 @@ en la etapa 4 (nov 2026) sin cambiar el código.
 Central Compras Princess Canarias · La idea y el desarrollo de la aplicación son de
 Víctor Alejandro Martín Andrade (VAMA).
 
-v10.2.54 (decisión de Víctor, 13 nov 2026): ya no existe «LISTADO CODIGOS DALI - SAP.xlsx». Antes esta acción
+v10.2.50 (decisión de Víctor, 13 nov 2026): ya no existe «LISTADO CODIGOS DALI - SAP.xlsx». Antes esta acción
 copiaba código, descripción, unidad y activo de ARTICULOS_DALI.xlsx al LISTADO POR POSICIÓN DE FILA (fila 8+n),
 dejando el código SAP de la columna D en su fila: si DALI quitaba o intercalaba un código, los SAP de debajo
 quedaban emparejados con el artículo de al lado. Ahora regenera directamente el catálogo completo, emparejando

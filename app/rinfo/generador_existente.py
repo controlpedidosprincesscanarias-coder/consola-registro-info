@@ -18,7 +18,7 @@ import datetime as _dt_mod          # módulo completo — usado en lógica de f
 from datetime import datetime
 from copy import copy
 import openpyxl
-from app.comun.catalogo_local import abrir_como_listado  # v10.2.54: catálogo con forma de LISTADO
+from app.comun.catalogo_local import abrir_como_listado  # v10.2.50: catálogo con forma de LISTADO
 # normalizar_codigo_sap vive en sap_helpers.py (sin tkinter) para que
 # también pueda importarla test_crear_registro_info.py sin arrastrar
 # la UI. Ver ese fichero para la implementación y el porqué.
@@ -266,7 +266,7 @@ class GeneradorDesdeExistente:
 
         diccionario = {}
         try:
-            wb_l = abrir_como_listado(ruta)   # catálogo con forma de LISTADO (v10.2.54)
+            wb_l = abrir_como_listado(ruta)   # catálogo con forma de LISTADO (v10.2.50)
             ws_l = wb_l.active
             for row in ws_l.iter_rows(min_row=8, values_only=True):
                 if not row or len(row) < 4 or row[3] is None:

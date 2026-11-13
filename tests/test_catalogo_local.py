@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Pruebas de app/comun/catalogo_local.py (v10.2.54): el catálogo completo como único archivo de artículos, con la
+"""Pruebas de app/comun/catalogo_local.py (v10.2.50): el catálogo completo como único archivo de artículos, con la
 forma del antiguo LISTADO para quien lo leía, escritura de códigos SAP por código DALI y el paso único del LISTADO
 al catálogo. Con archivos inventados en una carpeta temporal.
 

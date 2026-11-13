@@ -980,7 +980,7 @@ def _safe_after(widget, fn, delay: int = 0):
 
 def _localizar_ruta_catalogo(carpeta_tarifas, carpeta_proyecto=None, parent=None):
     """
-    Localiza el catálogo completo (RECURSOS/catalogo-dali-completo.xlsx), que desde v10.2.54 sustituye al
+    Localiza el catálogo completo (RECURSOS/catalogo-dali-completo.xlsx), que desde v10.2.50 sustituye al
     «LISTADO CODIGOS DALI - SAP.xlsx» (decisión de Víctor, 13 nov 2026). Busca en RECURSOS del proyecto (por
     defecto, la carpeta padre de TARIFAS). Devuelve la ruta, o None si no existe. No abre el fichero: se lee con
     app.comun.catalogo_local.abrir_como_listado, que da las filas con la misma forma que tenía el LISTADO (desde

@@ -14,7 +14,7 @@ from tkinter import messagebox
 import datetime as _dt_mod          # módulo completo — usado en lógica de fechas de baja
 from datetime import datetime
 import openpyxl
-from app.comun.catalogo_local import abrir_como_listado  # v10.2.54: catálogo con forma de LISTADO
+from app.comun.catalogo_local import abrir_como_listado  # v10.2.50: catálogo con forma de LISTADO
 # normalizar_codigo_sap vive en sap_helpers.py (sin tkinter) para que
 # también pueda importarla test_crear_registro_info.py sin arrastrar
 # la UI. Ver ese fichero para la implementación y el porqué.
@@ -454,7 +454,7 @@ class CreadorRINFO:
             return
 
         ws_rinfo = wb[self.HOJA_PRINCIPAL]
-        nombre_listado = "catalogo-dali-completo.xlsx"   # v10.2.54 (antes, el LISTADO)
+        nombre_listado = "catalogo-dali-completo.xlsx"   # v10.2.50 (antes, el LISTADO)
 
         # -- Localizar LISTADO CODIGOS DALI - SAP.xlsx ────────────────────────
         # (antes ~35 líneas propias; consolidado en _localizar_ruta_listado_dali)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-ventana_login.py — inicio de sesión de Catálogo Asignaciones al abrir la Consola (v10.2.52).
+ventana_login.py — inicio de sesión de Catálogo Asignaciones al abrir la Consola (v10.2.50).
 
 Central Compras Princess Canarias · La idea y el desarrollo de la aplicación, incluidas sus pruebas,
 son de Víctor Alejandro Martín Andrade (VAMA).

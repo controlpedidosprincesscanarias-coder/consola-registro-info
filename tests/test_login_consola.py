@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Pruebas del inicio de sesión al abrir la Consola (v10.2.52): ventana app/ui/ventana_login.py y
+"""Pruebas del inicio de sesión al abrir la Consola (v10.2.50): ventana app/ui/ventana_login.py y
 _iniciar_sesion_consola (app/principal/catalogo_dali.py). La web se simula; sin red. Necesitan tkinter y
 pantalla (en Linux, xvfb-run).
 

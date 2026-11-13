@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 catalogo_local.py — el catálogo completo (RECURSOS/catalogo-dali-completo.xlsx) como ÚNICO archivo de artículos
-de la Consola (v10.2.54). Sin tkinter: se prueba en tests/test_catalogo_local.py.
+de la Consola (v10.2.50). Sin tkinter: se prueba en tests/test_catalogo_local.py.
 
 Central Compras Princess Canarias · La idea y el desarrollo de la aplicación, incluidas sus pruebas,
 son de Víctor Alejandro Martín Andrade (VAMA).

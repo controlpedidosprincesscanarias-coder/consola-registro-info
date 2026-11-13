@@ -55,7 +55,7 @@ class AccionListadoSap:
         # ── LECTURA 1: Productos.xlsx ─────────────────────────────────
         # Clave cruce: col B (índice 1) → Código producto SAP
         self.log_consola("Leyendo Productos.xlsx...", "INFO")
-        # (v10.2.56) La lectura está en sap_helpers.leer_productos_xlsx (sin cambios), para compartirla.
+        # (v10.2.50) La lectura está en sap_helpers.leer_productos_xlsx (sin cambios), para compartirla.
         tabla_productos, filas_prod = leer_productos_xlsx(ruta_productos)
         self.log_consola(f"  └ {filas_prod} productos cargados (Productos.xlsx)", "OK")
 
@@ -186,7 +186,7 @@ class AccionListadoSap:
 
     def _auditar_sap_duplicados_listado(self, ws):
         """
-        Escanea TODO el catálogo (con forma de LISTADO, v10.2.54) (no solo lo que
+        Escanea TODO el catálogo (con forma de LISTADO, v10.2.50) (no solo lo que
         se esté tecleando en ese momento) buscando códigos SAP asignados
         a más de un código DALI distinto -- el problema real reportado
         por el usuario no es un DALI concreto, sino que dos DALI
@@ -288,7 +288,7 @@ class AccionListadoSap:
         """
         from app.comun import catalogo_local
         # ── CRUCE Y ESCRITURA EN DESTINO ─────────────────────────────
-        # v10.2.54: ya no hay «LISTADO CODIGOS DALI - SAP.xlsx». El cruce de siempre se hace sobre un libro EN
+        # v10.2.50: ya no hay «LISTADO CODIGOS DALI - SAP.xlsx». El cruce de siempre se hace sobre un libro EN
         # MEMORIA con la misma forma (filas desde la 8, columnas A..O) sacado del catálogo, y al final los datos
         # SAP se pasan al catálogo por código DALI (regenerándolo). La lógica de abajo no cambia.
         self.log_consola("Abriendo destino: catalogo-dali-completo.xlsx", "INFO")
@@ -455,7 +455,7 @@ class AccionListadoSap:
         # actualizado, buscando cualquier SAP asignado a más de un DALI.
         self._auditar_sap_duplicados_listado(ws_dest)
 
-        # v10.2.54: los datos SAP cruzados pasan al catálogo (por código DALI) al regenerarlo, más abajo.
+        # v10.2.50: los datos SAP cruzados pasan al catálogo (por código DALI) al regenerarlo, más abajo.
         tabla_sap = catalogo_local.tabla_sap_desde_libro(ws_dest)
         wb_dest.close()
 
@@ -615,7 +615,7 @@ class AccionListadoSap:
         Origen 1 : RECURSOS/Productos.xlsx           (fecha = última modificación del archivo)
         Origen 2 : RECURSOS/ARTICULOS_DALI.xlsx       (fecha = celda B3, texto "ACTUALIZADO …")
         Origen 3 : RECURSOS/Listas de productos.xlsx
-        Destino  : RECURSOS/catalogo-dali-completo.xlsx (v10.2.54; antes, el LISTADO CODIGOS DALI - SAP)
+        Destino  : RECURSOS/catalogo-dali-completo.xlsx (v10.2.50; antes, el LISTADO CODIGOS DALI - SAP)
 
         Cruce 1 — col D destino ↔ col B Productos.xlsx:
           C (Descripción producto)              → E  (DESCRIPCION SAP)
@@ -649,7 +649,7 @@ class AccionListadoSap:
         ruta_productos = os.path.join(recursos_path, "Productos.xlsx")
         ruta_dali      = os.path.join(recursos_path, "ARTICULOS_DALI.xlsx")
         ruta_listas    = os.path.join(recursos_path, "Listas de productos.xlsx")
-        # v10.2.54: el destino es el catálogo completo (ya no hay LISTADO)
+        # v10.2.50: el destino es el catálogo completo (ya no hay LISTADO)
         ruta_destino   = os.path.join(recursos_path, "catalogo-dali-completo.xlsx")
 
         # ── 1. Verificar archivos de origen ──────────────────────────

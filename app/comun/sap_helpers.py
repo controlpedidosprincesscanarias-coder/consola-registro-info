@@ -330,7 +330,7 @@ def leer_productos_xlsx(ruta_productos):
     {codigo_sap_str: (desc_prod, texto_um, unidad_base, grp_prod, desc_grp, tipo_producto)}.
     Clave = col B; C descripción, D tipo de producto, F grupo, G descripción del grupo, I unidad base y
     J texto UM (expl.). Datos desde la fila 2. Movido sin cambios desde AccionListadoSap._leer_productos_sap
-    (v10.2.56) para usarlo también en «Asignar SAP pendientes».
+    (v10.2.50) para usarlo también en «Asignar SAP pendientes».
     """
     import openpyxl
     wb_prod = openpyxl.load_workbook(ruta_productos, read_only=True, data_only=True)

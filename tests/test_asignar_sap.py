@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Pruebas de app/comun/asignar_sap.py (acción «Asignar SAP pendientes», v10.2.56), con un catálogo inventado.
+"""Pruebas de app/comun/asignar_sap.py (acción «Asignar SAP pendientes», v10.2.50), con un catálogo inventado.
 
 Central Compras Princess Canarias · La idea y el desarrollo de la aplicación, incluidas sus pruebas,
 son de Víctor Alejandro Martín Andrade (VAMA).

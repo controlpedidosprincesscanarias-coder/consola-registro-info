@@ -56,7 +56,7 @@ class CatalogoDali:
 
         Devuelve (None, None) si el usuario cancela el diálogo.
         """
-        # (v10.2.52) Las de la sesión iniciada al abrir la Consola (sirven aunque no se hayan podido cifrar).
+        # (v10.2.50) Las de la sesión iniciada al abrir la Consola (sirven aunque no se hayan podido cifrar).
         if getattr(self, "_credenciales_sesion", None):
             return self._credenciales_sesion
         email_guardado, pass_guardado = leer_credenciales_dali(self.config_data)
@@ -139,7 +139,7 @@ class CatalogoDali:
 
     def _iniciar_sesion_consola(self):
         """
-        (v10.2.52) Al abrir la Consola: inicio de sesión de Catálogo Asignaciones. Solo entra una cuenta activa,
+        (v10.2.50) Al abrir la Consola: inicio de sesión de Catálogo Asignaciones. Solo entra una cuenta activa,
         de administrador y con el permiso «Escribir desde la Consola Registro Info»
         (catalogo_web.comprobar_acceso); a las demás, «Usuario no autorizado.». Si hay credenciales guardadas,
         se prueban solas; si dejan de valer o la cuenta ya no está autorizada, se borran. «Salir» cierra la app.
@@ -346,7 +346,7 @@ class CatalogoDali:
             with open(ruta_tmp, "wb") as f:
                 f.write(contenido)
 
-            # v10.2.54: sin LISTADO, un código SAP escrito en la Consola y aún no enviado a la web solo está en
+            # v10.2.50: sin LISTADO, un código SAP escrito en la Consola y aún no enviado a la web solo está en
             # el catálogo local: si en el descargado ese artículo no tiene SAP, se conserva el local.
             if os.path.isfile(ruta_final):
                 try:
@@ -525,7 +525,7 @@ class CatalogoDali:
         actualizado, que Acción 4 ya no llama).
 
         Revisa la antigüedad de catalogo-dali-completo.xlsx Y de su fichero
-        de origen ARTICULOS_DALI.xlsx (desde v10.2.54 ya no hay LISTADO
+        de origen ARTICULOS_DALI.xlsx (desde v10.2.50 ya no hay LISTADO
         CODIGOS DALI - SAP) -- si Acciones 1-3 no se han corrido hoy, estos también
         pueden estar desactualizados aunque el catálogo en sí no se haya
         tocado hace mucho.
@@ -704,7 +704,7 @@ class CatalogoDali:
         y lo libera siempre al terminar, delegando en _regenerar_catalogo_
         dali_completo_impl() para la lógica real (sin tocarla).
 
-        tabla_sap (v10.2.54): datos SAP por código DALI que manda la Acción 3; sin ella, los del propio catálogo.
+        tabla_sap (v10.2.50): datos SAP por código DALI que manda la Acción 3; sin ella, los del propio catálogo.
         """
         self._adquirir_lock_catalogo_con_aviso()
         try:
@@ -722,7 +722,7 @@ class CatalogoDali:
             unidad, familia, subfamilia, naturaleza, IGIC, proveedor
             asignado y activo (lado DALI).
           - Lado SAP (código SAP, descripciones/grupos SAP, categoría valoración, tipo de producto, grupo de
-            compras): desde v10.2.54 sale del PROPIO catálogo anterior (por código DALI), o de `tabla_sap` si la
+            compras): desde v10.2.50 sale del PROPIO catálogo anterior (por código DALI), o de `tabla_sap` si la
             manda la Acción 3. Ya no existe el «LISTADO CODIGOS DALI - SAP.xlsx» (decisión de Víctor, 13 nov
             2026; ver app/comun/catalogo_local.py). Si todavía está, antes se pasa al catálogo (migrar_listado).
 
@@ -759,7 +759,7 @@ class CatalogoDali:
                 "  ℹ catalogo-dali-completo.xlsx no regenerado: falta ARTICULOS_DALI.xlsx "
                 "(Acción 1).", "INFO")
             return
-        # v10.2.54: si todavía existe el LISTADO, sus datos SAP se pasan una vez al catálogo.
+        # v10.2.50: si todavía existe el LISTADO, sus datos SAP se pasan una vez al catálogo.
         if tabla_sap is None and os.path.isfile(ruta_catalogo):
             self._pasar_listado_al_catalogo(con_bloqueo=False)
 
@@ -842,7 +842,7 @@ class CatalogoDali:
         wb_dali.close()
         self.log_consola(f"  └ {len(tabla_dali)} artículos DALI leídos", "OK")
 
-        # ── 3. Datos SAP por código DALI (v10.2.54: del catálogo, no del LISTADO) ──
+        # ── 3. Datos SAP por código DALI (v10.2.50: del catálogo, no del LISTADO) ──
         if tabla_sap is not None:
             self.log_consola(f"  └ {len(tabla_sap)} artículo(s) con datos SAP de la Acción 3", "OK")
         elif os.path.isfile(ruta_catalogo):
@@ -1043,7 +1043,7 @@ class CatalogoDali:
 
     def _tras_cambiar_sap_en_catalogo(self, _codigos_dali=None):
         """
-        (v10.2.54) La ventana de SAP faltantes escribe ya los códigos SAP directamente en el catálogo (antes, en el
+        (v10.2.50) La ventana de SAP faltantes escribe ya los códigos SAP directamente en el catálogo (antes, en el
         LISTADO, y _refrescar_sap_catalogo_para_dali los copiaba después). Aquí solo queda enviar a Catálogo
         Asignaciones lo que haya cambiado.
         """
@@ -1051,7 +1051,7 @@ class CatalogoDali:
 
     def _pasar_listado_al_catalogo(self, con_bloqueo=True):
         """
-        (v10.2.54) Si todavía existe «LISTADO CODIGOS DALI - SAP.xlsx» en la raíz del proyecto, pasa sus datos SAP
+        (v10.2.50) Si todavía existe «LISTADO CODIGOS DALI - SAP.xlsx» en la raíz del proyecto, pasa sus datos SAP
         al catálogo (el LISTADO manda, como en cada Acción 2/3 hasta ahora), deja un informe de diferencias en
         RECURSOS y lo renombra a «(antiguo, ya no se usa)». Solo pasa una vez: el primer PC que abra esta versión.
         Devuelve el resumen o None.
@@ -1224,7 +1224,7 @@ class CatalogoDali:
                     "  ⚠  ARTICULOS_DALI.xlsx no encontrado — "
                     "catálogo actualizado solo con los datos de la tarifa.", "WARN")
 
-            # ── 3. Datos SAP: desde v10.2.54 ya están en el propio catálogo (no hay LISTADO) ──
+            # ── 3. Datos SAP: desde v10.2.50 ya están en el propio catálogo (no hay LISTADO) ──
             #    Con el diccionario vacío, las columnas SAP de las filas existentes se conservan (escribir None no
             #    borra, ver más abajo); una fila nueva queda sin datos SAP hasta la Acción 3, como antes.
             _datos_sap = {}
