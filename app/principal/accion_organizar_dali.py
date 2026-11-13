@@ -10,6 +10,11 @@ Víctor Alejandro Martín Andrade (VAMA).
 """
 
 import os
+# (13 nov 2026) messagebox se importa aquí, una vez. Antes se importaba dentro de proceso() solo en los bloques
+# except: eso lo convertía en variable local de proceso() y los mensajes lanzados antes con self.after (faltan
+# ARTICULOS1/2 y no hay ARTICULOS_DALI previo, incidencias de duplicados y validación fallida) daban NameError en
+# silencio y no salían nunca. Lo vigila tests/test_accion1_mensajes.py.
+from tkinter import messagebox
 
 
 class AccionOrganizarDali:
@@ -27,7 +32,6 @@ class AccionOrganizarDali:
 
         carpeta = self._carpeta_proyecto.get().strip()
         if not carpeta or not os.path.isdir(carpeta):
-            from tkinter import messagebox
             messagebox.showwarning("Sin proyecto",
                                    "Seleccione primero la carpeta del Proyecto.")
             return
@@ -72,7 +76,6 @@ class AccionOrganizarDali:
                         _respuesta = [None]
 
                         def _preguntar(r=_respuesta):
-                            from tkinter import messagebox
                             r[0] = messagebox.askyesno(
                                 "Archivos ARTICULOS no encontrados",
                                 f"\u274c  No se encontraron los siguientes archivos en RECURSOS/:\n\n"
@@ -273,7 +276,6 @@ class AccionOrganizarDali:
                                        e=errores, ruta=recursos_path,
                                        techo=_ultimo_cod_art1,
                                        elim=_eliminados_ok):
-                    from tkinter import messagebox
 
                     # Construir texto del mensaje
                     lineas = [
@@ -324,7 +326,6 @@ class AccionOrganizarDali:
                 self.log_consola(f"ERROR: {e}", "ERROR")
                 self.consola.separador("FIN ORGANIZACIÓN DALI (con error)")
                 self.after(0, lambda: self._barra.reset("Error en DALI"))
-                from tkinter import messagebox
                 self.after(0, lambda err=str(e): messagebox.showerror(
                     "Error en DALI — archivo en uso",
                     "\u2718  No se pudo guardar el archivo.\n\n"
@@ -337,7 +338,6 @@ class AccionOrganizarDali:
                 self.log_consola(f"ERROR: {e}", "ERROR")
                 self.consola.separador("FIN ORGANIZACIÓN DALI (con error)")
                 self.after(0, lambda: self._barra.reset("Error en DALI"))
-                from tkinter import messagebox
                 self.after(0, lambda err=str(e): messagebox.showerror(
                     "Error en DALI",
                     "\u2718  El proceso no se completó correctamente.\n\n"
