@@ -646,7 +646,7 @@ class AccionesTarifa:
                     except Exception as _e_desc:
                         self.log_consola(f"  [INFO] No se pudo leer descripciones: {_e_desc}", "INFO")
 
-                    # Catálogo completo (v10.2.54: ya no hay LISTADO CODIGOS DALI - SAP): RECURSOS del
+                    # Catálogo completo (v10.2.50: ya no hay LISTADO CODIGOS DALI - SAP): RECURSOS del
                     # proyecto o, si no, el de la carpeta padre de la del .xls.
                     from app.comun import catalogo_local as _cl
                     _carpeta_xls = (os.path.dirname(os.path.abspath(self._ruta_resultado))
@@ -945,7 +945,7 @@ class AccionesTarifa:
         """
         from app.comun import catalogo_local as _cl
 
-        # ── 1. Localizar el catálogo (v10.2.54: ya no hay LISTADO CODIGOS DALI-SAP) ──
+        # ── 1. Localizar el catálogo (v10.2.50: ya no hay LISTADO CODIGOS DALI-SAP) ──
         _ruta_listado = _cl.localizar_catalogo(self._carpeta_proyecto.get().strip() or None)
         if not _ruta_listado:
             self.log_consola("catalogo-dali-completo.xlsx no encontrado.", "ERROR")

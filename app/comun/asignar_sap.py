@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-asignar_sap.py — lógica de la acción «Asignar SAP pendientes» (v10.2.56). Sin tkinter: se prueba en
+asignar_sap.py — lógica de la acción «Asignar SAP pendientes» (v10.2.50). Sin tkinter: se prueba en
 tests/test_asignar_sap.py; la ventana está en app/ui/ventana_asignar_sap.py.
 
 Central Compras Princess Canarias · La idea y el desarrollo de la aplicación, incluidas sus pruebas,

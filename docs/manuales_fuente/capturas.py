@@ -57,7 +57,37 @@ for n in ("SUMINISTROS DEMO SL [INCOMPLETO] [11-11-2026].xlsx", "PAPELERIA EJEMP
     open(os.path.join(TARIFAS, n), "wb").close()
 for n in ("ARTICULOS_DALI.xlsx", "Productos.xlsx", "Listas de productos.xlsx", "Proveedores.xlsx"):
     open(os.path.join(RECURSOS, n), "wb").close()
-open(os.path.join(PROYECTO, "LISTADO CODIGOS DALI - SAP.xlsx"), "wb").close()
+# Catálogo completo de ejemplo (desde la v10.2.50 es el único archivo de artículos; ya no hay LISTADO)
+CATALOGO = os.path.join(RECURSOS, "catalogo-dali-completo.xlsx")
+
+
+def _crear_catalogo_demo():
+    import openpyxl
+    from app.comun.sap_helpers import CATALOGO_COLUMNAS, CATALOGO_FILA_CABECERA
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    for i, (_k, titulo, _a) in enumerate(CATALOGO_COLUMNAS, start=1):
+        ws.cell(row=CATALOGO_FILA_CABECERA, column=i, value=titulo)
+    col = {k: i for i, (k, _t, _a) in enumerate(CATALOGO_COLUMNAS, start=1)}
+    for n, (dali, desc, prov, fam, sap) in enumerate(ARTICULOS_DEMO, start=CATALOGO_FILA_CABECERA + 1):
+        for k, v in (("clave", dali), ("descripcion", desc), ("unidad", "UN"), ("proveedor", prov), ("familia", fam),
+                     ("cod_sap", sap), ("activo", "SI")):
+            if v is not None:
+                ws.cell(row=n, column=col[k], value=v)
+    wb.save(CATALOGO)
+
+
+ARTICULOS_DEMO = [
+    (10001, "BOLIGRAFO AZUL CAJA 50 UD", "PAPELERIA EJEMPLO SL", "PAPELERIA", None),
+    (10002, "CARPETA ARCHIVADOR A4", "PAPELERIA EJEMPLO SL", "PAPELERIA", None),
+    (10003, "PAPEL A4 80 GR PAQUETE 500", "PAPELERIA EJEMPLO SL", "PAPELERIA", None),
+    (10011, "BAYETA MICROFIBRA AZUL", "SUMINISTROS DEMO SL", "LIMPIEZA", None),
+    (10012, "GUANTE NITRILO TALLA M CAJA 100", "SUMINISTROS DEMO SL", "LIMPIEZA", None),
+    (10013, "BOLSA BASURA 85X105 ROLLO 10", "SUMINISTROS DEMO SL", "LIMPIEZA", None),
+    (10021, "VASO PLASTICO 200 ML PAQUETE 100", "DISTRIBUCIONES MODELO SA", "MENAJE DESECHABLE", None),
+    (10022, "SERVILLETA PAPEL 40X40 PAQUETE 50", "DISTRIBUCIONES MODELO SA", "MENAJE DESECHABLE", None),
+    (10031, "ROTULADOR PERMANENTE NEGRO", "PAPELERIA EJEMPLO SL", "PAPELERIA", "10509001"),
+]
 CONFIG = os.path.join(DEMO, "tarifa_config.json")
 with open(CONFIG, "w", encoding="utf-8") as f:
     json.dump({"carpeta_proyecto": PROYECTO}, f)
@@ -75,6 +105,11 @@ from app.comun import manual as _manual  # noqa: E402
 _manual.abrir_manual = lambda: None
 
 import tarifa_app  # noqa: E402
+# El inicio de sesión de Catálogo Asignaciones (sin red) se fotografía aparte (c_login); aquí se entra sin él.
+tarifa_app.App._iniciar_sesion_consola = lambda self: (self.deiconify(), self._tras_iniciar_sesion())
+# La versión que se enseña es la del .exe que llevará este manual (en el código fuente, APP_VERSION es la antigua).
+tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.52")
+_crear_catalogo_demo()
 
 
 # ── Utilidades de captura (como las del Organizador) ─────────────────────────
@@ -217,11 +252,13 @@ LOG_DEMO = [
     ("Archivo fuente: TARIFAS\\TARIFA.xls", "INFO"),
     ("Formato detectado: A  (cab=col4, desc=col4, fmt=col6, precio=col7, dto=col8)", "OK"),
     ("  └ cod=900  nombre=SUMINISTROS DEMO SL  periodo=1er SEMESTRE 2027", "OK"),
-    ("Paso 27b: Cruzando CODIGO DALI (col B) con listado DALI-SAP...", "INFO"),
+    ("Paso 27b: Cruzando CODIGO DALI (col B) con el catálogo DALI-SAP...", "INFO"),
     ("  └ 124 coincidencias / 0 sin match", "OK"),
-    ("  ⚠  3 código(s) DALI sin DESCRIPCION/UNIDAD SAP en el listado: 10001, 10002, 10003", "WARN"),
+    ("  ⚠  3 código(s) DALI sin DESCRIPCION/UNIDAD SAP en el catálogo: 10001, 10002, 10003", "WARN"),
     ("Guardando: SUMINISTROS DEMO SL [INCOMPLETO] [11-11-2026].xlsx", "INFO"),
     ("  ⚠ Archivo marcado como [INCOMPLETO] — faltan 3 códigos SAP", "WARN"),
+    ("Catálogo Asignaciones: comprobando qué ha cambiado...", "INFO"),
+    ("  └ Catálogo Asignaciones actualizado: la web y el catálogo local coinciden.", "OK"),
     ("── FIN DE TRANSFORMACIÓN ─────────────────────────────────", None),
     ("Iniciando: Crear Registro Info…", "INFO"),
     ("Proveedor SAP: «SUMINISTROS DEMO SL» [cód. 1009999]", "OK"),
@@ -238,6 +275,9 @@ def pasos(app):
     from app.ui.ventana_actualizacion import VentanaActualizacion
     from app.ui.ventana_consulta_manual import VentanaConsultaManual
     from app.comun.tarifa_core import listar_xls
+    from app.ui import ventana_login, ventana_publicar_catalogo
+    from app.ui.ventana_asignar_sap import VentanaAsignarSap
+    from app.comun import asignar_sap
     tarifa = os.path.join(TARIFAS, "SUMINISTROS DEMO SL [11-11-2026].xlsx")
     win_tarifas = RUTA_WIN + "\\TARIFAS"
     B = buscar
@@ -255,13 +295,21 @@ def pasos(app):
             for n in sorted(os.listdir(TARIFAS)) if "[INCOMPLETO]" in n]), lambda v: [(de_clase(v, "Treeview"), 1, "ir"), (boton(v, "Seleccionar"), 2, "t")]),
         ("c_incompletos_a6", lambda: app._crear_registro_sap(), lambda v: [(B(v, "Instrucciones de uso").master, 1, "ir"), (de_clase(v, "Treeview"), 2, "ir"), (boton(v, "Abrir en Excel"), 3, "t")]),
         ("c_sap_faltantes", lambda: VentanaSAPFaltantes(app, [(30, 10001), (49, 10002), (66, 10003)],
-                                                         os.path.join(PROYECTO, "LISTADO CODIGOS DALI - SAP.xlsx"),
+                                                         CATALOGO,
                                                          app.log_consola, {10001: "BOLIGRAFO AZUL CAJA 50 UD", 10002: "CARPETA ARCHIVADOR A4",
-                                                                           10003: "PAPEL A4 80 GR PAQUETE 500"}), lambda v: [(caja(v, B(v, "CÓDIGO DALI"), B(v, "FORMATO")), 1, "b"), (B(v, "CÓDIGO SAP  (introducir)"), 2, "b"), (boton(v, "Guardar en LISTADO"), 3, "t")]),
+                                                                           10003: "PAPEL A4 80 GR PAQUETE 500"}), lambda v: [(caja(v, B(v, "CÓDIGO DALI"), B(v, "FORMATO")), 1, "b"), (B(v, "CÓDIGO SAP  (introducir)"), 2, "b"), (boton(v, "Guardar en el catálogo"), 3, "t")]),
         ("c_sap_duplicados", lambda: VentanaResolverSAPDuplicados(app, {"10509999": [(10002, True, 2010, "CARPETA ARCHIVADOR A4"),
                                                                                       (10004, False, None, "CARPETA ARCHIVADOR A4 AZUL")]}),
          lambda v: [(caja(v, B(v, "Borrar de DALI 010002"), B(v, "Borrar de DALI 010004")), 1, "t"), (boton(v, "Confirmar y continuar"), 2, "t"), (boton(v, "Cancelar todo"), 3, "t")]),
-        ("c_credenciales", lambda: app._obtener_credenciales_dali_app(), lambda v: [(caja(v, de_clase(v, "Entry", 0), de_clase(v, "Entry", 1)), 1, "r"), (boton(v, "Guardar y continuar"), 2, "t")]),
+        ("c_login", lambda: ventana_login.pedir_inicio_sesion(app, "comprador@ejemplo.es", None,
+                                                               lambda e, c: ("no_autorizado", "Usuario no autorizado.", None)),
+         lambda v: [(de_clase(v, "Entry", 0), 1, "r"), (de_clase(v, "Entry", 1), 2, "r"), (boton(v, "Entrar"), 3, "t"),
+                    (boton(v, "Salir"), 4, "t")]),
+        ("c_publicar", lambda: ventana_publicar_catalogo.pedir_confirmacion(app, DIF_DEMO, SIMS_DEMO, "completar la tarifa (Acción 4)"),
+         lambda v: [(B(v, "Datos DALI:"), 1, "r"), (de_clase(v, "Checkbutton"), 2, "r"), (B(v, "que la web NO cambiará"), 3, "r"),
+                    (de_clase(v, "Text"), 4, "ir"), (boton(v, "Actualizar la web"), 5, "t"), (boton(v, "Ahora no"), 6, "t")]),
+        ("c_asignar_sap", lambda: VentanaAsignarSap(app, asignar_sap.pendientes(CATALOGO), PRODUCTOS_DEMO, lambda n, r: None),
+         marcas_asignar_sap),
         ("c_rinfo_tarifa", lambda: cri.VentanaSeleccionTarifa(app, cri._listar_tarifas_validas(TARIFAS), TARIFAS), lambda v: [(de_clase(v, "Treeview"), 1, "ir"), (boton(v, "Continuar"), 2, "t")]),
         ("c_rinfo_purchasing", lambda: cri.VentanaPurchasingEncontrado(app, tarifa, os.path.basename(tarifa), "SUMINISTROS DEMO SL",
                                                                       "SUMINISTROS DEMO SL", "1009999",
@@ -300,6 +348,39 @@ def pasos(app):
     return lista
 
 
+PRODUCTOS_DEMO = {"10509011": ("BAYETA MICROFIBRA AZUL 40X40", "Pieza", "PI", "", "", ""),
+                  "10509012": ("GUANTE NITRILO M CAJA 100", "Caja", "CJ", "", "", "")}
+DIF_DEMO = {
+    "accion2": [{"codigo_dali": 10041, "campos": {"nombre_articulo": (None, "TIJERA OFICINA 21 CM")}, "nuevo": True,
+                 "editado_en_web": False, "proveedor": "PAPELERIA EJEMPLO SL"},
+                {"codigo_dali": 10002, "campos": {"nombre_articulo": ("CARPETA A4", "CARPETA ARCHIVADOR A4")}, "nuevo": False,
+                 "editado_en_web": False, "proveedor": "PAPELERIA EJEMPLO SL"}],
+    "accion3": [{"codigo_dali": 10031, "campos": {"descripcion_sap": ("ROTULADOR NEGRO", "ROTULADOR PERMANENTE NEGRO")},
+                 "nuevo": False, "editado_en_web": True, "proveedor": "PAPELERIA EJEMPLO SL"}],
+    "accion4": [{"codigo_dali": 10001, "campos": {"precio": (4.10, 4.35)}, "nuevo": False, "editado_en_web": False,
+                 "proveedor": "PAPELERIA EJEMPLO SL"},
+                {"codigo_dali": 10041, "campos": {"precio": (None, 2.90)}, "nuevo": True, "editado_en_web": False,
+                 "proveedor": "PAPELERIA EJEMPLO SL"}]}
+SIMS_DEMO = {"accion4": {"irregulares": [{"codigo_dali": 10003, "tipo": "codigo_proveedor_distinto",
+                                          "detalle": "El código de proveedor guardado es «P-500» y la tarifa trae «P-501»: no se toca."}]}}
+
+
+def marcas_asignar_sap(v):
+    B = buscar
+    v._tabla.selection_set("10011"); v._al_elegir(); v._var_sap.set("10509011"); v._asignar()
+    v._var_sap.set("10509099"); v._asignar()
+    v.update()                                   # que la tabla termine de elegir la fila siguiente
+    v._var_sap.set("10509012")                   # código a medio confirmar: se ve lo que dice Productos.xlsx
+    v.update()
+    return [
+        (caja_de(v, [B(v, "Buscar"), B(v, "Quitar filtros")]), 1, "tr"),
+        (de_clase(v, "Treeview"), 2, "ir"),
+        (v._ent_sap, 3, "ir"),
+        (v._lbl_productos, 4, "r"),
+        (v._btn_guardar, 5, "in"),
+    ]
+
+
 def marcas_principal(v):
     B = buscar
     v._carpeta_proyecto.set(RUTA_WIN)          # solo lo que se ve; las ventanas anteriores ya se capturaron
@@ -312,7 +393,7 @@ def marcas_principal(v):
         (B(v, "Crear estructura PROYECTO"), 3, "ir"),
         (B(v, "Localizar").master.master if B(v, "Localizar") else None, 4, "tr"),
         (prog, 5, "r"),
-        (caja_de(v, [B(v, "Organizar artículos DALI").master, B(v, "Generar Listado Tarifa").master]), 6, "tr"),
+        (caja_de(v, [B(v, "Organizar artículos DALI").master, B(v, "Asignar SAP pendientes").master]), 6, "tr"),
         (B(v, "Consultar el manual").master, 7, "tr"),
         (v.consola, 8, "ir"),
         (caja_de(v, [B(v, "guardar log"), B(v, "limpiar")]), 9, "b"),

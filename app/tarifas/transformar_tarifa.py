@@ -332,7 +332,7 @@ def _cruzar_con_listado_dali_sap(ws, ruta_xls, ultima, log_fn=None) -> list:
     _log(log_fn, f"  [DIAG] Carpeta .xls : {_carpeta_xls}", "INFO")
     _log(log_fn, f"  [DIAG] Carpeta raíz : {_carpeta_raiz}", "INFO")
 
-    # v10.2.54: ya no hay LISTADO CODIGOS DALI - SAP; se lee el catálogo completo (RECURSOS de la carpeta raíz,
+    # v10.2.50: ya no hay LISTADO CODIGOS DALI - SAP; se lee el catálogo completo (RECURSOS de la carpeta raíz,
     # la padre de la del .xls), con la misma forma de filas que tenía el LISTADO.
     from app.comun import catalogo_local as _cl
     _listado_ruta = _cl.localizar_catalogo(_carpeta_raiz, _carpeta_xls)
@@ -349,7 +349,7 @@ def _cruzar_con_listado_dali_sap(ws, ruta_xls, ultima, log_fn=None) -> list:
                 _cod_dali   = _row[0]      # col A del listado = CODIGO DALI
                 _cod_sap    = _row[3]      # col D del listado = CODIGO SAP-TEST
                 _desc_sap   = _row[4]      # col E del listado = DESCRIPCION SAP-TEST
-                # col G = UNIDAD SAP. Hasta v10.2.52 se leía la F, que desde la inserción de columnas de
+                # col G = UNIDAD SAP. Hasta v10.2.50 se leía la F, que desde la inserción de columnas de
                 # 2026-08 es «Texto UM (expl.)»: la descripción salía «… - Kilogramo» en vez de «… - KG»
                 # (mismo fallo que el de los INC corregido en la sección 496 del historial).
                 _unidad_sap = _row[6] if len(_row) > 6 else None
@@ -418,7 +418,7 @@ def _cruzar_con_listado_dali_sap(ws, ruta_xls, ultima, log_fn=None) -> list:
         # ── Aviso cuando algún SAP no tiene descripción ni unidad en el listado
         if _sin_desc_und:
             _log(log_fn,
-                 f"  ⚠  {len(_sin_desc_und)} código(s) DALI sin DESCRIPCION/UNIDAD SAP en el listado: "
+                 f"  ⚠  {len(_sin_desc_und)} código(s) DALI sin DESCRIPCION/UNIDAD SAP en el catálogo: "
                  + ", ".join(str(d) for d in _sin_desc_und[:10])
                  + (" ..." if len(_sin_desc_und) > 10 else ""),
                  "WARN")

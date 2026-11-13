@@ -335,7 +335,7 @@ class VentanaResolverSAPDuplicados(tk.Toplevel):
             for cod_dali, es_existente, fila, desc in candidatos:
                 var = tk.BooleanVar(value=False)
                 self._checks[(cod_sap, cod_dali)] = var
-                origen = (f"ya en el listado, fila {fila}" if es_existente
+                origen = (f"ya en el catálogo, fila {fila}" if es_existente
                           else "recién introducido en este lote")
                 texto = f"Borrar de DALI {int(cod_dali):06d}"
                 if desc:
@@ -375,7 +375,7 @@ class VentanaSAPFaltantes(tk.Toplevel):
     y permite al usuario introducir el código SAP correspondiente.
     Una vez confirmado, escribe los valores en la columna «Código SAP» del
     catálogo completo (RECURSOS/catalogo-dali-completo.xlsx), buscando por
-    código DALI. Hasta v10.2.54 se escribían en la columna D del LISTADO
+    código DALI. Hasta v10.2.50 se escribían en la columna D del LISTADO
     CODIGOS DALI - SAP, protegido con una contraseña escrita en el código;
     el LISTADO ya no existe y esa contraseña se ha quitado.
     Devuelve True si el usuario guardó cambios, False si canceló.
@@ -650,7 +650,7 @@ class VentanaSAPFaltantes(tk.Toplevel):
                 from openpyxl import load_workbook
                 from app.comun import catalogo_local
 
-                # v10.2.54: el código SAP se escribe en el catálogo completo, buscando por código DALI.
+                # v10.2.50: el código SAP se escribe en el catálogo completo, buscando por código DALI.
                 # Con el bloqueo del catálogo de la app, para no chocar con otra escritura a la vez.
                 if _bloqueo is not None:
                     _bloqueo.acquire()

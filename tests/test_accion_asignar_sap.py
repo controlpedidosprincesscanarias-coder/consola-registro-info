@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Pruebas de la acción «Asignar SAP pendientes» (v10.2.56): guardado en el catálogo con duplicados resueltos,
+"""Pruebas de la acción «Asignar SAP pendientes» (v10.2.50): guardado en el catálogo con duplicados resueltos,
 completar los datos SAP (cruce de la Acción 3) y la ventana (app/ui/ventana_asignar_sap.py). Con un proyecto
 inventado y las clases reales; la ventana necesita tkinter y pantalla (xvfb-run).
 

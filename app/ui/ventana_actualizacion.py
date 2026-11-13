@@ -90,7 +90,7 @@ class VentanaActualizacion(tk.Toplevel):
             self.transient(app)
             centrar_sobre_padre(self, app)
         else:
-            # (v10.2.52) Puede llegar mientras la ventana principal está oculta, con el inicio de sesión abierto:
+            # (v10.2.50) Puede llegar mientras la ventana principal está oculta, con el inicio de sesión abierto:
             # así se ve igual y se puede actualizar aunque no se haya podido entrar.
             self.update_idletasks()
             w, h = self.winfo_reqwidth(), self.winfo_reqheight()

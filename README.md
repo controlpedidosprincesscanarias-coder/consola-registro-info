@@ -21,7 +21,7 @@ Se distribuye solo `TARIFA_Finder.exe`, que no necesita Python instalado. Hace f
 | 5 | Abrir la última TARIFA procesada |
 | 6 | Actualizar a mano los archivos [INCOMPLETOS] |
 | 7 | Listado de tarifa de proveedor vacía (en construcción) |
-| 8 | Asignar SAP pendientes: todos los códigos DALI activos sin SAP, para grabarlos en el orden que quieras (desde v10.2.56) |
+| 8 | Asignar SAP pendientes: todos los códigos DALI activos sin SAP, para grabarlos en el orden que quieras (desde v10.2.50) |
 
 Desde la tarifa preparada se crea el **Registro Info SAP**, a partir del «Purchasing Info Records» descargado de SAP.
 
@@ -31,11 +31,11 @@ La **consola** de la derecha muestra cada paso con su hora y un color por nivel:
 
 **Dónde dejar el `.exe`:** no se instala. Déjalo siempre en la misma carpeta y con su nombre (`TARIFA_Finder.exe`): las actualizaciones lo sustituyen en ese mismo sitio, así que los accesos directos (también el del Organizador) no hay que cambiarlos.
 
-**Asignar SAP pendientes (Acción 8, desde v10.2.56):** abre la lista de todos los códigos DALI activos que no tienen código SAP, con buscador y filtros por proveedor y familia. Eliges uno, escribes su código SAP y pulsas Intro: se asigna y pasa al siguiente. Al lado se ve lo que dice `Productos.xlsx` de ese código. «Guardar en el catálogo» lo graba (si un código ya lo tiene otro artículo, te pregunta cuál es el correcto) y completa sus datos SAP como la Acción 3; los cambios se envían a Catálogo Asignaciones. Un código que no esté en `Productos.xlsx` se guarda igualmente: para completar sus datos, descarga de SAP `Productos.xlsx` y `Listas de productos.xlsx` actualizados, guárdalos en RECURSOS y pulsa de nuevo la Acción 3.
+**Asignar SAP pendientes (Acción 8, desde v10.2.50):** abre la lista de todos los códigos DALI activos que no tienen código SAP, con buscador y filtros por proveedor y familia. Eliges uno, escribes su código SAP y pulsas Intro: se asigna y pasa al siguiente. Al lado se ve lo que dice `Productos.xlsx` de ese código. «Guardar en el catálogo» lo graba (si un código ya lo tiene otro artículo, te pregunta cuál es el correcto) y completa sus datos SAP como la Acción 3; los cambios se envían a Catálogo Asignaciones. Un código que no esté en `Productos.xlsx` se guarda igualmente: para completar sus datos, descarga de SAP `Productos.xlsx` y `Listas de productos.xlsx` actualizados, guárdalos en RECURSOS y pulsa de nuevo la Acción 3.
 
-**Un solo archivo de artículos (desde v10.2.54):** la Consola ya no usa `LISTADO CODIGOS DALI - SAP.xlsx`: todo está en `RECURSOS/catalogo-dali-completo.xlsx`. La Acción 2 actualiza en él los datos DALI, la Acción 3 los datos SAP y la ventana de códigos SAP faltantes escribe ahí el código SAP; las tarifas y los Registros Info leen de él. Todo se empareja por código DALI. La primera vez que se abre esta versión, el LISTADO que haya se pasa al catálogo (con un informe de diferencias en RECURSOS) y se renombra a «LISTADO CODIGOS DALI - SAP (antiguo, ya no se usa).xlsx»; no se borra.
+**Un solo archivo de artículos (desde v10.2.50):** la Consola ya no usa `LISTADO CODIGOS DALI - SAP.xlsx`: todo está en `RECURSOS/catalogo-dali-completo.xlsx`. La Acción 2 actualiza en él los datos DALI, la Acción 3 los datos SAP y la ventana de códigos SAP faltantes escribe ahí el código SAP; las tarifas y los Registros Info leen de él. Todo se empareja por código DALI. La primera vez que se abre esta versión, el LISTADO que haya se pasa al catálogo (con un informe de diferencias en RECURSOS) y se renombra a «LISTADO CODIGOS DALI - SAP (antiguo, ya no se usa).xlsx»; no se borra.
 
-**Inicio de sesión (desde v10.2.52):** al abrir la Consola se pide el usuario y la contraseña de **Catálogo Asignaciones**. Solo entra una cuenta activa, de administrador y con el permiso «Escribir desde la Consola Registro Info» (el administrador principal también); con cualquier otra sale «Usuario no autorizado.». Si las credenciales están guardadas en el equipo, se comprueban solas al abrir. El aviso de versión nueva sale igual aunque no se haya podido entrar.
+**Inicio de sesión (desde v10.2.50):** al abrir la Consola se pide el usuario y la contraseña de **Catálogo Asignaciones**. Solo entra una cuenta activa, de administrador y con el permiso «Escribir desde la Consola Registro Info» (el administrador principal también); con cualquier otra sale «Usuario no autorizado.». Si las credenciales están guardadas en el equipo, se comprueban solas al abrir. El aviso de versión nueva sale igual aunque no se haya podido entrar.
 
 **Catálogo Asignaciones:** la primera vez que hace falta descargar su catálogo, la app pide tu usuario y tu contraseña. La contraseña se guarda **cifrada**: solo tu usuario de Windows, en ese equipo, puede leerla. Si la contraseña deja de valer, se borra y se vuelve a pedir.
 
@@ -78,8 +78,8 @@ python -m unittest discover -s tests -v
 | `assets/` | Logos, icono, imágenes de ayuda y el manual con su índice (van dentro del `.exe`) |
 | `docs/` | Manual de usuario (`.docx` y `.pdf`) y su fuente (`docs/manuales_fuente/`, ver su README) |
 | `tests/` | Pruebas automáticas |
-| `app/comun/asignar_sap.py`, `app/ui/ventana_asignar_sap.py`, `app/principal/accion_asignar_sap.py` | Acción 8: Asignar SAP pendientes (v10.2.56) |
-| `app/comun/catalogo_local.py` | El catálogo completo como único archivo de artículos (v10.2.54) |
+| `app/comun/asignar_sap.py`, `app/ui/ventana_asignar_sap.py`, `app/principal/accion_asignar_sap.py` | Acción 8: Asignar SAP pendientes (v10.2.50) |
+| `app/comun/catalogo_local.py` | El catálogo completo como único archivo de artículos (v10.2.50) |
 | `app/comun/catalogo_web.py`, `app/principal/publicar_catalogo_web.py`, `app/ui/ventana_publicar_catalogo.py` | Envío de los cambios a Catálogo Asignaciones (v10.2.50) |
 | `build_exe.py`, `compilacion/`, `.github/workflows/compilar.yml` | Compilación (en GitHub, con versión automática) |
 | `COMPILAR_TARIFA.bat`, `_bat_helper.py` | Compilación local en Windows |

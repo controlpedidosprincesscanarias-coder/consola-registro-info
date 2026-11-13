@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Pruebas de punta a punta del catálogo único (v10.2.54) con un proyecto inventado: regeneración del catálogo
+"""Pruebas de punta a punta del catálogo único (v10.2.50) con un proyecto inventado: regeneración del catálogo
 sin LISTADO (por código DALI, también cuando DALI quita o intercala códigos), paso único del LISTADO al catálogo,
 Acción 3 sobre el libro en memoria y la ventana de SAP faltantes escribiendo en el catálogo. Usan las clases
 reales de la app (object.__new__), sin red. Necesitan tkinter (y pantalla para la ventana: xvfb-run).

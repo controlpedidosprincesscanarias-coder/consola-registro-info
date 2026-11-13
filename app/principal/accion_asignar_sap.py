@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-accion_asignar_sap.py — Acción 8: «Asignar SAP pendientes» (v10.2.56).
+accion_asignar_sap.py — Acción 8: «Asignar SAP pendientes» (v10.2.50).
 
 Mixin de App (tarifa_app.py). Central Compras Princess Canarias · La idea y el desarrollo de la aplicación,
 incluidas sus pruebas, son de Víctor Alejandro Martín Andrade (VAMA).
