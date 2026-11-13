@@ -618,14 +618,16 @@ def _finalizar_y_guardar(wb, ws, ultima, ruta_xls, nombre_base,
 
     _log(log_fn, f"Guardando: {os.path.basename(ruta_salida)}", "INFO")
     if _hay_incompleto:
+        # (13 nov 2026) El texto anterior decía lo contrario de lo que pasa: un [INCOMPLETO] SÍ sale en la Acción 6
+        # (edición a mano) y en la Acción 4, que es la que le quita [INCOMPLETO] cuando ya está completo.
         _log(log_fn,
-             "  ⚠ Archivo marcado como [INCOMPLETO] — no aparecerá en Acción 6.",
+             "  ⚠ Archivo marcado como [INCOMPLETO]: faltan códigos SAP o hay duplicados.",
              "WARN")
         _log(log_fn,
-             "    Corrige los errores en el archivo, elimina [INCOMPLETO] del nombre",
+             "    Completa los códigos SAP (ventana que se abre) o corrígelo a mano con la Acción 6,",
              "WARN")
         _log(log_fn,
-             "    y vuelve a ejecutar Acción 6 para crear el Registro Info.",
+             "    y vuelve a pasar la Acción 4: si queda completo, quita [INCOMPLETO] del nombre.",
              "WARN")
     wb.save(ruta_salida)
     _log(log_fn, f"✔ Completado: {ruta_salida}", "OK")
