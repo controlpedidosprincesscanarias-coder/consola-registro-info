@@ -248,5 +248,42 @@ class TestEnvio(unittest.TestCase):
         self.assertIsNone(ctx.exception.codigo)
 
 
+class _ClienteLogin:
+    def __init__(self, respuesta=None, error=None):
+        self.respuesta, self.error = respuesta, error
+
+    def login(self, email, password):
+        if self.error:
+            raise self.error
+        return self.respuesta
+
+
+class TestAccesoConsola(unittest.TestCase):
+    def test_solo_admin_con_permiso_o_admin_principal(self):
+        self.assertTrue(W.usuario_autorizado({"rol": "admin", "permisos": ["admin-catalogo-escribir"]}))
+        self.assertTrue(W.usuario_autorizado({"rol": "admin", "esAdminPrincipal": True, "permisos": []}))
+        self.assertFalse(W.usuario_autorizado({"rol": "admin", "permisos": ["admin-articulos"]}))
+        self.assertFalse(W.usuario_autorizado({"rol": "hotel", "permisos": ["admin-catalogo-escribir"]}))
+        self.assertFalse(W.usuario_autorizado({"rol": "hotel", "esAdminPrincipal": True}))
+        self.assertFalse(W.usuario_autorizado(None))
+
+    def test_comprobar_acceso(self):
+        ok = {"ok": True, "usuario": {"nombre": "Ana", "rol": "admin", "permisos": ["admin-catalogo-escribir"]}}
+        estado, mensaje, usuario = W.comprobar_acceso(_ClienteLogin(ok), "a@x", "c")
+        self.assertEqual((estado, usuario["nombre"]), ("ok", "Ana"))
+        self.assertIn("Ana", mensaje)
+        sin_permiso = {"ok": True, "usuario": {"nombre": "Luis", "rol": "admin", "permisos": []}}
+        self.assertEqual(W.comprobar_acceso(_ClienteLogin(sin_permiso), "l@x", "c")[:2],
+                         ("no_autorizado", "Usuario no autorizado."))
+        hotel = {"ok": True, "usuario": {"rol": "hotel", "permisos": []}}
+        self.assertEqual(W.comprobar_acceso(_ClienteLogin(hotel), "h@x", "c")[0], "no_autorizado")
+        casos = [(W.ErrorWeb("HTTP 401", 401), "credenciales"), (W.ErrorWeb("verif", 428), "verificacion"),
+                 (W.ErrorWeb("sin red"), "sin_conexion"), (W.ErrorWeb("HTTP 429", 429), "error"),
+                 (W.ErrorWeb("HTTP 403", 403), "no_autorizado")]
+        for error, esperado in casos:
+            self.assertEqual(W.comprobar_acceso(_ClienteLogin(error=error), "a@x", "c")[0], esperado)
+        self.assertEqual(W.comprobar_acceso(_ClienteLogin(ok), " ", "c")[0], "credenciales")
+
+
 if __name__ == "__main__":
     unittest.main()

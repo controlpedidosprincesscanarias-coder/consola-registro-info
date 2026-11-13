@@ -1175,7 +1175,21 @@ Petición de Víctor: que el LISTADO DALI–SAP y el catálogo completo dejen de
 
 ---
 
-## Próximos pasos, en orden de prioridad
+## 53. Inicio de sesión de Catálogo Asignaciones al abrir la Consola (13 nov 2026) — PR en GitHub
+
+Petición de Víctor: «incluir el login de Catálogo Asignaciones también en la Consola; solo usuario con login administrador y activo para escribir consola tendrá permiso. No hace falta anotar nada: si el login no se corresponde, mensaje de usuario no autorizado».
+- La web ya devuelve lo necesario al iniciar sesión (`POST /auth/login`): solo deja entrar a cuentas activas y trae `rol`, `esAdminPrincipal` y `permisos`. No hace falta tocar la web.
+- `catalogo_web.usuario_autorizado` / `comprobar_acceso` (sin tkinter): entra quien tiene rol `admin` y el permiso `admin-catalogo-escribir`, o es administrador principal (como en la web). Estados: correcto, no autorizado, email o contraseña incorrectos, verificación por email pendiente, sin conexión y otro error.
+- `app/ui/ventana_login.py`: la ventana; la comprobación va en un hilo, para que no se congele. La ventana principal arranca oculta y solo se enseña si se entra; «Salir» o cerrar la ventana cierra la Consola. Las credenciales guardadas (cifradas) se prueban solas; si son incorrectas o la cuenta ya no está autorizada, se borran. Sin conexión no se borran y se puede reintentar. No se anota nada.
+- Tras entrar, las credenciales de la sesión sirven para todo lo demás (descarga del catálogo y envío de cambios), aunque no se hayan podido cifrar.
+- La comprobación de actualizaciones va **antes** del inicio de sesión, y su ventana sale aunque la principal esté oculta: si algún día el inicio de sesión fallara (web caída, un error), la versión que lo arregle llegaría igual.
+- Pruebas: 2 nuevas en `tests/test_catalogo_web.py` (quién está autorizado y cada respuesta de la web) y `tests/test_login_consola.py` (5, con tkinter: credenciales guardadas, no autorizado, sin conexión y reintento, entrar y salir). 159 en total. La Consola completa probada en pantalla virtual con una web simulada (no autorizado: no se abre; autorizado: se abre).
+- **Por probar en Windows:** entrar con una cuenta autorizada, con una de administrador sin el permiso y con una de hotel; y que la descarga del catálogo y el envío de cambios ya no vuelvan a pedir la contraseña.
+- **Manual:** pendiente de regenerar con la próxima versión (pantalla de inicio de sesión).
+- **Ojo al publicar:** hasta que cada comprador tenga el permiso «Escribir desde la Consola Registro Info», no podrá abrir la Consola.
+
+---
+
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
    - ~~etapa 2: carpetas por capas~~ hecha (sección 43);
    - ~~etapa 3: limpieza~~ hecha (sección 44); ~~trocear `crear_registro_info.py`~~ hecho (sección 45); ~~trocear `tarifa_app.py`~~ hecho (sección 46);

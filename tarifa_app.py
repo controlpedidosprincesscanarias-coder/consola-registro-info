@@ -56,6 +56,9 @@ class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap,
         self.resizable(True, True)
         self.minsize(820, 640)
         poner_icono_aplicacion(self)    # también el de la barra de tareas (antes salía la pluma de Tk)
+        # (v10.2.52) La ventana principal no se enseña hasta iniciar sesión (ver _iniciar_sesion_consola).
+        self.withdraw()
+        self._credenciales_sesion = None
         self.config_data       = cargar_config()
         # (nov 2026) Una contraseña de Catálogo Asignaciones antigua en claro se cifra
         # con DPAPI y se borra la copia en claro (ver credenciales.py).
@@ -84,6 +87,14 @@ class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap,
         self._logo_img         = None
         self._build_ui()
         self._centrar()
+        # (v10.2.52) Inicio de sesión de Catálogo Asignaciones antes de usar la Consola; lo de abajo
+        # (_tras_iniciar_sesion) se hace solo si entra.
+        self.after(50, self._iniciar_sesion_consola)
+        # (nov 2026) Actualización automática desde las Releases de GitHub (solo el .exe). Se comprueba también
+        # antes de entrar (v10.2.52): si algún día el inicio de sesión fallara, la versión que lo arregle llegaría igual.
+        self.after(3000, lambda: self._comprobar_actualizaciones(APP_VERSION))
+
+    def _tras_iniciar_sesion(self):
         self.log_consola("Sistema iniciado. Listo para operar.", "SISTEMA")
         self.log_consola("Cargando configuraci\xf3n guardada...", "INFO")
         if self._carpeta_proyecto.get():
@@ -92,8 +103,6 @@ class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap,
             self.after(300, self._buscar)
         else:
             self.log_consola("No hay carpeta de proyecto configurada. Seleccione o cree una.", "WARN")
-        # (nov 2026) Actualización automática desde las Releases de GitHub (solo el .exe).
-        self.after(3000, lambda: self._comprobar_actualizaciones(APP_VERSION))
 
     # ── HEADER ────────────────────────────────────────────────────────────
     def _build_header(self):
