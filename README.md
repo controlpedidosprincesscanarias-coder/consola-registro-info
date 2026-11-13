@@ -14,8 +14,7 @@ Se distribuye solo `TARIFA_Finder.exe`, que no necesita Python instalado. Hace f
 
 | Nº | Acción |
 |---|---|
-| 1 | Organizar artículos DALI y generar `ARTICULOS_DALI` |
-| 2 | Actualizar el listado de artículos DALI |
+| 1 | Organizar artículos DALI, generar `ARTICULOS_DALI` y, al final, actualizar el catálogo y Catálogo Asignaciones (desde v10.2.64 incluye lo que hacía la antigua Acción 2; antes pregunta si quieres revisar el Excel) |
 | 3 | Actualizar el listado de materiales SAP |
 | 4 | Generar la TARIFA final y procesar las tarifas incompletas |
 | 5 | Abrir la última TARIFA procesada |
@@ -35,13 +34,13 @@ La **consola** de la derecha muestra cada paso con su hora y un color por nivel:
 
 **Faltan los listados de SAP actualizados (desde v10.2.56):** si guardas códigos SAP (Acción 8 o códigos SAP faltantes de la Acción 4) que todavía no están en `Productos.xlsx`, una ventana explica con imágenes cómo descargar de SAP `Productos.xlsx` («Gestionar datos maestros de producto») y `Listas de productos.xlsx` («Lista de productos»): botón ⌄ de exportar → «Exportar como…» → Excel, y guardarlos en RECURSOS. «Ya están en RECURSOS» lanza sola la Acción 3; «Más tarde» avisa de que la web queda parcialmente actualizada hasta entonces. Las imágenes se generan con `compilacion/generar_guia_sap.py`.
 
-**Un solo archivo de artículos (desde v10.2.50):** la Consola ya no usa `LISTADO CODIGOS DALI - SAP.xlsx`: todo está en `RECURSOS/catalogo-dali-completo.xlsx`. La Acción 2 actualiza en él los datos DALI, la Acción 3 los datos SAP y la ventana de códigos SAP faltantes escribe ahí el código SAP; las tarifas y los Registros Info leen de él. Todo se empareja por código DALI. La primera vez que se abre esta versión, el LISTADO que haya se pasa al catálogo (con un informe de diferencias en RECURSOS) y se renombra a «LISTADO CODIGOS DALI - SAP (antiguo, ya no se usa).xlsx»; no se borra.
+**Un solo archivo de artículos (desde v10.2.50):** la Consola ya no usa `LISTADO CODIGOS DALI - SAP.xlsx`: todo está en `RECURSOS/catalogo-dali-completo.xlsx`. El final de la Acción 1 actualiza en él los datos DALI (antes, la Acción 2), la Acción 3 los datos SAP y la ventana de códigos SAP faltantes escribe ahí el código SAP; las tarifas y los Registros Info leen de él. Todo se empareja por código DALI. La primera vez que se abre esta versión, el LISTADO que haya se pasa al catálogo (con un informe de diferencias en RECURSOS) y se renombra a «LISTADO CODIGOS DALI - SAP (antiguo, ya no se usa).xlsx»; no se borra.
 
 **Inicio de sesión (desde v10.2.50):** al abrir la Consola se pide el usuario y la contraseña de **Catálogo Asignaciones**. Solo entra una cuenta activa, de administrador y con el permiso «Escribir desde la Consola Registro Info» (el administrador principal también); con cualquier otra sale «Usuario no autorizado.». Si las credenciales están guardadas en el equipo, se comprueban solas al abrir. El aviso de versión nueva sale igual aunque no se haya podido entrar.
 
 **Catálogo Asignaciones:** la primera vez que hace falta descargar su catálogo, la app pide tu usuario y tu contraseña. La contraseña se guarda **cifrada**: solo tu usuario de Windows, en ese equipo, puede leerla. Si la contraseña deja de valer, se borra y se vuelve a pedir.
 
-**Cambios en Catálogo Asignaciones (desde v10.2.50):** después de las Acciones 2, 3 y 4 (y de resolver un código SAP duplicado), la app envía a la web **solo lo que ha cambiado**: altas y datos DALI, datos SAP, y precio y código de proveedor de la tarifa. Antes de cambiar nada muestra un resumen; lo que se haya cambiado en la web desde tu último envío queda fuera salvo que marques la casilla, y lo que la web no puede aplicar (otro proveedor asignado, otro código de proveedor) sale para corregirlo. Si eliges «Ahora no» o no hay conexión, los cambios vuelven a salir la próxima vez. Hace falta el permiso «Escribir desde la Consola Registro Info» en Catálogo Asignaciones. El código DALI y su descripción solo se cargan desde aquí. El Excel `catalogo-dali-completo.xlsx` se sigue escribiendo igual mientras se comprueba que los dos coinciden (fase 1).
+**Cambios en Catálogo Asignaciones (desde v10.2.50):** al final de la Acción 1, después de las Acciones 3 y 4 (y de resolver un código SAP duplicado), la app envía a la web **solo lo que ha cambiado**: altas y datos DALI, datos SAP, y precio y código de proveedor de la tarifa. Antes de cambiar nada muestra un resumen; lo que se haya cambiado en la web desde tu último envío queda fuera salvo que marques la casilla, y lo que la web no puede aplicar (otro proveedor asignado, otro código de proveedor) sale para corregirlo. Si eliges «Ahora no» o no hay conexión, los cambios vuelven a salir la próxima vez. Hace falta el permiso «Escribir desde la Consola Registro Info» en Catálogo Asignaciones. El código DALI y su descripción solo se cargan desde aquí. El Excel `catalogo-dali-completo.xlsx` se sigue escribiendo igual mientras se comprueba que los dos coinciden (fase 1).
 
 ## Actualizaciones
 Al abrirse, la app comprueba si hay una versión nueva publicada en GitHub. Si la hay, muestra las novedades y ofrece **Actualizar ahora**: descarga el `.exe` nuevo, comprueba que es el publicado (SHA-256), lo pone en el sitio del actual y se vuelve a abrir sola. La carpeta del proyecto y la contraseña guardada no se tocan. La versión anterior se borra sola en el siguiente arranque, y la consola lo indica.
@@ -71,7 +70,7 @@ python -m unittest discover -s tests -v
 | Archivo | Contenido |
 |---|---|
 | `tarifa_app.py` | Punto de arranque y clase de la ventana principal (`APP_VERSION`) |
-| `app/principal/` | Métodos de la ventana principal por temas: interfaz, Acciones 1, 2, 3, 4/6 y catálogo DALI |
+| `app/principal/` | Métodos de la ventana principal por temas: interfaz, Acciones 1 (con el paso al catálogo, `accion_listado_dali.py`), 3, 4/6 y catálogo DALI |
 | `app/rinfo/` | Motor de generación de RINFO: `generador_existente.py`, `creador_rinfo.py`, `ventanas_rinfo.py`, `comun_rinfo.py` y `crear_registro_info.py` (entrada) |
 | `app/tarifas/transformar_tarifa.py` | Transformación de la tarifa del proveedor |
 | `app/acciones/organizar_dali.py` | Lógica de la Acción 1 (sin interfaz) |
@@ -81,6 +80,7 @@ python -m unittest discover -s tests -v
 | `docs/` | Manual de usuario (`.docx` y `.pdf`) y su fuente (`docs/manuales_fuente/`, ver su README) |
 | `tests/` | Pruebas automáticas |
 | `app/comun/asignar_sap.py`, `app/ui/ventana_asignar_sap.py`, `app/principal/accion_asignar_sap.py` | Acción 8: Asignar SAP pendientes (v10.2.50) |
+| `app/comun/volcado_dali.py`, `app/ui/ventana_volcado_dali.py` | Final de la Acción 1: revisar `ARTICULOS_DALI.xlsx` y actualizar Catálogo Asignaciones (v10.2.64) |
 | `app/comun/catalogo_local.py` | El catálogo completo como único archivo de artículos (v10.2.50) |
 | `app/comun/catalogo_web.py`, `app/principal/publicar_catalogo_web.py`, `app/ui/ventana_publicar_catalogo.py` | Envío de los cambios a Catálogo Asignaciones (v10.2.50) |
 | `build_exe.py`, `compilacion/`, `.github/workflows/compilar.yml` | Compilación (en GitHub, con versión automática) |

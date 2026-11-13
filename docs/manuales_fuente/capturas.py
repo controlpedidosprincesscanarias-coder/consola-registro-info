@@ -108,7 +108,7 @@ import tarifa_app  # noqa: E402
 # El inicio de sesión de Catálogo Asignaciones (sin red) se fotografía aparte (c_login); aquí se entra sin él.
 tarifa_app.App._iniciar_sesion_consola = lambda self: (self.deiconify(), self._tras_iniciar_sesion())
 # La versión que se enseña es la del .exe que llevará este manual (en el código fuente, APP_VERSION es la antigua).
-tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.52")
+tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.64")
 _crear_catalogo_demo()
 
 
@@ -312,6 +312,7 @@ def pasos(app):
         ("c_asignar_sap", lambda: VentanaAsignarSap(app, asignar_sap.pendientes(CATALOGO), PRODUCTOS_DEMO, lambda n, r: None),
          marcas_asignar_sap),
         ("c_listados_sap", lambda: VentanaListadosSap(app, ["10509099"], RECURSOS), marcas_listados_sap),
+        ("c_volcado_dali", lambda: _abrir_volcado_dali(app), marcas_volcado_dali),
         ("c_rinfo_tarifa", lambda: cri.VentanaSeleccionTarifa(app, cri._listar_tarifas_validas(TARIFAS), TARIFAS), lambda v: [(de_clase(v, "Treeview"), 1, "ir"), (boton(v, "Continuar"), 2, "t")]),
         ("c_rinfo_purchasing", lambda: cri.VentanaPurchasingEncontrado(app, tarifa, os.path.basename(tarifa), "SUMINISTROS DEMO SL",
                                                                       "SUMINISTROS DEMO SL", "1009999",
@@ -382,6 +383,31 @@ def marcas_asignar_sap(v):
         (caja_de(v, [cab(5)] + [v._celdas_sap[d] for d in filas[:4]]), 3, "b"),
         (caja_de(v, [cab(6)] + [v._estados[d] for d in filas[:3]]), 4, "b"),
         (v._btn_guardar, 5, "in"),
+    ]
+
+
+def _abrir_volcado_dali(app):
+    """Final de la Acción 1 (13 nov 2026), ya contestado «Sí» para que se vea el botón (sin abrir Excel de verdad)."""
+    from app.comun import volcado_dali
+    from app.ui.ventana_volcado_dali import VentanaVolcadoDali
+    lineas = ["✔  Proceso completado correctamente", "", "   Artículos transferidos:  4812", "",
+              "✘  2 código(s) faltante(s) entre 000001 y 010045:",
+              "   Estos códigos de ARTICULOS1 no están en el resultado.", "      010012  (1 ausente)",
+              "      010030  (1 ausente)", "", "📁  Puede acceder al listado en:", "   " + RUTA_WIN + "\\RECURSOS", "",
+              "🗑  Archivos eliminados automáticamente de RECURSOS/:", "   • ARTICULOS1.xls", "   • ARTICULOS2.xls"]
+    v = VentanaVolcadoDali(app, "DALI — Proceso completado con errores", volcado_dali.lineas_con_tipo(lineas),
+                           os.path.join(RECURSOS, "ARTICULOS_DALI.xlsx"), abrir=lambda _r: None)
+    v._btn_si.invoke()
+    app.wait_window(v)
+
+
+def marcas_volcado_dali(v):
+    B = buscar
+    return [
+        (B(v, "Proceso completado correctamente").master, 1, "ir"),
+        (caja_de(v, [v._btn_si, v._btn_no]), 2, "r"),
+        (v._btn_actualizar, 3, "t"),
+        (v._btn_cerrar, 4, "t"),
     ]
 
 
