@@ -10,7 +10,7 @@
   {
    "capitulo": "1. Qué es la Consola Registro Info SAP",
    "titulo": "El trabajo de principio a fin",
-   "texto": "1. Organizar artículos DALI — Junta ARTICULOS1.xls y ARTICULOS2.xls (exportados de DALI) en ARTICULOS_DALI.xlsx — Cuando hay artículos nuevos en DALI.\n2. Actualizar listado artículos DALI — Pasa los datos de ARTICULOS_DALI.xlsx al catálogo completo, código a código — Después de la Acción 1.\n3. Actualizar listado materiales SAP — Completa los datos SAP del catálogo con Productos.xlsx y Listas de productos.xlsx — Cuando hay materiales nuevos en SAP.\n4. Generar TARIFA final — Convierte la tarifa del proveedor en la TARIFA final con los códigos SAP — Con cada tarifa nueva.\n5. Abrir última TARIFA — Abre en Excel la última TARIFA procesada — Para revisarla.\n6. Archivos [INCOMPLETOS] — Abre en Excel una tarifa incompleta para corregirla a mano — Si una tarifa queda [INCOMPLETO].\n7. Tarifa de proveedor vacía — En preparación («PRÓXIMO») — —.\n8. Asignar SAP pendientes — Lista todos los artículos DALI activos sin código SAP para escribir sus códigos — Cuando haya artículos sin código SAP.\nCrear / Actualizar Registro Info — Genera el RINFO de una TARIFA final (acceso rápido) — Con la TARIFA ya completa.",
+   "texto": "1. Organizar artículos DALI y actualizar Catálogo Asignaciones — Junta ARTICULOS1.xls y ARTICULOS2.xls (exportados de DALI) en ARTICULOS_DALI.xlsx y, al final, lo pasa al catálogo completo y a la web — Cuando hay artículos nuevos o cambios en DALI.\n3. Actualizar listado materiales SAP — Completa los datos SAP del catálogo con Productos.xlsx y Listas de productos.xlsx — Cuando hay materiales nuevos en SAP.\n4. Generar TARIFA final — Convierte la tarifa del proveedor en la TARIFA final con los códigos SAP — Con cada tarifa nueva.\n5. Abrir última TARIFA — Abre en Excel la última TARIFA procesada — Para revisarla.\n6. Archivos [INCOMPLETOS] — Abre en Excel una tarifa incompleta para corregirla a mano — Si una tarifa queda [INCOMPLETO].\n7. Tarifa de proveedor vacía — En preparación («PRÓXIMO») — —.\n8. Asignar SAP pendientes — Lista todos los artículos DALI activos sin código SAP para escribir sus códigos — Cuando haya artículos sin código SAP.\nCrear / Actualizar Registro Info — Genera el RINFO de una TARIFA final (acceso rápido) — Con la TARIFA ya completa.",
    "pagina": 3
   },
   {
@@ -46,134 +46,134 @@
   {
    "capitulo": "4. Preparar el proyecto",
    "titulo": "Qué archivos van en cada carpeta",
-   "texto": "ARTICULOS1.xls y ARTICULOS2.xls — RECURSOS — Exportados de DALI (los usa la Acción 1 y luego se borran).\nARTICULOS_DALI.xlsx — RECURSOS — Lo genera la Acción 1.\nProductos.xlsx — RECURSOS — Exportado de SAP, aplicación «Gestionar datos maestros de producto» (capítulo 5, «Descargar los listados de SAP»).\nListas de productos.xlsx — RECURSOS — Exportado de SAP, aplicación «Lista de productos» (categoría de valoración por centro).\nProveedores.xlsx — RECURSOS — Proveedores de SAP con su código (para el Registro Info).\ncatalogo-dali-completo.xlsx — RECURSOS — El catálogo de artículos DALI / SAP. Lo mantienen las Acciones 2, 3 y 8 y la ventana de códigos SAP faltantes (se puede descargar de Catálogo Asignaciones).\nTarifa del proveedor (.xls) — TARIFAS — La que envía el proveedor.\nTARIFA final «PROVEEDOR [dd-mm-aaaa].xlsx» — TARIFAS — La genera la Acción 4.\nPurchasing Info Records.xlsx — TARIFAS — Descargado de SAP, si el proveedor ya tiene Registros Info.\nRINFO «PROVEEDOR [dd-mm-aaaa].xlsx» — TARIFAS — El Registro Info que genera la consola.\nArchivos abiertos en Excel. Cierra en Excel los archivos que vaya a escribir la consola (el catálogo, la tarifa…) antes de lanzar una acción. Si un archivo está abierto, Windows no deja guardarlo y la consola lo indicará en rojo.",
+   "texto": "ARTICULOS1.xls y ARTICULOS2.xls — RECURSOS — Exportados de DALI (los usa la Acción 1 y luego se borran).\nARTICULOS_DALI.xlsx — RECURSOS — Lo genera la Acción 1.\nProductos.xlsx — RECURSOS — Exportado de SAP, aplicación «Gestionar datos maestros de producto» (capítulo 5, «Descargar los listados de SAP»).\nListas de productos.xlsx — RECURSOS — Exportado de SAP, aplicación «Lista de productos» (categoría de valoración por centro).\nProveedores.xlsx — RECURSOS — Proveedores de SAP con su código (para el Registro Info).\ncatalogo-dali-completo.xlsx — RECURSOS — El catálogo de artículos DALI / SAP. Lo mantienen las Acciones 1, 3 y 8 y la ventana de códigos SAP faltantes (se puede descargar de Catálogo Asignaciones).\nTarifa del proveedor (.xls) — TARIFAS — La que envía el proveedor.\nTARIFA final «PROVEEDOR [dd-mm-aaaa].xlsx» — TARIFAS — La genera la Acción 4.\nPurchasing Info Records.xlsx — TARIFAS — Descargado de SAP, si el proveedor ya tiene Registros Info.\nRINFO «PROVEEDOR [dd-mm-aaaa].xlsx» — TARIFAS — El Registro Info que genera la consola.\nArchivos abiertos en Excel. Cierra en Excel los archivos que vaya a escribir la consola (el catálogo, la tarifa…) antes de lanzar una acción. Si un archivo está abierto, Windows no deja guardarlo y la consola lo indicará en rojo.",
    "pagina": 7
   },
   {
-   "capitulo": "5. El catálogo DALI / SAP (Acciones 1, 2, 3 y 8)",
-   "titulo": "5. El catálogo DALI / SAP (Acciones 1, 2, 3 y 8)",
+   "capitulo": "5. El catálogo DALI / SAP (Acciones 1, 3 y 8)",
+   "titulo": "5. El catálogo DALI / SAP (Acciones 1, 3 y 8)",
    "texto": "El catálogo completo (RECURSOS/catalogo-dali-completo.xlsx) relaciona cada código DALI con su material SAP (descripción, unidad, IGIC, grupo de compras…), su proveedor, su código de proveedor y su precio. Es la base de la TARIFA y del Registro Info, así que conviene tenerlo al día. Todo se empareja siempre por código DALI.\nAdiós al LISTADO CODIGOS DALI - SAP. Hasta noviembre de 2026 había además un LISTADO CODIGOS DALI - SAP.xlsx con casi los mismos datos. Ya no se usa: todo está en el catálogo. La primera vez que se abre la versión nueva, la consola pasa al catálogo los datos SAP del LISTADO, deja un informe con las diferencias que hubiera (RECURSOS/paso_listado_a_catalogo_….txt) y le cambia el nombre a «LISTADO CODIGOS DALI - SAP (antiguo, ya no se usa).xlsx». No se borra: puedes guardarlo como copia.",
    "pagina": 9
   },
   {
-   "capitulo": "5. El catálogo DALI / SAP (Acciones 1, 2, 3 y 8)",
+   "capitulo": "5. El catálogo DALI / SAP (Acciones 1, 3 y 8)",
    "titulo": "Acción 1 — Organizar artículos DALI",
-   "texto": "1. Exporta de DALI los artículos en ARTICULOS1.xls y ARTICULOS2.xls y déjalos en RECURSOS.\n2. Pulsa 1 · Organizar artículos DALI. La consola los cruza por código, quita duplicados y genera ARTICULOS_DALI.xlsx.\n3. Si un código aparece repetido con datos distintos, te avisa y guarda el detalle en RECURSOS (INCIDENCIAS_DUPLICADOS_DALI…). Los .xls de origen se borran al terminar.",
+   "texto": "1. Exporta de DALI los artículos en ARTICULOS1.xls y ARTICULOS2.xls y déjalos en RECURSOS.\n2. Pulsa 1 · Organizar artículos DALI. La consola los cruza por código, quita duplicados y genera ARTICULOS_DALI.xlsx.\n3. Si un código aparece repetido con datos distintos, te avisa y guarda el detalle en RECURSOS (INCIDENCIAS_DUPLICADOS_DALI…). Los .xls de origen se borran al terminar.\n4. Al terminar sale el resumen con la pregunta ¿Desea revisar ARTICULOS_DALI.xlsx en Excel antes de actualizar Catálogo Asignaciones? (ver la imagen).\n(1) Resumen de la Acción 1: artículos transferidos, códigos que faltan (en rojo) y archivos borrados.\n(2) Sí, abrir el Excel: abre ARTICULOS_DALI.xlsx para revisarlo y corregir lo que haga falta. No: sigue sin abrirlo.\n(3) El botón Actualizar Catálogo Asignaciones no aparece hasta que contestas. Si has abierto el Excel, guarda y ciérralo antes de pulsarlo: si sigue abierto, la consola te lo recuerda y espera. Al pulsarlo, pasa al catálogo los datos de DALI (descripción, unidad, familia, proveedor asignado, activo…), código a código, y envía a la web lo que haya cambiado (capítulo 8).\n(4) Cerrar sin actualizar: no cambia ni el catálogo ni la web. ARTICULOS_DALI.xlsx se queda en RECURSOS y, la próxima vez que pulses la Acción 1 sin ARTICULOS1/2.xls nuevos, te ofrecerá usarlo.\nLos artículos nuevos de DALI se añaden. El código SAP, el código de proveedor y el precio de cada artículo se conservan; si un artículo cambia de proveedor asignado, su código de proveedor y su precio se vacían y la consola lo avisa como «CASO IRREGULAR».\nYa no hay Acción 2. Hasta la versión 10.2.62, pasar ARTICULOS_DALI.xlsx al catálogo era un botón aparte (2 · Actualizar listado artículos DALI). Ahora lo hace el final de la Acción 1, para que la web quede al día en un solo paso. Los demás botones conservan su número.",
    "pagina": 9
   },
   {
-   "capitulo": "5. El catálogo DALI / SAP (Acciones 1, 2, 3 y 8)",
-   "titulo": "Acción 2 — Actualizar listado artículos DALI",
-   "texto": "Pasa al catálogo los datos de DALI de ARTICULOS_DALI.xlsx (descripción, unidad, familia, proveedor asignado, activo…), código a código. Los artículos nuevos de DALI se añaden. El código SAP, el código de proveedor y el precio de cada artículo se conservan; si un artículo cambia de proveedor asignado, su código de proveedor y su precio se vacían y la consola lo avisa como «CASO IRREGULAR».",
-   "pagina": 9
-  },
-  {
-   "capitulo": "5. El catálogo DALI / SAP (Acciones 1, 2, 3 y 8)",
+   "capitulo": "5. El catálogo DALI / SAP (Acciones 1, 3 y 8)",
    "titulo": "Acción 3 — Actualizar listado materiales SAP",
-   "texto": "Lee Productos.xlsx y Listas de productos.xlsx de RECURSOS y vuelve a rellenar los datos SAP del catálogo (descripción, unidad, grupo de productos, categoría de valoración, IGIC, grupo de compras…) de cada artículo que tenga código SAP. Si un material tiene categorías distintas según el centro, toma la más frecuente y lo dice en la consola. Si un mismo código SAP está en dos artículos, te pregunta cuál es el correcto.\nYa no pregunta si descargar el catálogo. Hasta la versión 10.2.54, antes de las Acciones 2 y 3 y al cerrar una TARIFA la consola preguntaba si el catálogo «puede estar desactualizado» y ofrecía descargarlo de la web. Ya no hace falta: la consola trabaja directamente con Catálogo Asignaciones, envía solo lo cambiado y no pisa lo que otros compañeros hayan editado en la web (capítulo 8).",
-   "pagina": 9
+   "texto": "Lee Productos.xlsx y Listas de productos.xlsx de RECURSOS y vuelve a rellenar los datos SAP del catálogo (descripción, unidad, grupo de productos, categoría de valoración, IGIC, grupo de compras…) de cada artículo que tenga código SAP. Si un material tiene categorías distintas según el centro, toma la más frecuente y lo dice en la consola. Si un mismo código SAP está en dos artículos, te pregunta cuál es el correcto.\nYa no pregunta si descargar el catálogo. Hasta la versión 10.2.54, antes de las antiguas Acciones 2 y 3 y al cerrar una TARIFA la consola preguntaba si el catálogo «puede estar desactualizado» y ofrecía descargarlo de la web. Ya no hace falta: la consola trabaja directamente con Catálogo Asignaciones, envía solo lo cambiado y no pisa lo que otros compañeros hayan editado en la web (capítulo 8).",
+   "pagina": 11
   },
   {
-   "capitulo": "5. El catálogo DALI / SAP (Acciones 1, 2, 3 y 8)",
+   "capitulo": "5. El catálogo DALI / SAP (Acciones 1, 3 y 8)",
    "titulo": "Acción 8 — Asignar SAP pendientes",
    "texto": "Abre la tabla de todos los artículos DALI activos que no tienen código SAP, igual que la de «Códigos SAP faltantes» de la Acción 4: escribes el código SAP de cada uno en su fila, en el orden que quieras.\n(1) Buscar (código, descripción, proveedor o familia, sin importar mayúsculas ni acentos) y filtros por Proveedor y Familia. Quitar filtros vuelve a la lista completa. Lo que hayas escrito no se pierde al filtrar.\n(2) Código DALI, descripción, formato, proveedor y familia de cada artículo. Se pueden seleccionar y copiar para pegarlos en SAP al crear el material: Ctrl+C copia la celda, y con el clic derecho copias el código, la descripción, el formato, el proveedor o la fila entera.\n(3) CÓDIGO SAP (introducir): escribe el código y pulsa Intro (o la flecha abajo) para pasar a la fila siguiente. Deja en blanco los que no quieras asignar ahora.\n(4) Lo que dice Productos.xlsx del código: en verde si está (con su descripción y unidad), en naranja si no está o si lo has escrito en dos artículos, y en rojo si no es un código válido.\n(5) Guardar en el catálogo lo escrito. Las filas guardadas desaparecen y puedes seguir con las demás.\n1. Pulsa 8 · Asignar SAP pendientes.\n2. Si el material aún no existe en SAP, copia su descripción y su formato (clic derecho → Copiar) para pegarlos en SAP al crearlo.\n3. Busca o filtra los artículos y escribe sus códigos SAP en la columna CÓDIGO SAP (introducir).\n4. Pulsa Guardar en el catálogo. Si un código ya lo tiene otro artículo, te pregunta cuál es el correcto (la misma ventana que en el capítulo 6).\n5. La consola completa sola los datos SAP de los que están en Productos.xlsx (como la Acción 3) y envía los cambios a Catálogo Asignaciones (capítulo 8). Si alguno no está en Productos.xlsx, te guía para descargar los listados de SAP (apartado siguiente).\nSin prisa. No hace falta completarlos todos de una vez: guarda cuando quieras y cierra. La próxima vez solo saldrán los que sigan sin código. Si cierras con códigos sin guardar, la consola te pregunta.",
-   "pagina": 10
+   "pagina": 11
   },
   {
-   "capitulo": "5. El catálogo DALI / SAP (Acciones 1, 2, 3 y 8)",
+   "capitulo": "5. El catálogo DALI / SAP (Acciones 1, 3 y 8)",
    "titulo": "Descargar los listados de SAP (Productos y Listas de productos)",
    "texto": "Cuando guardas códigos SAP (Acción 8 o «Códigos SAP faltantes» de la Acción 4) de materiales que todavía no están en Productos.xlsx —normalmente, materiales recién creados en SAP—, los códigos se envían ya a Catálogo Asignaciones, pero sus datos SAP (descripción, unidad, grupos y categoría de valoración) solo llegan con los listados descargados de SAP después de crearlos. Por eso la consola abre esta ventana:\n(1) Los códigos que no están en Productos.xlsx.\n(2) La aplicación de SAP de cada listado: Productos.xlsx se descarga en «Gestionar datos maestros de producto» y Listas de productos.xlsx en «Lista de productos».\n(3) Pulsa Ir para cargar la tabla y, a la derecha de su barra, el botón ⌄ de exportar (el último, «Abrir menú») → Exportar como….\n(4) Deja el nombre de fichero que se indica («Productos» o «Listas de productos») y el formato Microsoft Excel (*.xlsx), y pulsa Exportar. Guarda los dos archivos en RECURSOS, sustituyendo a los anteriores (con 📂 Abrir RECURSOS se abre la carpeta). Debajo se ve si cada archivo ya se ha descargado de nuevo.\n(5) Ya están en RECURSOS: actualizar ahora: la consola lanza sola la Acción 3, que completa los datos SAP en el catálogo y en la web.\n(6) Más tarde: la consola avisa de que la web queda parcialmente actualizada (tiene los códigos SAP, pero no sus datos SAP) hasta que descargues los listados y pulses la Acción 3.\nExportar como Excel. Exporta siempre con «Exportar como…» y el formato Microsoft Excel (*.xlsx), y con el nombre exacto: Productos y Listas de productos. Con otro nombre o formato, la consola no los encuentra.",
-   "pagina": 11
+   "pagina": 12
   },
   {
    "capitulo": "6. Generar la TARIFA (Acciones 4, 5 y 6)",
    "titulo": "Acción 4 — Generar TARIFA final",
    "texto": "1. Deja la tarifa del proveedor (el .xls que envía) en TARIFAS y pulsa Buscar (o la Acción 4).\n2. Si no se llama TARIFA.xls, la consola te deja elegirla de la lista y la renombra.\n3. Pulsa 4 · Generar TARIFA final. La consola copia los artículos, cruza cada código DALI con el catálogo para poner su código SAP, calcula los precios con los descuentos y marca duplicados.\n4. Resultado en TARIFAS: «PROVEEDOR [dd-mm-aaaa].xlsx» si está completa, o «PROVEEDOR [INCOMPLETO] [dd-mm-aaaa].xlsx» si faltan códigos SAP o hay duplicados. El .xls de origen se borra.\n(1) Los .xls que hay en TARIFAS.\n(2) Usar este archivo: lo renombra a TARIFA.xls y sigue.",
-   "pagina": 13
+   "pagina": 14
   },
   {
    "capitulo": "6. Generar la TARIFA (Acciones 4, 5 y 6)",
    "titulo": "Códigos SAP faltantes",
    "texto": "Si algún código DALI de la tarifa no tiene SAP en el catálogo, se abre esta ventana para escribirlo. Lo que guardes se escribe a la vez en el catálogo y en la tarifa, y se envía a Catálogo Asignaciones. Si algún código no está todavía en Productos.xlsx, después te guía para descargar los listados de SAP (capítulo 5). Para los artículos sin SAP que no son de esta tarifa, usa la Acción 8 (capítulo 5).\n(1) Código DALI, descripción y formato de cada artículo sin SAP.\n(2) Escribe aquí su código SAP. Deja en blanco los que no quieras completar ahora.\n(3) Guardar en el catálogo.",
-   "pagina": 13
+   "pagina": 14
   },
   {
    "capitulo": "6. Generar la TARIFA (Acciones 4, 5 y 6)",
    "titulo": "Códigos SAP duplicados",
    "texto": "Si el código SAP que escribes ya está asignado a otro DALI (o lo has escrito dos veces), la consola te pide cuál es el correcto.\n(1) Marca el DALI incorrecto: se le borrará ese SAP. El que quede sin marcar lo conserva. En cada grupo debe quedar al menos uno sin marcar.\n(2) Confirmar y continuar guardado.\n(3) Cancelar todo el guardado si prefieres revisarlo antes.",
-   "pagina": 14
+   "pagina": 15
   },
   {
    "capitulo": "6. Generar la TARIFA (Acciones 4, 5 y 6)",
    "titulo": "Terminar una tarifa [INCOMPLETO]",
    "texto": "Cuando ya estén los códigos (por ejemplo, después de dar de alta los materiales en SAP y repetir la Acción 3), pulsa otra vez la Acción 4: si no hay TARIFA.xls, te ofrece las tarifas [INCOMPLETO] para volver a cruzarlas con el catálogo.\n(1) Tarifas [INCOMPLETO] de TARIFAS.\n(2) Seleccionar: aplica los SAP y las descripciones del catálogo. Si queda completa, se quita [INCOMPLETO] del nombre.",
-   "pagina": 15
+   "pagina": 16
   },
   {
    "capitulo": "6. Generar la TARIFA (Acciones 4, 5 y 6)",
    "titulo": "Acción 6 — Corregir a mano un archivo [INCOMPLETO]",
    "texto": "(1) Los pasos a seguir.\n(2) Tarifas [INCOMPLETO].\n(3) Abrir en Excel: corrige (líneas duplicadas, códigos pendientes), guarda, cierra Excel y vuelve a pasar la Acción 4.\nLa Acción 5 abre en Excel la última TARIFA procesada para revisarla.\nCatálogo DALI completo. Al completar una TARIFA, la consola pasa al catálogo DALI completo los códigos y precios del proveedor. Si un código DALI de la tarifa tiene asignado otro proveedor en DALI, no lo toca y lo avisa como «CASO IRREGULAR»: revísalo en DALI. Después, los precios y códigos de proveedor cambiados se envían a Catálogo Asignaciones (capítulo 8).",
-   "pagina": 16
+   "pagina": 17
   },
   {
    "capitulo": "7. Crear el Registro Info (RINFO)",
    "titulo": "7. Crear el Registro Info (RINFO)",
    "texto": "Con la TARIFA ya completa (sin [INCOMPLETO]), pulsa el acceso rápido Crear / Actualizar Registro Info SAP.\n(1) TARIFAS finales disponibles (no salen las [INCOMPLETO] ni los RINFO).\n(2) Continuar: la consola busca el proveedor en Proveedores.xlsx y un Purchasing compatible en TARIFAS.",
-   "pagina": 17
+   "pagina": 18
   },
   {
    "capitulo": "7. Crear el Registro Info (RINFO)",
    "titulo": "Si el proveedor ya tiene Registros Info en SAP (Purchasing encontrado)",
    "texto": "Si en TARIFAS hay un Purchasing Info Records.xlsx de ese proveedor (descargado de SAP), la consola lo usa como base: conserva los registros que ya existen, actualiza precios y fechas y añade los materiales nuevos de la tarifa.\n(1) Proveedor SAP (nombre y código) encontrado en Proveedores.xlsx.\n(2) El Purchasing encontrado y su parecido con el proveedor.\n(3) Continuar usando este Purchasing (lo normal).\n(4) Comenzar desde cero: un Registro Info nuevo sin tener en cuenta el Purchasing.",
-   "pagina": 17
+   "pagina": 18
   },
   {
    "capitulo": "7. Crear el Registro Info (RINFO)",
    "titulo": "Si no hay Purchasing",
    "texto": "(1) Descargar el Purchasing desde SAP primero: muestra los 7 pasos en SAP. Guárdalo en TARIFAS y vuelve a empezar.\n(2) Crear nuevo Registro Info desde cero, si el proveedor no tiene ninguno en SAP.\n(1) Acceso directo a SAP S/4HANA. Sigue los pasos y guarda el archivo descargado en TARIFAS.",
-   "pagina": 18
+   "pagina": 19
   },
   {
    "capitulo": "7. Crear el Registro Info (RINFO)",
    "titulo": "Teléfono, fechas y centros",
    "texto": "(1) Teléfono (8 a 10 cifras; los espacios se quitan solos).\n(2) Asignar teléfono y continuar.\n(3) Sin teléfono, si no lo tienes.\n(1) Inicio de validez (dd.mm.aaaa).\n(2) Fin de validez.\n(3) Confirmar fechas y continuar.\n(1) Todos / Ninguno para marcar o desmarcar de golpe.\n(2) Centros (hoteles). Desmarca los que no vayan a comprar esta tarifa.\n(3) Confirmar selección y continuar.",
-   "pagina": 19
+   "pagina": 20
   },
   {
    "capitulo": "7. Crear el Registro Info (RINFO)",
    "titulo": "Avisos durante la generación",
    "texto": "Con un Purchasing existente, puede preguntarte qué hacer con materiales que ya están en SAP pero no vienen en la tarifa nueva:\n(1) Materiales del Purchasing que no están en la tarifa, con su fin de validez. Marca los que quieras dar de baja.\n(2) MANTENER: no cambia nada.\n(3) DAR BAJA: los marca para borrar en SAP.\nY si algún material sigue en la tarifa pero su Registro Info está marcado para borrar en SAP, te avisa de que hay que reactivarlo a mano en SAP, con los centros afectados:\n(1) Material, Registro Info y centros afectados.\n(2) Los pasos en SAP («Marcar reg.info de compra para borrar»), con una captura de referencia.",
-   "pagina": 21
+   "pagina": 22
   },
   {
    "capitulo": "7. Crear el Registro Info (RINFO)",
    "titulo": "Resultado",
    "texto": "(1) Resumen: materiales que ya existían y nuevos añadidos.\n(2) Sí, abrir ahora para revisarlo en Excel.\n(1) Valores escritos: proveedor SAP, código y artículos copiados.\n(2) Sí, abrir ahora.\nAntes de importarlo en SAP. Mira el resumen de validación de la consola: si dice «Sin incidencias detectadas», el archivo puede importarse. Importa cada RINFO una sola vez. Si necesitas repetir la carga, vuelve a descargar el Purchasing de SAP y genera el RINFO otra vez: un Purchasing antiguo ya no refleja lo que hay en SAP.",
-   "pagina": 22
+   "pagina": 23
   },
   {
    "capitulo": "8. Cambios en Catálogo Asignaciones",
    "titulo": "8. Cambios en Catálogo Asignaciones",
-   "texto": "Después de la Acción 2, la Acción 3, la Acción 8, al completar una TARIFA (Acción 4) o al resolver un código SAP duplicado, la consola envía a la web Catálogo Asignaciones solo lo que ha cambiado: altas y datos DALI, datos SAP, y precio y código de proveedor. Lo hace en segundo plano: puedes seguir trabajando mientras tanto.\nLa primera vez en cada PC descarga una copia del catálogo de la web (tarda un poco); después solo pregunta lo que ha cambiado. Antes de tocar nada, la web comprueba el envío y la consola te enseña un resumen:\n(1) Cuántos artículos cambian de cada tipo: datos DALI (con las altas), datos SAP y precio y código de proveedor.\n(2) Artículos que se cambiaron en la web (o que envió otro compañero) desde tu último envío. Por defecto, sus datos SAP, su precio y su código de proveedor no se tocan; marca la casilla si quieres sustituirlos por los de la consola. La descripción DALI siempre se envía: solo se carga desde la consola.\n(3) Artículos que la web no cambiará: el proveedor asignado no es el de la tarifa, o el código de proveedor guardado es otro. Revísalos y corrígelos.\n(4) Detalle: cada cambio, con el valor de la web y el nuevo.\n(5) Actualizar la web: aplica los cambios.\n(6) Ahora no: no envía nada; los cambios volverán a salir la próxima vez.\nAl terminar. La consola dice si la web y tu catálogo coinciden. Si quedan diferencias (cambios de la web que dejaste fuera o artículos irregulares), te dice cuántas. En la web nunca se borra nada desde la consola, y un precio o un código de proveedor vacío en tu catálogo no borra el de la web.\nPermiso necesario. Para enviar cambios (y para abrir la consola) tu cuenta de Catálogo Asignaciones necesita el permiso «Escribir desde la Consola Registro Info». Si falta, la consola lo dice en rojo.",
-   "pagina": 24
+   "texto": "Al final de la Acción 1, después de la Acción 3, la Acción 8, al completar una TARIFA (Acción 4) o al resolver un código SAP duplicado, la consola envía a la web Catálogo Asignaciones solo lo que ha cambiado: altas y datos DALI, datos SAP, y precio y código de proveedor. Lo hace en segundo plano: puedes seguir trabajando mientras tanto.\nLa primera vez en cada PC descarga una copia del catálogo de la web (tarda un poco); después solo pregunta lo que ha cambiado. Antes de tocar nada, la web comprueba el envío y la consola te enseña un resumen:\n(1) Cuántos artículos cambian de cada tipo: datos DALI (con las altas), datos SAP y precio y código de proveedor.\n(2) Artículos que se cambiaron también en la web (o que envió otro compañero) desde tu último envío. Lo cambiado en la web ya se ha copiado a tu catálogo (ver «Lo cambiado en la web llega a tu catálogo», más abajo); aquí solo queda lo que la consola cambió después. La descripción DALI siempre se envía: solo se carga desde la consola.\n(3) Artículos que la web no cambiará: el proveedor asignado no es el de la tarifa, o el código de proveedor guardado es otro. Revísalos y corrígelos.\n(4) Detalle: cada cambio, con el valor de la web y el nuevo.\n(5) Actualizar la web: aplica los cambios.\n(6) Ahora no: no envía nada; los cambios volverán a salir la próxima vez.",
+   "pagina": 25
+  },
+  {
+   "capitulo": "8. Cambios en Catálogo Asignaciones",
+   "titulo": "Lo cambiado en la web llega a tu catálogo",
+   "texto": "En la web se pueden cambiar el código SAP, su descripción y el código de proveedor (los datos DALI, no). Esos cambios bajan solos a RECURSOS/catalogo-dali-completo.xlsx, sin que tengas que hacer nada, en dos momentos: antes de cada envío (también al final de la Acción 1) y al empezar las Acciones 3, 4 y 8, para que trabajen ya con lo de la web. Por ejemplo, un código SAP corregido en la web se completa en la Acción 3 con Productos.xlsx y se usa en la siguiente TARIFA.\n1. Si un dato (datos SAP, precio o código de proveedor) solo ha cambiado en la web, se copia a tu catálogo.\n2. Si solo ha cambiado en la consola, se envía a la web.\n3. Si ha cambiado en los dos sitios, gana la última modificación. La consola lo dice en la ventana de la consola («gana la web» o «gana la Consola»).\nCon el catálogo abierto en Excel. Si tienes catalogo-dali-completo.xlsx abierto, la consola no puede copiar lo de la web y lo avisa. Mientras tanto, esos datos tampoco se envían, para no pisar los de la web; se copiarán la próxima vez, con el archivo cerrado.\nAl terminar. La consola dice si la web y tu catálogo coinciden. Si quedan diferencias (artículos irregulares que la web no aplica), te dice cuántas. En la web nunca se borra nada desde la consola, y un precio o un código de proveedor vacío en tu catálogo no borra el de la web.\nPermiso necesario. Para enviar cambios (y para abrir la consola) tu cuenta de Catálogo Asignaciones necesita el permiso «Escribir desde la Consola Registro Info». Si falta, la consola lo dice en rojo.",
+   "pagina": 25
   },
   {
    "capitulo": "9. Consultar el manual y actualizaciones",
    "titulo": "Consultar el manual",
    "texto": "En la barra 🔎 Consultar el manual, encima de la consola, escribe tu duda con tus palabras (por ejemplo, «códigos SAP faltantes» o «contraseña catálogo») y pulsa Intro. La consola busca en este manual y te enseña los apartados que mejor encajan, con un fragmento y la página. No necesita Internet.\n(1) Tu consulta. Puedes cambiarla y pulsar Buscar otra vez.\n(2) Apartados del manual que mejor responden, con su capítulo, página y un fragmento.\n(3) Abrir el manual completo (también con el acceso rápido Manual de usuario).\n(4) Guardar una copia del manual donde quieras.",
-   "pagina": 26
+   "pagina": 27
   },
   {
    "capitulo": "9. Consultar el manual y actualizaciones",
    "titulo": "Actualizaciones",
    "texto": "(1) Las novedades de la versión nueva.\n(2) Actualizar ahora: descarga, comprueba que es la versión oficial (SHA-256), sustituye el programa y se vuelve a abrir solo.\n(3) Más tarde: te lo volverá a ofrecer la próxima vez que la abras.\nQué pasa con la versión anterior. Al abrirse la versión nueva, borra sola la anterior (TARIFA_Finder.anterior.exe) y lo dice en la consola: «Versión anterior borrada». Tu carpeta del proyecto, tu contraseña guardada y tu copia del catálogo de la web no se tocan.\nSi tienes la consola en una carpeta de red. En una carpeta compartida (por ejemplo, en G:) Windows no deja cambiar el programa mientras está abierto. Desde la versión 10.2.56, la consola se cierra, termina de actualizarse sola y se vuelve a abrir en unos segundos. Si la actualización desde una versión anterior se quedó a medias («No se pudo renombrar el programa actual… [WinError 32]»): cierra la consola, cambia el nombre de TARIFA_Finder.exe a TARIFA_Finder.anterior.exe y el de TARIFA_Finder.nuevo.exe a TARIFA_Finder.exe, y ábrela.",
-   "pagina": 26
+   "pagina": 27
   },
   {
    "capitulo": "10. Consulta rápida y problemas frecuentes",
    "titulo": "10. Consulta rápida y problemas frecuentes",
    "texto": "«TARIFA.xls NO ENCONTRADA» — No hay ninguna tarifa .xls en TARIFAS — Copia el .xls del proveedor en TARIFAS y pulsa Buscar.\nLa tarifa sale como [INCOMPLETO] — Faltan códigos SAP o hay duplicados — Completa los SAP (ventana que se abre) o usa la Acción 6, y repite la Acción 4.\n«DALI sin DESCRIPCION/UNIDAD SAP» — El material tiene código SAP pero el catálogo no tiene sus datos de SAP — Descarga de SAP Productos.xlsx y Listas de productos.xlsx a RECURSOS (capítulo 5) y pasa la Acción 3.\nVentana «Faltan los listados de SAP actualizados» — Has guardado códigos SAP que aún no están en Productos.xlsx — Descarga los dos listados de SAP a RECURSOS y pulsa «Ya están en RECURSOS» (capítulo 5).\n«La web queda PARCIALMENTE actualizada» — Dejaste los listados de SAP para más tarde — Cuando los descargues a RECURSOS, pulsa la Acción 3.\nArtículos DALI activos sin código SAP — Aún no tienen material SAP asignado — Asígnalos con la Acción 8.\n«CASO IRREGULAR» — El DALI tiene asignado otro proveedor en DALI — Revisa en DALI el proveedor asignado de esos códigos.\n«No se encontró Purchasing Info Records compatible» — En TARIFAS no hay un Purchasing de ese proveedor — Descárgalo de SAP (7 pasos) o crea el RINFO desde cero.\nError al guardar un archivo — Seguramente está abierto en Excel — Ciérralo en Excel y repite la acción.\n«Usuario no autorizado.» al abrir — Tu cuenta no es de administrador, no está activa o no tiene el permiso «Escribir desde la Consola Registro Info» — Pide el permiso al administrador principal de Catálogo Asignaciones.\n«Email o contraseña incorrectos.» — Los datos no coinciden con los de la web — Escríbelos de nuevo (son los de Catálogo Asignaciones).\nVentana «Cambios para Catálogo Asignaciones» — La consola va a enviar a la web lo que ha cambiado — Revisa el resumen y pulsa Actualizar la web (capítulo 8).\npaso_listado_a_catalogo_….txt en RECURSOS — Diferencias encontradas al pasar el antiguo LISTADO al catálogo (solo una vez) — Revísalo por si alguna diferencia era un error.\n«Listado no encontrado» en otro PC — Ese PC tiene una consola antigua, que aún busca el LISTADO — Actualízala (Actualizar ahora al abrirla).\n«No se pudo comprobar si hay versión nueva» — Sin conexión con GitHub en ese momento — Nada: se comprobará la próxima vez.\nLa app parece «colgada» — Está trabajando o espera una ventana — Mira la consola y si hay una ventana detrás; guarda el log si hay un error.\nPara pedir ayuda. Pulsa guardar log y envía el .txt junto con el nombre del archivo con el que estabas trabajando. Con eso se puede ver exactamente qué pasó.",
-   "pagina": 28
+   "pagina": 29
   }
  ]
 }

@@ -7,9 +7,22 @@ Mixin de App (tarifa_app.py): sus métodos se usan como self.metodo(). Separado 
 en la etapa 4 (nov 2026) sin cambiar el código.
 Central Compras Princess Canarias · La idea y el desarrollo de la aplicación son de
 Víctor Alejandro Martín Andrade (VAMA).
+
+13 nov 2026 (petición de Víctor): al terminar ya no sale solo el mensaje de resultado, sino la ventana
+app/ui/ventana_volcado_dali.py con ese resumen, la pregunta de si se quiere revisar ARTICULOS_DALI.xlsx en Excel y,
+tras contestar, el botón «Actualizar Catálogo Asignaciones», que pasa el archivo al catálogo completo y lo envía a la
+web (_volcar_articulos_dali_al_catalogo, lo que antes era la Acción 2). Si la validación de diccionarios falla, el
+archivo no es bueno: sale el mensaje de siempre y no se ofrece actualizar.
 """
 
 import os
+# (13 nov 2026) messagebox se importa aquí, una vez. Antes se importaba dentro de proceso() solo en los bloques
+# except: eso lo convertía en variable local de proceso() y los mensajes lanzados antes con self.after (faltan
+# ARTICULOS1/2 y no hay ARTICULOS_DALI previo, incidencias de duplicados y validación fallida) daban NameError en
+# silencio y no salían nunca. Lo vigila tests/test_accion1_mensajes.py.
+from tkinter import messagebox
+
+from app.comun import volcado_dali
 
 
 class AccionOrganizarDali:
@@ -27,7 +40,6 @@ class AccionOrganizarDali:
 
         carpeta = self._carpeta_proyecto.get().strip()
         if not carpeta or not os.path.isdir(carpeta):
-            from tkinter import messagebox
             messagebox.showwarning("Sin proyecto",
                                    "Seleccione primero la carpeta del Proyecto.")
             return
@@ -72,7 +84,6 @@ class AccionOrganizarDali:
                         _respuesta = [None]
 
                         def _preguntar(r=_respuesta):
-                            from tkinter import messagebox
                             r[0] = messagebox.askyesno(
                                 "Archivos ARTICULOS no encontrados",
                                 f"\u274c  No se encontraron los siguientes archivos en RECURSOS/:\n\n"
@@ -87,7 +98,8 @@ class AccionOrganizarDali:
                                 f"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n"
                                 f"Se ha encontrado un ARTICULOS_DALI.xlsx existente:\n\n"
                                 f"   {_info_fecha}\n\n"
-                                f"\u00bfDesea actualizar el listado art\u00edculos DALI ahora?",
+                                f"\u00bfDesea usar este archivo para actualizar el cat\u00e1logo\n"
+                                f"y Cat\u00e1logo Asignaciones?",
                                 icon="warning"
                             )
 
@@ -98,11 +110,16 @@ class AccionOrganizarDali:
                             _time.sleep(0.1)
 
                         if _respuesta[0] is True:
-                            # Usuario quiere actualizar → lanzar acción 2 directamente
-                            self.log_consola("Lanzando actualizaci\u00f3n DALI (acci\u00f3n 2)...", "INFO")
+                            # Usuario quiere actualizar → la misma ventana del final (revisar y actualizar)
+                            self.log_consola("Se usa el ARTICULOS_DALI.xlsx existente.", "INFO")
                             self.consola.separador("FIN ORGANIZACIÓN DALI")
                             self.after(0, lambda: self._barra.reset(""))
-                            self.after(100, self._actualizar_listado_dali)
+                            _lineas = [("Se usará el ARTICULOS_DALI.xlsx que ya está en RECURSOS:", "info"),
+                                       (f"   {_info_fecha}", "info"),
+                                       ("", "info"),
+                                       (f"📁  {output}", "nota")]
+                            self.after(0, lambda li=_lineas: self._final_accion1(
+                                "DALI — Actualizar Catálogo Asignaciones", li, output))
                             return
                         else:
                             # Usuario cierra → volver a la interfaz sin hacer nada
@@ -208,11 +225,13 @@ class AccionOrganizarDali:
                 #  Si alguna columna tiene coincidencia 0 % se lanza error y se
                 #  advierte al usuario que revise los filtros de la opción 131.
                 # ═══════════════════════════════════════════════════════════════
+                _valido = True     # False si falla la validación: entonces no se ofrece actualizar la web
                 try:
                     _val = organizar_dali_datos.validar_diccionarios_sap(
                         df_final, self.log_consola)
 
                     if _val["columnas_sin_match"]:
+                        _valido = False
                         _cols_str = "\n".join(f"   \u2022 {c}" for c in _val["columnas_sin_match"])
 
                         # Eliminar ARTICULOS1/2 (proceso incorrecto)
@@ -272,8 +291,7 @@ class AccionOrganizarDali:
                 def _mostrar_resultado(n=n_filas, s=saltos, fl=faltantes_lista,
                                        e=errores, ruta=recursos_path,
                                        techo=_ultimo_cod_art1,
-                                       elim=_eliminados_ok):
-                    from tkinter import messagebox
+                                       elim=_eliminados_ok, valido=_valido):
 
                     # Construir texto del mensaje
                     lineas = [
@@ -311,8 +329,12 @@ class AccionOrganizarDali:
 
                     tipo  = "error" if fl else "info"
                     titulo = "DALI — Proceso completado" + (" con errores" if fl else "")
-                    msg = "\n".join(lineas)
 
+                    if valido:
+                        self._final_accion1(titulo, volcado_dali.lineas_con_tipo(lineas), output)
+                        return
+
+                    msg = "\n".join(lineas)
                     if tipo == "error":
                         messagebox.showerror(titulo, msg)
                     else:
@@ -324,7 +346,6 @@ class AccionOrganizarDali:
                 self.log_consola(f"ERROR: {e}", "ERROR")
                 self.consola.separador("FIN ORGANIZACIÓN DALI (con error)")
                 self.after(0, lambda: self._barra.reset("Error en DALI"))
-                from tkinter import messagebox
                 self.after(0, lambda err=str(e): messagebox.showerror(
                     "Error en DALI — archivo en uso",
                     "\u2718  No se pudo guardar el archivo.\n\n"
@@ -337,7 +358,6 @@ class AccionOrganizarDali:
                 self.log_consola(f"ERROR: {e}", "ERROR")
                 self.consola.separador("FIN ORGANIZACIÓN DALI (con error)")
                 self.after(0, lambda: self._barra.reset("Error en DALI"))
-                from tkinter import messagebox
                 self.after(0, lambda err=str(e): messagebox.showerror(
                     "Error en DALI",
                     "\u2718  El proceso no se completó correctamente.\n\n"
@@ -345,3 +365,15 @@ class AccionOrganizarDali:
                     "Revise la ventana de log para más información."))
 
         threading.Thread(target=proceso, daemon=True).start()
+
+    def _final_accion1(self, titulo, lineas, ruta_articulos):
+        """(13 nov 2026) Ventana del final de la Acción 1 (en el hilo principal). Si se pulsa «Actualizar Catálogo
+        Asignaciones», pasa ARTICULOS_DALI.xlsx al catálogo y lo envía a la web."""
+        from app.ui import ventana_volcado_dali
+        if ventana_volcado_dali.preguntar(self, titulo, lineas, ruta_articulos) == "actualizar":
+            self.log_consola("Actualizando el catálogo y Catálogo Asignaciones con ARTICULOS_DALI.xlsx...", "INFO")
+            self._volcar_articulos_dali_al_catalogo()
+        else:
+            self.log_consola("Catálogo Asignaciones sin actualizar: ARTICULOS_DALI.xlsx queda en RECURSOS "
+                             "(la Acción 1 ofrecerá usarlo la próxima vez).", "WARN")
+

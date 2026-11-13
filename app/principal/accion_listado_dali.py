@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 accion_listado_dali.py
-Acción 2 — Actualizar los artículos DALI del catálogo.
+Pasar ARTICULOS_DALI.xlsx al catálogo completo y a Catálogo Asignaciones (antes, Acción 2).
 
 Mixin de App (tarifa_app.py): sus métodos se usan como self.metodo(). Separado de tarifa_app.py
 en la etapa 4 (nov 2026) sin cambiar el código.
@@ -14,22 +14,28 @@ dejando el código SAP de la columna D en su fila: si DALI quitaba o intercalaba
 quedaban emparejados con el artículo de al lado. Ahora regenera directamente el catálogo completo, emparejando
 siempre por código DALI: los datos DALI salen de ARTICULOS_DALI.xlsx y los SAP, el código de proveedor y el precio
 se conservan del catálogo anterior (ver _regenerar_catalogo_dali_completo_impl).
+
+13 nov 2026 (petición de Víctor, «reducir pasos y que todo esté actualizado en la web lo antes posible»): ya no hay
+botón 2. Esto lo lanza el botón «Actualizar Catálogo Asignaciones» del final de la Acción 1
+(app/ui/ventana_volcado_dali.py), que ya ha pedido la confirmación; por eso aquí no se pregunta otra vez.
+_regenerar_catalogo_dali_completo envía después a la web solo lo que haya cambiado.
 """
 
 import os
 from tkinter import messagebox
 import threading
+from app.comun import volcado_dali
 from app.comun.tarifa_core import (
     FOLDER_RECURSOS,
 )
 
 
 class AccionListadoDali:
-    def _actualizar_listado_dali(self):
+    def _volcar_articulos_dali_al_catalogo(self):
         """
-        PUNTO 2 — Actualizar los artículos DALI del catálogo.
-        Origen : RECURSOS/ARTICULOS_DALI.xlsx  (generado por Punto 1)
-        Destino: RECURSOS/catalogo-dali-completo.xlsx (por código DALI)
+        Final de la Acción 1 — Actualizar el catálogo y Catálogo Asignaciones con los artículos DALI.
+        Origen : RECURSOS/ARTICULOS_DALI.xlsx  (generado por la Acción 1 y, si se quiso, revisado en Excel)
+        Destino: RECURSOS/catalogo-dali-completo.xlsx (por código DALI) y, después, Catálogo Asignaciones
         """
         carpeta = self._carpeta_proyecto.get().strip()
         if not carpeta:
@@ -48,33 +54,16 @@ class AccionListadoDali:
                 "Archivo no encontrado",
                 "❌  No se encontró el archivo:\n\n"
                 f"   {ruta_origen}\n\n"
-                "Debe ejecutar primero la opción\n"
-                "▶  1 — Organizar artículos DALI\n\n"
+                "Ejecute la Acción 1 — Organizar artículos DALI\n"
                 "para generar este archivo antes de continuar.")
             return
 
         # ── Leer fecha del encabezado (celda B3) ─────────────────
         try:
-            import openpyxl
-            wb_orig = openpyxl.load_workbook(ruta_origen, read_only=True, data_only=True)
-            celda_b3 = wb_orig.active["B3"].value or ""
-            wb_orig.close()
+            texto_fecha = volcado_dali.fecha_encabezado(ruta_origen)
         except Exception as e:
             messagebox.showerror("Error al leer origen",
                                  f"No se pudo leer ARTICULOS_DALI.xlsx:\n{e}")
-            return
-        texto_fecha = str(celda_b3).strip() if celda_b3 else "(fecha no disponible)"
-
-        # ── Confirmación al usuario ───────────────────────────────
-        if not messagebox.askyesno(
-                "Confirmar actualización DALI",
-                f"Archivo origen encontrado:\n"
-                f"   ARTICULOS_DALI.xlsx\n\n"
-                f"   {texto_fecha}\n\n"
-                f"Destino:\n"
-                f"   RECURSOS/catalogo-dali-completo.xlsx\n\n"
-                "¿Desea continuar?"):
-            self.log_consola("Actualización DALI cancelada por el usuario.", "WARN")
             return
 
         # ── Proceso en hilo ──────────────────────────────────────
@@ -83,13 +72,7 @@ class AccionListadoDali:
             self.log_consola("Iniciando actualización de los artículos DALI del catálogo...", "INFO")
             self.after(0, lambda: self._barra.indeterminate("Leyendo ARTICULOS_DALI..."))
             try:
-                import openpyxl
-                wb = openpyxl.load_workbook(ruta_origen, read_only=True, data_only=True)
-                n_filas = 0
-                for fila in wb.active.iter_rows(min_row=8, max_col=1, values_only=True):
-                    if fila and fila[0] not in (None, ""):
-                        n_filas += 1
-                wb.close()
+                n_filas = volcado_dali.contar_articulos(ruta_origen)
                 self.log_consola(f"Artículos en ARTICULOS_DALI.xlsx: {n_filas}", "OK")
                 if n_filas == 0:
                     self.after(0, lambda: self._barra.reset("Sin datos en origen"))
@@ -112,7 +95,9 @@ class AccionListadoDali:
                     f"✔  Artículos DALI actualizados en el catálogo\n\n"
                     f"   Artículos DALI : {n}\n"
                     f"   {texto_fecha}\n\n"
-                    f"\U0001f4c1  {ruta_catalogo}"))
+                    f"\U0001f4c1  {ruta_catalogo}\n\n"
+                    "Los cambios se envían ahora a Catálogo Asignaciones:\n"
+                    "verás el resumen antes de aplicarlos."))
 
             except PermissionError:
                 self.log_consola("ERROR: catalogo-dali-completo.xlsx está abierto en Excel.", "ERROR")
@@ -122,7 +107,8 @@ class AccionListadoDali:
                     "Archivo bloqueado por Excel",
                     "❌  No se pudo guardar RECURSOS/catalogo-dali-completo.xlsx:\n"
                     "está abierto en Excel.\n\n"
-                    "Ciérrelo y vuelva a ejecutar la Acción 2."))
+                    "Ciérrelo y vuelva a pulsar la Acción 1: ofrecerá usar el\n"
+                    "ARTICULOS_DALI.xlsx ya generado para actualizar."))
             except Exception as e:
                 self.log_consola(f"ERROR: {e}", "ERROR")
                 self.consola.separador("FIN ACTUALIZACIÓN DALI (con error)")

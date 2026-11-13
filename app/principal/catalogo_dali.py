@@ -526,7 +526,7 @@ class CatalogoDali:
         finally:
             self._catalogo_lock.release()
         # Etapa 6 (v10.2.50): enviar a Catálogo Asignaciones lo que haya cambiado (en segundo plano).
-        self._publicar_catalogo_web("regenerar el catálogo (Acción 2 o 3)")
+        self._publicar_catalogo_web("regenerar el catálogo (Acción 1 o 3)")
         return resultado
 
     def _regenerar_catalogo_dali_completo_impl(self, tabla_sap=None):
@@ -540,8 +540,8 @@ class CatalogoDali:
             manda la Acción 3. Ya no existe el «LISTADO CODIGOS DALI - SAP.xlsx» (decisión de Víctor, 13 nov
             2026; ver app/comun/catalogo_local.py). Si todavía está, antes se pasa al catálogo (migrar_listado).
 
-        Llamado automáticamente al final de _actualizar_listado_dali()
-        (Acción 2) y de _cruzar_y_escribir_listado_sap() (Acción 3) --
+        Llamado automáticamente al final de _volcar_articulos_dali_al_catalogo()
+        (final de la Acción 1; antes, Acción 2) y de _cruzar_y_escribir_listado_sap() (Acción 3) --
         cada vez que cualquiera de las dos actualiza el LISTADO, el
         catálogo se regenera para mantenerse siempre sincronizado. No es
         una acción independiente con botón propio: se ejecuta de forma
@@ -1147,7 +1147,7 @@ class CatalogoDali:
                 self.log_consola(
                     "  ⚠  El catálogo no tiene la columna «Precio €» (formato antiguo): "
                     "los precios de la tarifa no se han guardado; se incorporarán "
-                    "cuando se regenere el catálogo (Acción 2/3).", "WARN")
+                    "cuando se regenere el catálogo (Acción 1 o 3).", "WARN")
             else:
                 self.log_consola(
                     f"  └ Precio €: {_precios_escritos} precio(s) pegado(s) desde la "

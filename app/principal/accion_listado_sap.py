@@ -741,7 +741,8 @@ class AccionListadoSap:
                 "Destino no encontrado",
                 "❌  No se encontró el archivo destino:\n\n"
                 f"   {ruta_destino}\n\n"
-                "Ejecute primero la Acción 2 (artículos DALI), que crea el catálogo\n"
+                "Ejecute primero la Acción 1 (artículos DALI) y pulse «Actualizar\n"
+                "Catálogo Asignaciones» al final: así se crea el catálogo\n"
                 "RECURSOS/catalogo-dali-completo.xlsx.")
             return
 
@@ -753,6 +754,8 @@ class AccionListadoSap:
         # ── 6. Proceso en hilo ────────────────────────────────────────
         def proceso():
             self.consola.separador("INICIO ACTUALIZACIÓN SAP")
+            # (13 nov 2026) Primero lo cambiado en la web (p. ej. un código SAP corregido allí), para completarlo
+            self._traer_cambios_web("la Acción 3")
             self.log_consola("Iniciando actualización listado materiales SAP...", "INFO")
             self.after(0, lambda: self._barra.indeterminate("Leyendo Productos.xlsx..."))
 

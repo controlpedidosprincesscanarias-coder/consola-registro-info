@@ -24,6 +24,14 @@ Cómo funciona (sin tkinter: se prueba en tests/test_catalogo_web.py):
 3. Se envía primero con «simular» (la web dice qué cambiaría) y, si se confirma, se aplica, por lotes.
 
 Nunca se borra nada en la web: un artículo que está en la web y no en el Excel local se deja como está.
+
+4. (13 nov 2026, petición de Víctor) Lo cambiado en la web (datos SAP, código de proveedor y precio; los datos DALI
+   no se editan en la web) baja solo al Excel, y la Consola no lo pisa: en cada campo **gana la última
+   modificación**. Para saber quién cambió qué, la `Cache` guarda la «base»: el último valor en que coincidían el
+   Excel y la web, campo a campo (`acordar`). `fusionar` compara Excel, web y base: si solo cambió la web, se baja
+   al Excel; si solo cambió el Excel, se sube; si cambiaron los dos, gana el cambio más reciente (hora de la web
+   frente a la hora en que la Consola vio el cambio en el Excel). Se hace antes de las acciones que escriben esos
+   datos (3, 4 y 8) y antes de cada envío.
 """
 import http.cookiejar
 import json
@@ -59,6 +67,10 @@ GRUPOS = {
 }
 # Solo se cargan desde la Consola (no se editan en la web): siempre manda lo de la Consola.
 SOLO_DESDE_CONSOLA = ("nombre_articulo",)
+# Se editan en la web y en la Consola: en cada uno gana la última modificación (ver fusionar).
+CAMPOS_COMPARTIDOS = GRUPOS["accion3"] + GRUPOS["accion4"]
+# Campo de la web → columna del Excel (inversa de CLAVE_WEB)
+CLAVE_LOCAL = {web: local for local, web in CLAVE_WEB.items()}
 NOMBRE_GRUPO = {"accion2": "Datos DALI", "accion3": "Datos SAP", "accion4": "Precio y código de proveedor"}
 
 
@@ -156,6 +168,9 @@ class Cache:
         self.publicado_hasta = None
         self.protegidos = set()
         self.articulos = {}
+        self.base = {}                 # {cod: {campo: valor}}: último valor en que coincidían Excel y web
+        self.web_cambiado_en = {}      # {cod: {campo: hora}}: cuándo se vio cambiar en la web
+        self.local_cambiado_en = {}    # {cod: {campo: [valor, hora]}}: cuándo vio la Consola el cambio en el Excel
 
     def cargar(self):
         try:
@@ -165,8 +180,12 @@ class Cache:
             self.publicado_hasta = datos.get("publicado_hasta")
             self.protegidos = {int(c) for c in datos.get("protegidos") or []}
             self.articulos = {int(k): v for k, v in (datos.get("articulos") or {}).items()}
+            self.base = {int(k): v for k, v in (datos.get("base") or {}).items()}
+            self.web_cambiado_en = {int(k): v for k, v in (datos.get("web_cambiado_en") or {}).items()}
+            self.local_cambiado_en = {int(k): v for k, v in (datos.get("local_cambiado_en") or {}).items()}
         except (OSError, ValueError, TypeError, AttributeError):
             self.hasta, self.publicado_hasta, self.protegidos, self.articulos = None, None, set(), {}
+            self.base, self.web_cambiado_en, self.local_cambiado_en = {}, {}, {}
         return self
 
     def guardar(self):
@@ -174,17 +193,30 @@ class Cache:
         tmp = self.ruta + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump({"hasta": self.hasta, "publicado_hasta": self.publicado_hasta,
-                       "protegidos": sorted(self.protegidos), "articulos": {str(k): v for k, v in self.articulos.items()}}, f,
+                       "protegidos": sorted(self.protegidos), "articulos": {str(k): v for k, v in self.articulos.items()},
+                       "base": {str(k): v for k, v in self.base.items()},
+                       "web_cambiado_en": {str(k): v for k, v in self.web_cambiado_en.items()},
+                       "local_cambiado_en": {str(k): v for k, v in self.local_cambiado_en.items()}}, f,
                       ensure_ascii=False)
         os.replace(tmp, self.ruta)
 
-    def aplicar_pagina(self, articulos):
+    def aplicar_pagina(self, articulos, hasta=None):
+        """Guarda los artículos recibidos. Si un campo compartido ha cambiado respecto a la copia anterior, apunta
+        cuándo (`web_cambiado_en`): la hora de modificación del artículo; para el código de proveedor, que la web
+        guarda en otra tabla, la hora de esta consulta (`hasta`), que es posterior o igual al cambio."""
         for a in articulos:
             cod = codigo_dali(a.get("codigo_dali"))
             if cod is None:
                 continue
-            self.articulos[cod] = {campo: normalizar(campo, a.get(campo))
-                                   for campo in set().union(*GRUPOS.values())} | {"modificado_en": a.get("modificado_en")}
+            anterior = self.articulos.get(cod)
+            nuevo = {campo: normalizar(campo, a.get(campo))
+                     for campo in set().union(*GRUPOS.values())} | {"modificado_en": a.get("modificado_en")}
+            if anterior is not None:
+                for campo in CAMPOS_COMPARTIDOS:
+                    if anterior.get(campo) != nuevo.get(campo):
+                        hora = (hasta if campo == "codigo_proveedor" else nuevo["modificado_en"]) or hasta or ""
+                        self.web_cambiado_en.setdefault(cod, {})[campo] = hora
+            self.articulos[cod] = nuevo
 
     def sincronizar(self, cliente, progreso=None):
         """Trae de la web lo cambiado desde la última vez (o todo, la primera). Devuelve cuántos artículos."""
@@ -193,7 +225,7 @@ class Cache:
             datos = cliente.cambios(desde, pagina)
             hasta = hasta or datos.get("hasta")
             articulos = datos.get("articulos") or []
-            self.aplicar_pagina(articulos)
+            self.aplicar_pagina(articulos, datos.get("hasta"))
             total += len(articulos)
             if progreso:
                 progreso(total)
@@ -272,6 +304,107 @@ def actualizar_protegidos(cache, diferencias, incluir_editados):
     else:
         cache.protegidos |= editados
     cache.protegidos &= con_diferencias
+
+
+# ── Lo cambiado en la web baja al Excel; gana la última modificación (13 nov 2026) ─────────────────────────
+def hora_iso(t=None):
+    """Hora en el mismo formato que la web (UTC, «2026-11-13T10:00:00.000Z»), para poder compararlas como texto.
+    t: segundos (time.time() / os.path.getmtime) o None para ahora."""
+    from datetime import timezone
+    dt = datetime.now(timezone.utc) if t is None else datetime.fromtimestamp(t, timezone.utc)
+    return dt.strftime("%Y-%m-%dT%H:%M:%S.") + f"{dt.microsecond // 1000:03d}Z"
+
+
+def fusionar(local, cache, hora_excel, ahora=None):
+    """Decide, en cada artículo que está en el Excel y en la web y en cada campo compartido (datos SAP, precio y
+    código de proveedor), si el valor baja de la web al Excel o sube del Excel a la web. Gana la última modificación.
+
+    - base conocida (`cache.base`, el último valor en que coincidían): si solo cambió la web, baja; si solo cambió
+      el Excel, sube; si cambiaron los dos, gana el más reciente: la hora de la web (`cache.web_cambiado_en`, o la
+      de modificación del artículo) frente a la hora en que la Consola vio el cambio del Excel
+      (`cache.local_cambiado_en`, que se apunta aquí la primera vez que se ve).
+    - sin base (primera vez en este PC o artículo nuevo): si el Excel está vacío y la web no, baja; si no, gana la
+      hora de modificación del artículo en la web frente a `hora_excel` (la del archivo).
+    - Un valor vacío en el Excel no borra el precio ni el código de proveedor de la web (regla de siempre): baja.
+
+    Devuelve {"bajar": {cod: {campo: valor_web}}, "conflictos": [(cod, campo, valor_excel, valor_web, gana)]}.
+    `cache.local_cambiado_en` queda actualizado (guardarlo con cache.guardar())."""
+    ahora = ahora or hora_iso()
+    bajar, conflictos = {}, []
+    for cod, loc in local.items():
+        web = cache.articulos.get(cod)
+        if web is None:
+            continue
+        base = cache.base.get(cod) or {}
+        vistos = cache.local_cambiado_en.get(cod) or {}
+        for campo in CAMPOS_COMPARTIDOS:
+            vl, vw = loc.get(campo), web.get(campo)
+            if vl == vw:
+                continue
+            if campo in base:
+                vb = base[campo]
+                cambio_excel, cambio_web = vl != vb, vw != vb
+            else:
+                vb, cambio_excel, cambio_web = None, None, None
+            if cambio_excel:
+                visto = vistos.get(campo)
+                if not visto or visto[0] != vl:
+                    vistos[campo] = [vl, ahora]
+                    cache.local_cambiado_en[cod] = vistos
+            if vl is None and (campo in GRUPOS["accion4"] or cambio_excel is None):
+                gana = "web"                      # vacío en el Excel: no borra lo de la web
+            elif cambio_excel is None:            # sin base
+                gana = "web" if (web.get("modificado_en") or "") > hora_excel else "excel"
+            elif cambio_web and not cambio_excel:
+                gana = "web"
+            elif cambio_excel and not cambio_web:
+                gana = "excel"
+            else:                                 # cambiaron los dos: el más reciente
+                h_web = (cache.web_cambiado_en.get(cod) or {}).get(campo) or web.get("modificado_en") or ""
+                h_excel = vistos.get(campo, [None, hora_excel])[1]
+                gana = "web" if h_web > h_excel else "excel"
+                conflictos.append((cod, campo, vl, vw, gana))
+            if gana == "web":
+                bajar.setdefault(cod, {})[campo] = vw
+    return {"bajar": bajar, "conflictos": conflictos}
+
+
+def acordar(cache, local):
+    """Apunta como base los campos compartidos en que el Excel y la web coinciden, y olvida sus horas de cambio.
+    Se llama después de bajar lo de la web y después de cada envío."""
+    for cod, loc in local.items():
+        web = cache.articulos.get(cod)
+        if web is None:
+            continue
+        for campo in CAMPOS_COMPARTIDOS:
+            if loc.get(campo) == web.get(campo):
+                cache.base.setdefault(cod, {})[campo] = web.get(campo)
+                for horas in (cache.web_cambiado_en, cache.local_cambiado_en):
+                    if campo in (horas.get(cod) or {}):
+                        del horas[cod][campo]
+                        if not horas[cod]:
+                            del horas[cod]
+
+
+def quitar_campos(diferencias, campos_por_articulo):
+    """Quita de las diferencias los campos {cod: {campo: …}} (los que ganaba la web pero no se pudieron bajar al
+    Excel, porque estaba abierto): así tampoco se suben y no se pisa la web. Quita las entradas que se queden vacías."""
+    if not campos_por_articulo:
+        return diferencias
+    for grupo, lista in diferencias.items():
+        quedan = []
+        for d in lista:
+            fuera = campos_por_articulo.get(d["codigo_dali"]) or {}
+            d["campos"] = {c: v for c, v in d["campos"].items() if c not in fuera}
+            if d["campos"]:
+                quedan.append(d)
+        diferencias[grupo] = quedan
+    return diferencias
+
+
+def bajar_para_excel(bajar):
+    """{cod: {campo_web: valor}} → {cod: {columna_local: valor}} para catalogo_local.escribir_campos."""
+    return {cod: {CLAVE_LOCAL[c]: v for c, v in campos.items()} for cod, campos in bajar.items()}
 
 
 def contar(diferencias, incluir_editados=True):
