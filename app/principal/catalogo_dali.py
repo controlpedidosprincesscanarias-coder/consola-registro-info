@@ -56,6 +56,9 @@ class CatalogoDali:
 
         Devuelve (None, None) si el usuario cancela el diálogo.
         """
+        # (v10.2.52) Las de la sesión iniciada al abrir la Consola (sirven aunque no se hayan podido cifrar).
+        if getattr(self, "_credenciales_sesion", None):
+            return self._credenciales_sesion
         email_guardado, pass_guardado = leer_credenciales_dali(self.config_data)
         if email_guardado and pass_guardado:
             return email_guardado, pass_guardado
@@ -133,6 +136,47 @@ class CatalogoDali:
                     "en esta sesión y se volverá a pedir la próxima vez.", "WARN")
             guardar_config(self.config_data)
         return resultado["email"], resultado["password"]
+
+    def _iniciar_sesion_consola(self):
+        """
+        (v10.2.52) Al abrir la Consola: inicio de sesión de Catálogo Asignaciones. Solo entra una cuenta activa,
+        de administrador y con el permiso «Escribir desde la Consola Registro Info»
+        (catalogo_web.comprobar_acceso); a las demás, «Usuario no autorizado.». Si hay credenciales guardadas,
+        se prueban solas; si dejan de valer o la cuenta ya no está autorizada, se borran. «Salir» cierra la app.
+        Desde el código (python tarifa_app.py) también se pide.
+        """
+        from app.comun import catalogo_web
+        from app.ui import ventana_login
+
+        email, password = leer_credenciales_dali(self.config_data)
+
+        def _comprobar(e, p):
+            return catalogo_web.comprobar_acceso(catalogo_web.ClienteCatalogo(), e, p)
+
+        def _olvidar():
+            borrar_credenciales_dali(self.config_data)
+            guardar_config(self.config_data)
+
+        try:
+            r = ventana_login.pedir_inicio_sesion(self, email, password, _comprobar, al_fallar_credenciales=_olvidar)
+        except tk.TclError:
+            return                                # la Consola se cerró mientras tanto (p. ej., al actualizarse)
+        if not r:
+            try:
+                self.destroy()
+            except tk.TclError:
+                pass
+            return
+        email, password, usuario = r
+        self._credenciales_sesion = (email, password)
+        if not guardar_credenciales_dali(self.config_data, email, password):
+            self.log_consola("No se pudo cifrar la contraseña de Catálogo Asignaciones: se usa solo en esta "
+                             "sesión y se volverá a pedir la próxima vez.", "WARN")
+        guardar_config(self.config_data)
+        self.deiconify()
+        self.lift()
+        self._tras_iniciar_sesion()
+        self.log_consola(f"Sesión iniciada en Catálogo Asignaciones: {usuario.get('nombre') or email}.", "OK")
 
     def _adquirir_lock_catalogo_con_aviso(self):
         """

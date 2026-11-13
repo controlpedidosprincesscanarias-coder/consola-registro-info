@@ -349,6 +349,47 @@ class ClienteCatalogo:
         return self._peticion("POST", "/admin/catalogo/lote", cuerpo)
 
 
+# ── Acceso a la Consola (v10.2.52) ───────────────────────────────────────────────────────────────────
+# Decisión de Víctor (13 nov 2026): solo entra en la Consola quien inicia sesión en Catálogo Asignaciones con una
+# cuenta activa (la web ya no deja entrar a las inactivas), de administrador y con el permiso «Escribir desde la
+# Consola Registro Info» (el administrador principal los tiene todos, como en la web). No se anota nada.
+PERMISO_CONSOLA = "admin-catalogo-escribir"
+NO_AUTORIZADO = "Usuario no autorizado."
+
+
+def usuario_autorizado(usuario):
+    if not isinstance(usuario, dict) or usuario.get("rol") != "admin":
+        return False
+    return bool(usuario.get("esAdminPrincipal")) or PERMISO_CONSOLA in (usuario.get("permisos") or [])
+
+
+def comprobar_acceso(cliente, email, password):
+    """Inicia sesión y comprueba si la cuenta puede usar la Consola.
+
+    Devuelve (estado, mensaje, usuario). Estados: «ok», «no_autorizado», «credenciales» (email o contraseña
+    incorrectos: hay que borrar las guardadas), «verificacion» (la web pide un código por email), «sin_conexion»
+    y «error» (otro fallo de la web: se puede reintentar)."""
+    if not (email or "").strip() or not password:
+        return "credenciales", "Indica email y contraseña.", None
+    try:
+        datos = cliente.login(email.strip(), password)
+    except ErrorWeb as e:
+        if e.codigo == 428:
+            return "verificacion", str(e), None
+        if e.codigo in (400, 401):
+            return "credenciales", "Email o contraseña incorrectos.", None
+        if e.codigo == 403:
+            return "no_autorizado", NO_AUTORIZADO, None
+        if e.codigo is None:
+            return "sin_conexion", ("No hay conexión con Catálogo Asignaciones. Comprueba la red y pulsa "
+                                    "«Entrar» otra vez."), None
+        return "error", f"Catálogo Asignaciones no responde bien ({e}). Inténtalo otra vez en unos minutos.", None
+    usuario = datos.get("usuario") or {}
+    if not usuario_autorizado(usuario):
+        return "no_autorizado", NO_AUTORIZADO, None
+    return "ok", f"Sesión iniciada: {usuario.get('nombre') or usuario.get('email') or email}.", usuario
+
+
 # ── Enviar un grupo entero (simular o aplicar), por lotes ─────────────────────────────────────────────
 def enviar_grupo(cliente, grupo, por_proveedor, simular, archivo=None, sincronizado_desde=None):
     """Envía las filas de un grupo. Devuelve el resumen sumado y las listas de cambios, irregulares y avisos."""

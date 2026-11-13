@@ -86,8 +86,18 @@ class VentanaActualizacion(tk.Toplevel):
             self._btn_ok.configure(state="disabled")
             self._estado.configure(text="Esta copia no se puede actualizar sola (no es el .exe o no se puede "
                                         "escribir en su carpeta). Descárgala de la página de Releases.")
-        self.transient(app)
-        centrar_sobre_padre(self, app)
+        if app.winfo_viewable():
+            self.transient(app)
+            centrar_sobre_padre(self, app)
+        else:
+            # (v10.2.52) Puede llegar mientras la ventana principal está oculta, con el inicio de sesión abierto:
+            # así se ve igual y se puede actualizar aunque no se haya podido entrar.
+            self.update_idletasks()
+            w, h = self.winfo_reqwidth(), self.winfo_reqheight()
+            self.geometry(f"+{(self.winfo_screenwidth() - w) // 2}+{max(40, (self.winfo_screenheight() - h) // 4)}")
+            self.lift()
+            self.attributes("-topmost", True)
+            self.after(500, lambda: self.winfo_exists() and self.attributes("-topmost", False))
 
     def _poner_estado(self, texto):
         if self.winfo_exists():
