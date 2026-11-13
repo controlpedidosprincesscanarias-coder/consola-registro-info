@@ -30,6 +30,8 @@ La **consola** de la derecha muestra cada paso con su hora y un color por nivel:
 
 **Dónde dejar el `.exe`:** no se instala. Déjalo siempre en la misma carpeta y con su nombre (`TARIFA_Finder.exe`): las actualizaciones lo sustituyen en ese mismo sitio, así que los accesos directos (también el del Organizador) no hay que cambiarlos.
 
+**Un solo archivo de artículos (desde v10.2.54):** la Consola ya no usa `LISTADO CODIGOS DALI - SAP.xlsx`: todo está en `RECURSOS/catalogo-dali-completo.xlsx`. La Acción 2 actualiza en él los datos DALI, la Acción 3 los datos SAP y la ventana de códigos SAP faltantes escribe ahí el código SAP; las tarifas y los Registros Info leen de él. Todo se empareja por código DALI. La primera vez que se abre esta versión, el LISTADO que haya se pasa al catálogo (con un informe de diferencias en RECURSOS) y se renombra a «LISTADO CODIGOS DALI - SAP (antiguo, ya no se usa).xlsx»; no se borra.
+
 **Inicio de sesión (desde v10.2.52):** al abrir la Consola se pide el usuario y la contraseña de **Catálogo Asignaciones**. Solo entra una cuenta activa, de administrador y con el permiso «Escribir desde la Consola Registro Info» (el administrador principal también); con cualquier otra sale «Usuario no autorizado.». Si las credenciales están guardadas en el equipo, se comprueban solas al abrir. El aviso de versión nueva sale igual aunque no se haya podido entrar.
 
 **Catálogo Asignaciones:** la primera vez que hace falta descargar su catálogo, la app pide tu usuario y tu contraseña. La contraseña se guarda **cifrada**: solo tu usuario de Windows, en ese equipo, puede leerla. Si la contraseña deja de valer, se borra y se vuelve a pedir.
@@ -73,6 +75,7 @@ python -m unittest discover -s tests -v
 | `assets/` | Logos, icono, imágenes de ayuda y el manual con su índice (van dentro del `.exe`) |
 | `docs/` | Manual de usuario (`.docx` y `.pdf`) y su fuente (`docs/manuales_fuente/`, ver su README) |
 | `tests/` | Pruebas automáticas |
+| `app/comun/catalogo_local.py` | El catálogo completo como único archivo de artículos (v10.2.54) |
 | `app/comun/catalogo_web.py`, `app/principal/publicar_catalogo_web.py`, `app/ui/ventana_publicar_catalogo.py` | Envío de los cambios a Catálogo Asignaciones (v10.2.50) |
 | `build_exe.py`, `compilacion/`, `.github/workflows/compilar.yml` | Compilación (en GitHub, con versión automática) |
 | `COMPILAR_TARIFA.bat`, `_bat_helper.py` | Compilación local en Windows |

@@ -1190,7 +1190,31 @@ Petición de Víctor: «incluir el login de Catálogo Asignaciones también en l
 
 ---
 
+## 54. Un solo archivo de artículos: adiós al LISTADO CODIGOS DALI - SAP (13 nov 2026) — PR en GitHub
+
+Petición de Víctor: «¿Podríamos prescindir de uno de los Excel y mantener únicamente el catálogo completo que se guarda en RECURSOS? Creo que este listado realmente es el completo y reúne todo lo necesario». Confirmado: el catálogo tiene todas las columnas del LISTADO (A-C datos DALI, D código SAP, E-N datos SAP, O activo) y además proveedor, clasificación, código de proveedor y precio. Respuestas: nadie abre el LISTADO fuera de la Consola; primero esto y después la acción «Asignar SAP pendientes».
+
+**Riesgo que se corrige:** la Acción 2 escribía código, descripción, unidad y activo en el LISTADO por **posición de fila** (fila 8+n, en el orden de ARTICULOS_DALI) y el código SAP de la columna D se quedaba en su fila. Si DALI quitaba un código de en medio o intercalaba uno, todos los SAP de debajo quedaban emparejados con el artículo de al lado. Ahora todo va por código DALI (prueba `test_sap_por_codigo_aunque_dali_quite_e_intercale_codigos`).
+
+**Cómo (para cambiar lo menos posible la lógica que ya funcionaba):** `app/comun/catalogo_local.py` ofrece el catálogo con la misma forma que el LISTADO (filas desde la 8, columnas A..O).
+- Solo leían (cambia la línea que abría el archivo): Acción 4 e INC (`_leer_tabla_cruce_listado_sap`, búsqueda del archivo para la ventana de faltantes), paso 27b de la transformación de la tarifa, y RINFO (`_localizar_ruta_listado_dali` → `_localizar_ruta_catalogo`, con el nombre antiguo como alias; 3 lecturas en `creador_rinfo` y 1 en `generador_existente`).
+- Acción 3: el cruce de siempre sobre un libro en memoria sacado del catálogo; al final, `tabla_sap_desde_libro` y regenerar el catálogo con esos datos. La auditoría de SAP duplicados sigue igual (va antes).
+- Acción 2: regenera el catálogo (DALI de ARTICULOS_DALI; SAP, código de proveedor y precio del catálogo anterior, por código DALI).
+- Ventana de SAP faltantes: escribe el código SAP en el catálogo, con el bloqueo del catálogo (se suelta pase lo que pase) y, al guardar, envía los cambios a la web (`_tras_cambiar_sap_en_catalogo`). Se quita `_refrescar_sap_catalogo_para_dali`, que copiaba del LISTADO al catálogo. «Modificar directamente en el Excel» abre ahora el catálogo.
+- Paso único: `_pasar_listado_al_catalogo()` al iniciar sesión y al regenerar. Si hay LISTADO, sus datos SAP pasan al catálogo (manda el LISTADO, como en cada Acción 2/3 hasta ahora), queda un informe `RECURSOS/paso_listado_a_catalogo_<fecha>.txt` con las diferencias y el LISTADO se renombra a «LISTADO CODIGOS DALI - SAP (antiguo, ya no se usa).xlsx» (no se borra). Lo hace el primer PC que abra esta versión.
+- Nuevo riesgo cubierto: «descargar el catálogo de Catálogo Asignaciones» sustituye el archivo local. Sin LISTADO, un código SAP escrito en la Consola y aún no enviado («Ahora no», sin conexión) solo está en el catálogo local: al descargar, si la web no tiene SAP para ese artículo, se conserva el local (`conservar_sap_local`); si los dos tienen y no coinciden, manda la web.
+- Se quita `_proteger_hoja_destino` y la contraseña de protección de hojas que estaba escrita en el código (4 sitios; el repositorio es público).
+- Fallo encontrado y corregido en su propio commit: el paso 27b de la tarifa leía la «unidad SAP» de la columna F del LISTADO, que desde agosto es «Texto UM»: la descripción salía «… - Kilogramo» en vez de «… - KG» (como el de la sección 496, que se quedó sin corregir aquí).
+- También en su propio commit: se recupera el encabezado «Próximos pasos» de este historial, borrado por error al añadir la sección 53.
+- Pruebas: `tests/test_catalogo_local.py` (10) y `tests/test_catalogo_unico.py` (5, de punta a punta con las clases reales: regeneración, paso del LISTADO, primera vez sin catálogo, Acción 3 y la ventana de SAP faltantes). 174 en total.
+- **Por probar en Windows con datos reales:** el paso del LISTADO al abrir (revisar el informe de diferencias), una Acción 2 y una 3 completas, una tarifa con SAP faltantes y un RINFO (nuevo y desde Purchasing existente).
+- **Ojo al publicar:** las copias antiguas de la Consola siguen buscando el LISTADO. Cuando el primer PC lo haya pasado al catálogo, una Consola sin actualizar dirá «Listado no encontrado» en las Acciones 2, 3 y 4 (sin estropear nada): conviene que todos actualicen.
+- **Manual:** pendiente de regenerar con la próxima versión (la sección 5 habla del LISTADO).
+
+---
+
 ## Próximos pasos, en orden de prioridad
+- **Siguiente (Víctor, 13 nov 2026):** acción nueva «Asignar SAP pendientes»: ventana con todos los códigos DALI activos sin SAP (buscador y filtros), grabando en el orden que se quiera, con comprobación contra `Productos.xlsx`, sobre el catálogo (sección 54). Pendiente de decidir dónde va el botón y qué hacer con un código que no esté en `Productos.xlsx`.
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
    - ~~etapa 2: carpetas por capas~~ hecha (sección 43);
    - ~~etapa 3: limpieza~~ hecha (sección 44); ~~trocear `crear_registro_info.py`~~ hecho (sección 45); ~~trocear `tarifa_app.py`~~ hecho (sección 46);
