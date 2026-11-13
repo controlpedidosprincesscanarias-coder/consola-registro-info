@@ -25,7 +25,7 @@ from app.comun.tarifa_constants import (
 from app.comun.tarifa_core import (
     guardar_config,
     TARIFA_NAME, FOLDER_TARIFAS, FOLDER_RECURSOS,
-    buscar_tarifa, listar_xls, ConsolaLog, CanvasProgressBar,
+    buscar_tarifa, listar_xls, ConsolaLog, CanvasProgressBar, abrir_con_su_programa,
 )
 from app.ui.tarifa_dialogs import (
     VentanaSeleccionXLS, VentanaCrearProyecto,
@@ -902,10 +902,7 @@ class InterfazApp:
         if self._ruta_resultado and os.path.isfile(self._ruta_resultado):
             self.log_consola(f"Abriendo resultado: {self._ruta_resultado}", "INFO")
             try:
-                os.startfile(self._ruta_resultado)
-            except AttributeError:
-                import subprocess
-                subprocess.call(["xdg-open", self._ruta_resultado])
+                abrir_con_su_programa(self._ruta_resultado)    # (13 nov 2026) que Excel quede delante
             except Exception as e:
                 self.log_consola(f"Error al abrir: {e}", "ERROR")
                 messagebox.showerror("Error", f"No se pudo abrir:\n{e}")
