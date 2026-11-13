@@ -36,7 +36,7 @@ from app.comun.sap_helpers import (
 # URL del worker de Cloudflare que hace de proxy inverso hacia el backend
 # de la app web "Catálogo Asignaciones" (dali-sap-articulos-app). Usada
 # solo por _descargar_catalogo_dali_web() para la descarga automática del
-# catálogo completo (ver _confirmar_catalogo_actualizado()). Si esta URL
+# catálogo completo (desde el 13 nov 2026 no se usa: se quitaron las preguntas de descarga). Si esta URL
 # cambia algún día (redespliegue del Worker con otro nombre), solo hay
 # que actualizarla aquí.
 # (Hasta nov 2026, en tarifa_app.py.)
@@ -501,201 +501,15 @@ class CatalogoDali:
         return resultado.get("valor")
 
     def _catalogo_reciente_o_confirmar(self):
-        """
-        Wrapper thread-safe (ver _ejecutar_en_hilo_principal_y_esperar):
-        delega en _catalogo_reciente_o_confirmar_impl() para la lógica
-        real (sin tocarla), garantizando que se ejecuta en el hilo
-        principal aunque quien llame sea el hilo de fondo de proceso()
-        de cualquier Acción.
-        """
-        return self._ejecutar_en_hilo_principal_y_esperar(
-            self._catalogo_reciente_o_confirmar_impl)
+        """Acción 4: antes de escribir el código de proveedor y el precio en el catálogo.
 
-    def _catalogo_reciente_o_confirmar_impl(self):
-        """
-        Comprobación previa, específica de Acción 4 ("Generar TARIFA final
-        y Procesar Tarifas Incompletas"), llamada justo antes de cada uno
-        de sus 4 puntos de enganche con _actualizar_codigo_proveedor_
-        catalogo() (_ejecutar_transformacion camino limpio, y los 3 caminos
-        de _gestionar_faltantes_o_finalizar_inc). A diferencia del aviso de
-        Acciones 2/3 (que se muestra SIEMPRE al principio), este NO
-        interrumpe nada si todo está reciente -- solo aparece cuando de
-        verdad puede haber un problema, para no repetir el aviso constante
-        que Acción 4 dejó de mostrar a propósito (ver _confirmar_catalogo_
-        actualizado, que Acción 4 ya no llama).
-
-        Revisa la antigüedad de catalogo-dali-completo.xlsx Y de su fichero
-        de origen ARTICULOS_DALI.xlsx (desde v10.2.50 ya no hay LISTADO
-        CODIGOS DALI - SAP) -- si Acciones 1-3 no se han corrido hoy, estos también
-        pueden estar desactualizados aunque el catálogo en sí no se haya
-        tocado hace mucho.
-
-        Umbral: 30 minutos. Por debajo, se actualiza sin más (devuelve
-        True en silencio). Por encima de alguno de los tres, ofrece el
-        mismo diálogo de 3 vías que Acciones 2/3 (Sí=descargar, No=
-        continuar igualmente, Cancelar=no actualizar el catálogo esta vez
-        -- la tarifa en sí ya quedó completada, solo se salta este paso).
-
-        Devuelve True si se debe proceder a actualizar el catálogo con
-        _actualizar_codigo_proveedor_catalogo(), False si no.
-        """
-        carpeta = self._carpeta_proyecto.get().strip()
-        if not carpeta:
-            return True
-
-        from datetime import datetime as _dt, timedelta as _td
-        UMBRAL = _td(minutes=30)
-        ahora = _dt.now()
-
-        rutas_a_revisar = [
-            ("catalogo-dali-completo.xlsx",
-             os.path.join(carpeta, FOLDER_RECURSOS, "catalogo-dali-completo.xlsx")),
-            ("ARTICULOS_DALI.xlsx",
-             os.path.join(carpeta, FOLDER_RECURSOS, "ARTICULOS_DALI.xlsx")),
-        ]
-
-        if not os.path.isfile(rutas_a_revisar[0][1]):
-            return True   # catálogo nunca generado: nada que comprobar
-
-        anticuados = []
-        for nombre, ruta in rutas_a_revisar:
-            if not os.path.isfile(ruta):
-                continue
-            try:
-                mtime = _dt.fromtimestamp(os.path.getmtime(ruta))
-            except Exception:
-                continue
-            antiguedad = ahora - mtime
-            if antiguedad > UMBRAL:
-                minutos = int(antiguedad.total_seconds() // 60)
-                txt_edad = f"{minutos} min" if minutos < 60 \
-                    else f"{minutos // 60}h {minutos % 60}min"
-                anticuados.append((nombre, mtime.strftime("%d/%m/%Y %H:%M"), txt_edad))
-
-        if not anticuados:
-            return True
-
-        detalle = "\n".join(
-            f"   • {n}: actualizado {f} (hace {e})" for n, f, e in anticuados)
-        respuesta = messagebox.askyesnocancel(
-            "Catálogo DALI completo — puede estar desactualizado",
-            "Antes de actualizar el catálogo con esta tarifa, se detectó "
-            "que alguno de los archivos que lo alimentan tiene más de 30 "
-            "minutos de antigüedad:\n\n"
-            f"{detalle}\n\n"
-            "El catálogo también se mantiene desde la aplicación «Catálogo "
-            "Asignaciones» — puede convenir refrescarlo antes de escribir "
-            "en él.\n\n"
-            "  SÍ       → descargar ahora una copia actualizada desde "
-            "Catálogo Asignaciones y continuar con ella\n"
-            "  NO       → actualizar igualmente con la copia actual\n"
-            "  CANCELAR → no actualizar el catálogo esta vez (la tarifa "
-            "ya quedó completada igualmente)")
-
-        if respuesta is None:
-            self.log_consola(
-                "Actualización del catálogo omitida por decisión del "
-                "usuario (catálogo/origen desactualizado).", "WARN")
-            return False
-        if respuesta is False:
-            return True
-
-        email, password = self._obtener_credenciales_dali_app()
-        if not email or not password:
-            self.log_consola("Descarga del catálogo cancelada: sin credenciales.", "WARN")
-            return False
-        return self._descargar_catalogo_dali_web_bloqueante(email, password)
-
-    def _confirmar_catalogo_actualizado(self):
-        """
-        Wrapper thread-safe (ver _ejecutar_en_hilo_principal_y_esperar):
-        delega en _confirmar_catalogo_actualizado_impl() para la lógica
-        real (sin tocarla), garantizando que se ejecuta en el hilo
-        principal aunque quien llame sea el hilo de fondo de proceso()
-        de Acción 2 o Acción 3.
-        """
-        return self._ejecutar_en_hilo_principal_y_esperar(
-            self._confirmar_catalogo_actualizado_impl)
-
-    def _confirmar_catalogo_actualizado_impl(self):
-        """
-        Aviso previo, común a las Acciones 2 y 3 (las que acaban
-        modificando RECURSOS/catalogo-dali-completo.xlsx durante la
-        actualización de plantillas DALI/SAP -- Acción 4 no la llama en
-        absoluto, ver nota en _ejecutar_reinscripcion_sap_desde_inc):
-        antes de empezar nada, informa de la fecha de última
-        actualización de ese archivo -- el catálogo también se mantiene
-        desde la app web «Catálogo Asignaciones» (asignación manual de
-        Código Proveedor por otras personas), así que la copia local de
-        este equipo puede quedarse desactualizada sin que esta
-        aplicación tenga forma de saberlo.
-
-        Diálogo de 3 vías (Sí / No / Cancelar):
-          Sí       -> descargar ahora una copia fresca desde Catálogo
-                      Asignaciones (_descargar_catalogo_dali_web()) y
-                      continuar con ella.
-          No       -> continuar sin descargar, con la copia local tal
-                      cual está.
-          Cancelar -> no continuar con la acción.
-
-        Memoria de sesión (2026-09-21, a petición del usuario): una vez
-        resuelto (Sí o No, no Cancelar) dentro de esta misma ejecución
-        de la aplicación, NO se vuelve a preguntar -- Acción 2 y Acción
-        3 suelen correr una justo detrás de la otra como parte del
-        mismo proceso de actualización de plantillas, y repetir la
-        pregunta sería puro ruido. Se reinicia solo al cerrar y volver
-        a abrir la aplicación (self._catalogo_verificado_sesion vive en
-        la instancia, no se persiste en tarifa_config.json).
-
-        Devuelve True si se debe continuar (con o sin descarga previa,
-        o si el catálogo todavía no existe -- nada que avisar), False
-        si no se debe continuar.
-        """
-        if getattr(self, "_catalogo_verificado_sesion", False):
-            return True   # ya se preguntó y se resolvió en esta misma sesión de trabajo
-
-        carpeta = self._carpeta_proyecto.get().strip()
-        if not carpeta:
-            return True   # sin proyecto seleccionado: cada acción ya valida esto por su cuenta
-
-        ruta_catalogo = os.path.join(carpeta, FOLDER_RECURSOS, "catalogo-dali-completo.xlsx")
-        if not os.path.isfile(ruta_catalogo):
-            return True   # nunca se ha generado: nada que advertir todavía
-
-        try:
-            from datetime import datetime as _dt
-            _mtime = os.path.getmtime(ruta_catalogo)
-            _fecha_txt = _dt.fromtimestamp(_mtime).strftime("%d/%m/%Y a las %H:%M")
-        except Exception:
-            _fecha_txt = "(fecha no disponible)"
-
-        respuesta = messagebox.askyesnocancel(
-            "Catálogo DALI completo — comprobar actualización",
-            "catalogo-dali-completo.xlsx se actualizó por última vez:\n\n"
-            f"   {_fecha_txt}\n\n"
-            "Esta acción va a modificarlo ahora. El catálogo también se "
-            "mantiene desde la aplicación «Catálogo Asignaciones» (otras "
-            "personas pueden haber asignado códigos proveedor después de "
-            "esta fecha), así que puede convenir refrescarlo antes de "
-            "seguir.\n\n"
-            "  SÍ       → descargar ahora una copia actualizada desde "
-            "Catálogo Asignaciones y continuar con ella\n"
-            "  NO       → continuar sin descargar, con la copia actual\n"
-            "  CANCELAR → no continuar con esta acción")
-
-        if respuesta is None:
-            return False   # cancelar: no marcar como resuelto, para que vuelva a preguntar
-        if respuesta is False:
-            self._catalogo_verificado_sesion = True
-            return True
-        email, password = self._obtener_credenciales_dali_app()
-        if not email or not password:
-            self.log_consola("Descarga del catálogo cancelada: sin credenciales.", "WARN")
-            return False   # sin credenciales: no marcar, para que se pueda reintentar
-        exito = self._descargar_catalogo_dali_web_bloqueante(email, password)
-        if exito:
-            self._catalogo_verificado_sesion = True
-        return exito
+        (13 nov 2026, petición de Víctor) Ya no pregunta «Catálogo DALI completo — puede estar desactualizado»
+        ni ofrece descargar el catálogo: desde la etapa 6 la Consola trabaja directamente con Catálogo
+        Asignaciones (`_publicar_catalogo_web`), que solo envía lo cambiado y deja protegido lo editado en la
+        web, así que no hace falta refrescar la copia local a mano antes de escribir. Se conserva el nombre
+        porque lo llaman los cinco puntos de la Acción 4 (accion_tarifa.py). La pregunta equivalente de las
+        Acciones 2 y 3 («comprobar actualización», _confirmar_catalogo_actualizado) se quitó a la vez."""
+        return True
 
     def _regenerar_catalogo_dali_completo(self, tabla_sap=None):
         """

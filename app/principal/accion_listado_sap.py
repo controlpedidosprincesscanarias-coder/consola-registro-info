@@ -640,10 +640,6 @@ class AccionListadoSap:
                                    "Seleccione primero la carpeta del Proyecto.")
             return
 
-        if not self._confirmar_catalogo_actualizado():
-            self.log_consola(
-                "Actualización SAP cancelada por el usuario (catálogo desactualizado).", "WARN")
-            return
 
         recursos_path  = os.path.join(carpeta, FOLDER_RECURSOS)
         ruta_productos = os.path.join(recursos_path, "Productos.xlsx")
