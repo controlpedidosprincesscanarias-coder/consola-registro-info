@@ -508,3 +508,25 @@ class CanvasProgressBar(tk.Frame):
         # Restaurar color texto estado tras un momento
         self.after(3000, lambda: self._lbl_estado.config(fg=C_MUTED))
 
+
+def abrir_con_su_programa(ruta, startfile=None, permitir_delante=None):
+    """Abre un archivo con su programa (Excel para los .xlsx), dejando que ese programa se ponga delante.
+
+    (13 nov 2026) En la Acción 6 había que pulsar dos veces «Abrir en Excel»: la primera Excel se abría detrás de la
+    Consola (Windows no deja a un programa recién abierto quitarle el primer plano a la ventana modal) y la segunda solo
+    lo traía delante. AllowSetForegroundWindow(ASFW_ANY) le da permiso antes de abrirlo. Fuera de Windows, xdg-open.
+    `startfile` y `permitir_delante` se pueden sustituir en las pruebas."""
+    if permitir_delante is None:
+        def permitir_delante():
+            try:
+                import ctypes
+                ctypes.windll.user32.AllowSetForegroundWindow(-1)   # ASFW_ANY
+            except Exception:  # noqa: BLE001 — fuera de Windows no existe; no impide abrir
+                pass
+    permitir_delante()
+    abrir = startfile or getattr(os, "startfile", None)
+    if abrir is None:
+        import subprocess
+        subprocess.Popen(["xdg-open", ruta])
+        return
+    abrir(ruta)
