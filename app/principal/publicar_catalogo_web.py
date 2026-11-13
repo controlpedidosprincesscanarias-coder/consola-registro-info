@@ -30,7 +30,25 @@ class PublicarCatalogoWeb:
                 self._publicacion_web_pendiente = (motivo, archivo)
                 return
             self._publicacion_web_activa = True
+        # (13 nov 2026) La barra no se pone en verde hasta que acaba el envío a la web
+        self._barra_ocupar("Enviando cambios a Catálogo Asignaciones…")
         threading.Thread(target=self._publicar_catalogo_web_hilo, args=(motivo, archivo), daemon=True).start()
+
+    def _barra_ocupar(self, texto):
+        barra = getattr(self, "_barra", None)
+        if barra is not None and hasattr(barra, "ocupar"):
+            try:
+                self.after(0, lambda: barra.ocupar(texto))
+            except Exception:  # noqa: BLE001 — sin ventana (pruebas): nada que mover
+                pass
+
+    def _barra_liberar(self):
+        barra = getattr(self, "_barra", None)
+        if barra is not None and hasattr(barra, "liberar"):
+            try:
+                self.after(0, barra.liberar)
+            except Exception:  # noqa: BLE001
+                pass
 
     def _publicar_catalogo_web_hilo(self, motivo, archivo):
         try:
@@ -45,11 +63,13 @@ class PublicarCatalogoWeb:
                     self._publicacion_web_pendiente = None
                     if siguiente is None:
                         self._publicacion_web_activa = False
+                        self._barra_liberar()
                         return
                 motivo, archivo = siguiente
         except BaseException:
             with self._publicacion_web_estado:
                 self._publicacion_web_activa = False
+            self._barra_liberar()
             raise
 
     def _publicar_catalogo_web_una_vez(self, motivo, archivo):

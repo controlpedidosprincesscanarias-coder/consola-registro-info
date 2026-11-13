@@ -1303,6 +1303,27 @@ Registro de Víctor del 13 nov 2026 (12:09–12:34, v10.2.56): tras asignar 4 c�
 
 ---
 
+## 63. Barra de progreso hasta el final, tarifa abierta en Excel y categoría de valoración recuperada (13 nov 2026) — PR en GitHub
+
+Registro de Víctor de las 12:59–13:03 (v10.2.58) y sus archivos (catálogo, Productos.xlsx y Listas de productos.xlsx):
+- **Recuperada la Categoría valoración** (sección 62): la Acción 3 con la v10.2.58 leyó «7159 materiales con Categoría valoración desde Listas de productos.xlsx» y envió a la web los 7.159 cambios. El Listas de productos.xlsx nuevo trae «Producto» en la columna A («QUESO BRIE (10100050)») y «Categoría valoración» en la **D**, con «Centro» en la F: confirmado que la lectura por cabecera era necesaria.
+- **«No hay sincronización entre el log y la barra de tareas, termina en verde siempre sin haber terminado».** La barra se completaba al acabar la parte local, pero el envío a Catálogo Asignaciones seguía en segundo plano (en el registro, de 13:01:09 a 13:02:06). `CanvasProgressBar.ocupar()/liberar()` (`tarifa_core.py`): `_publicar_catalogo_web` la ocupa con «Enviando cambios a Catálogo Asignaciones…» y la libera al acabar el último envío; mientras tanto, `completado()` y `reset()` quedan pendientes y se aplican al terminar. Pruebas en `tests/test_barra_progreso.py` (4).
+- **El «[INCOMPLETO]» reaparecía.** A las 12:43 y a las 13:00 la Acción 4 renombró la tarifa de PRO A PRO (sin [INCOMPLETO]) y poco después volvía a encontrarla con [INCOMPLETO]. Lo más probable: seguía abierta en Excel desde la Acción 6, y al guardar en Excel se creaba otra vez con el nombre antiguo. Antes de renombrar se comprueba el archivo «~$…» que deja Excel (`sap_helpers.abierto_en_excel` / `comprobar_cerrado_en_excel`, en los tres sitios de `accion_tarifa.py`); si está abierta, no se renombra y se pide guardarla y cerrarla. El mensaje final ya no dice «TARIFA PREPARADA» si no se pudo quitar [INCOMPLETO]. Pruebas en `tests/test_abierto_en_excel.py`. **Conviene** revisar en TARIFAS si quedan las dos copias (con y sin [INCOMPLETO]) y quedarse con la buena.
+- 210 pruebas.
+- **Por probar en Windows:** que la barra siga en movimiento hasta el final del envío, y que con la tarifa abierta en Excel la Acción 4 avise y no la renombre.
+
+---
+
+## 64. Calendario en «Fechas de validez del Registro Info» (13 nov 2026) — PR en GitHub
+
+Petición de Víctor (con captura): «establecer calendario para no tener que escribir las fechas manualmente con su desplegable; la norma de pegado de las fechas en formato no debe cambiar para el RINFO».
+- Botón 📅 junto a «Inicio» y «Fin» en `VentanaFechasRINFO` (`app/rinfo/ventanas_rinfo.py`). Abre `app/comun/selector_fecha.py`: calendario propio (sin dependencias nuevas, solo tkinter y `calendar`), en el mes de la fecha que haya en la casilla, con desplegables de mes y año, ◀ ▶, «Hoy» y semanas de lunes a domingo.
+- Al pulsar un día se escribe en la casilla como **dd.mm.aaaa**, el formato de siempre: la validación (`_parsear_fecha`) y lo que se pega en la hoja 3 del RINFO no cambian. La casilla se sigue pudiendo escribir a mano.
+- **Pruebas:** `tests/test_selector_fecha.py` (3): formato y lectura, semanas que empiezan en lunes, y en la ventana real, elegir en el calendario y confirmar devuelve `("01.10.2026", "31.03.2027")`. 213 en total.
+- **Por probar en Windows:** el aspecto del calendario y el icono 📅.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Acción «Asignar SAP pendientes»~~ hecha (sección 55). ~~Regenerar el manual~~ hecho (sección 56).
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:

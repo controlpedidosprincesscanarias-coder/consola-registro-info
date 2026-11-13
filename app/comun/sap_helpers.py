@@ -10,6 +10,7 @@ Central Compras Princess Canarias — (c) VAMA 2026
 """
 
 import datetime as _dt
+import os
 
 
 def normalizar_codigo_sap(valor):
@@ -441,3 +442,26 @@ def comprobar_listas_productos(tabla_categoria, tabla_productos, minimo=0.5):
                 "exportado con otras columnas. No se ha cambiado nada: descárgalo de nuevo desde «Lista de "
                 "productos» con las columnas «Producto» y «Categoría valoración» y repite la Acción 3.")
     return None
+
+
+# ── ¿Abierto en Excel? (13 nov 2026) ────────────────────────────────────────────────────────────────────────────
+# Registro de Víctor: la Acción 4 renombraba la tarifa completa (quitando [INCOMPLETO]) con el archivo todavía
+# abierto en Excel desde la Acción 6; al volver a guardar en Excel, reaparecía el «[INCOMPLETO]». Excel deja junto
+# al archivo abierto un «~$<nombre>» (con nombres largos, sin los dos primeros caracteres).
+ABIERTO_EN_EXCEL = ("está abierto en Excel: guárdalo y ciérralo, y vuelve a pasar la Acción 4 "
+                    "(se queda como [INCOMPLETO] hasta entonces)")
+
+
+def abierto_en_excel(ruta):
+    carpeta, nombre = os.path.split(ruta)
+    return any(os.path.exists(os.path.join(carpeta, "~$" + n)) for n in (nombre, nombre[2:]) if n)
+
+
+class ArchivoAbiertoEnExcel(RuntimeError):
+    pass
+
+
+def comprobar_cerrado_en_excel(ruta):
+    """Lanza ArchivoAbiertoEnExcel si `ruta` está abierto en Excel (antes de renombrarlo)."""
+    if abierto_en_excel(ruta):
+        raise ArchivoAbiertoEnExcel(f"«{os.path.basename(ruta)}» {ABIERTO_EN_EXCEL}")

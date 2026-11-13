@@ -400,7 +400,12 @@ class ConsolaLog(tk.Frame):
 #  WIDGET: BARRA DE PROGRESO — Canvas custom (animación suave)
 # ---------------------------------------------------------
 class CanvasProgressBar(tk.Frame):
-    """Barra de progreso dibujada con Canvas. Animación suave en modo indeterminado."""
+    """Barra de progreso dibujada con Canvas. Animación suave en modo indeterminado.
+
+    (13 nov 2026, Víctor: «termina en verde siempre sin realmente haber terminado todo el proceso») Lo que sigue en
+    segundo plano tras una acción (el envío a Catálogo Asignaciones) avisa con ocupar()/liberar(): mientras haya
+    algo en marcha, completado() y reset() no se ven todavía (la barra sigue en movimiento con lo que se está
+    haciendo); se aplican cuando termina lo último."""
     _TRACK_BG    = "#0D1F35"
     _FILL_CLR    = C_ACCENT
     _DONE_CLR    = "#27AE60"
@@ -415,6 +420,9 @@ class CanvasProgressBar(tk.Frame):
         self._mode     = "determinate"
         self._value    = 0
         self._maximum  = 100
+        self._ocupados = 0           # trabajos en segundo plano en marcha (ocupar / liberar)
+        self._texto_ocupado = ""
+        self._final    = None        # ("completado" | "reset", estado) pendiente hasta que acaben
         self._build()
 
     def _build(self):
@@ -491,7 +499,36 @@ class CanvasProgressBar(tk.Frame):
         self._lbl_pct.config(text="·  ·  ·", fg=C_MUTED)
         self._animate()
 
+    def ocupar(self, estado):
+        """Empieza un trabajo en segundo plano: la barra se mueve con `estado` hasta liberar()."""
+        if self._ocupados == 0 and self._mode == "complete":
+            self._final = ("completado", self._lbl_estado.cget("text"))   # ya estaba en verde: se repite al acabar
+        self._ocupados += 1
+        self._texto_ocupado = estado
+        self.indeterminate(estado)
+
+    def liberar(self):
+        """Termina un trabajo en segundo plano; al acabar el último, se aplica el estado final pendiente."""
+        self._ocupados = max(0, self._ocupados - 1)
+        if self._ocupados:
+            return
+        final, self._final = self._final, None
+        if final is None:
+            self.reset("Listo")
+        elif final[0] == "completado":
+            self.completado(final[1])
+        else:
+            self.reset(final[1])
+
+    @property
+    def ocupada(self):
+        return self._ocupados > 0
+
     def reset(self, estado="Listo"):
+        if self._ocupados:
+            self._final = ("reset", estado)
+            self.indeterminate(self._texto_ocupado)
+            return
         self._stop()
         self._mode  = "determinate"
         self._value = 0
@@ -500,6 +537,10 @@ class CanvasProgressBar(tk.Frame):
         self._redraw()
 
     def completado(self, estado="Completado"):
+        if self._ocupados:
+            self._final = ("completado", estado)
+            self.indeterminate(self._texto_ocupado)
+            return
         self._stop()
         self._mode = "complete"
         self._lbl_pct.config(text="✔", fg=self._DONE_CLR)

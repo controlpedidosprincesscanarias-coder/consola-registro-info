@@ -15,6 +15,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
 import threading
+from app.comun.sap_helpers import comprobar_cerrado_en_excel
 from app.comun.tarifa_core import (
     TARIFA_NAME,
     FOLDER_TARIFAS,
@@ -721,6 +722,7 @@ class AccionesTarifa:
                                                     self.log_consola(
                                                         f"  🗑 Sustituido archivo final anterior: {_nuevo}",
                                                         "INFO")
+                                                comprobar_cerrado_en_excel(rs)   # (13 nov 2026)
                                                 os.rename(rs, _ruta_nueva)
                                                 self._ruta_resultado = _ruta_nueva
                                                 self.log_consola(
@@ -1319,6 +1321,7 @@ class AccionesTarifa:
                                     os.remove(_ruta_nueva)
                                     self.log_consola(
                                         f"  🗑 Sustituido archivo anterior: {_nuevo}", "INFO")
+                                comprobar_cerrado_en_excel(ri)   # (13 nov 2026)
                                 os.rename(ri, _ruta_nueva)
                                 self._ruta_resultado = _ruta_nueva
                                 self.log_consola(
@@ -1412,6 +1415,7 @@ class AccionesTarifa:
                             self.log_consola(
                                 f"  🗑 Sustituido archivo final anterior: {_nuevo_sf}",
                                 "INFO")
+                        comprobar_cerrado_en_excel(ruta_inc)   # (13 nov 2026)
                         os.rename(ruta_inc, _ruta_sf)
                         self._ruta_resultado = _ruta_sf
                         self.log_consola(
@@ -1429,7 +1433,8 @@ class AccionesTarifa:
                 except Exception as _e_ren_sf:
                     self.log_consola(
                         f"  ✘ Error al renombrar: {_e_ren_sf}", "WARN")
-                    _msg_fin += "\n✔  TARIFA PREPARADA PARA CREAR O MODIFICAR REGISTRO INFO SAP."
+                    # (13 nov 2026) Antes decía «TARIFA PREPARADA» aunque no se hubiera podido quitar [INCOMPLETO]
+                    _msg_fin += f"\n⚠  No se ha quitado [INCOMPLETO]: {_e_ren_sf}"
                 self.after(0, lambda: self._barra.completado(
                     "Reinscripción SAP completada"))
                 _barra_finalizada["v"] = True
