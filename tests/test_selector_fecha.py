@@ -61,7 +61,11 @@ class VentanaFechas(unittest.TestCase):
         cal._elegir(date(2026, 10, 1))
         self.assertEqual(v._var_inicio.get(), "01.10.2026")
         v._var_fin.set("31.03.2027")                        # a mano sigue valiendo
-        v._confirmar()
+        # (inicio anterior a hoy y sin periodo de tarifa: la ventana pide confirmar; se contesta «Sí»)
+        from unittest import mock
+        with mock.patch("app.rinfo.ventanas_rinfo.messagebox.askyesno", return_value=True), \
+                mock.patch("app.comun.fechas_tarifa.guardar_ultimas"):
+            v._confirmar()
         self.assertEqual(resultado, [("01.10.2026", "31.03.2027")])
 
 

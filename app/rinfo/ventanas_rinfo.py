@@ -24,6 +24,7 @@ from app.comun.tarifa_constants import (
 )
 from app.comun.tarifa_core import cargar_icono_ventana, ajustar_geometria_pantalla
 from app.comun.selector_fecha import boton_calendario  # (13 nov 2026) calendario de las fechas de validez
+from app.comun import fechas_tarifa as FT  # (13 nov 2026) fechas propuestas según el periodo de la tarifa
 # normalizar_codigo_sap vive en sap_helpers.py (sin tkinter) para que
 # también pueda importarla test_crear_registro_info.py sin arrastrar
 # la UI. Ver ese fichero para la implementación y el porqué.
@@ -988,11 +989,13 @@ class VentanaFechasRINFO(tk.Toplevel):
         r'^(\d{2})[-.,]?(\d{2})[-.,]?(\d{4})$'
     )
 
-    def __init__(self, parent, on_confirm):
+    def __init__(self, parent, on_confirm, periodo=""):
         """
         Parámetros
         ----------
         parent      : ventana padre (Toplevel o Tk).
+        periodo     : (13 nov 2026) texto «Periodo:» de la tarifa (C3); de él salen las fechas propuestas y los
+                      avisos al confirmar (app/comun/fechas_tarifa.py).
         on_confirm  : callable(resultado) donde resultado es:
                         (str, str)  → (fecha_inicio, fecha_fin) en formato dd.mm.yyyy
                         False       → cancelado / cerrar sin crear RINFO
@@ -1002,6 +1005,7 @@ class VentanaFechasRINFO(tk.Toplevel):
         self.configure(bg=C_BG)
         self.resizable(False, False)
         self._on_confirm = on_confirm
+        self._periodo = (periodo or "").strip()
 
         cargar_icono_ventana(self)
 
@@ -1031,7 +1035,11 @@ class VentanaFechasRINFO(tk.Toplevel):
                  text="Formato requerido: [dd.mm.yyyy]",
                  bg=C_BG, fg="#666",
                  font=FONT_LABEL,
-                 wraplength=440, justify="left").pack(anchor="w", pady=(0, 12))
+                 wraplength=440, justify="left").pack(anchor="w", pady=(0, 4))
+        # (13 nov 2026) De dónde salen las fechas propuestas
+        self._lbl_origen = tk.Label(cuerpo, text="", bg=C_BG, fg="#285FA8", font=("Segoe UI", 9, "bold"),
+                                    wraplength=440, justify="left")
+        self._lbl_origen.pack(anchor="w", pady=(0, 10))
 
         # ── Campo Fecha Inicio ─────────────────────────────────────────────────
         tk.Label(cuerpo,
@@ -1115,10 +1123,20 @@ class VentanaFechasRINFO(tk.Toplevel):
                   cursor="hand2", relief="flat",
                   bg="#D8DEE8", activebackground="#C0C8D8").pack(fill="x")
 
-        # Precargar fechas por defecto: 01.01.AAAA / 31.12.AAAA del año actual
-        _anio = datetime.today().year
-        self._var_inicio.set(f"01.01.{_anio}")
-        self._var_fin.set(f"31.12.{_anio}")
+        # (13 nov 2026) Fechas propuestas: las del periodo de la tarifa; si no, las últimas usadas en este PC; si no,
+        # el año en curso (lo de antes, que llevó a un RINFO de enero a diciembre para una tarifa del 4º trimestre)
+        _ini, _fin, _origen = FT.propuesta(self._periodo, ultimas=FT.leer_ultimas())
+        self._var_inicio.set(_ini.strftime("%d.%m.%Y"))
+        self._var_fin.set(_fin.strftime("%d.%m.%Y"))
+        self._lbl_origen.config(text={
+            "periodo": f"Propuestas según el periodo de la tarifa: «{self._periodo}».",
+            "ultimas": (f"La tarifa no indica un periodo reconocible («{self._periodo}»): se proponen las últimas "
+                        "fechas usadas. Revísalas." if self._periodo else
+                        "La tarifa no indica periodo: se proponen las últimas fechas usadas. Revísalas."),
+            "anio": (f"No se reconoce el periodo de la tarifa («{self._periodo}»): se propone el año en curso. "
+                     "Revísalas." if self._periodo else
+                     "La tarifa no indica periodo: se propone el año en curso. Revísalas."),
+        }[_origen], fg="#285FA8" if _origen == "periodo" else "#A15C00")
 
         self._entry_inicio.focus_set()
 
@@ -1200,6 +1218,17 @@ class VentanaFechasRINFO(tk.Toplevel):
 
         if not ok:
             return
+
+        # (13 nov 2026) Confirmar si el inicio es anterior a hoy o no coincide con el periodo de la tarifa
+        d_inicio, d_fin = self._a_date(fecha_inicio), self._a_date(fecha_fin)
+        lista = FT.avisos(d_inicio, d_fin, self._periodo)
+        if lista and not messagebox.askyesno(
+                "Revisar las fechas de validez",
+                "\n\n".join(f"⚠  {t}" for t in lista)
+                + "\n\n¿Continuar con estas fechas?\n(«No» para corregirlas)", parent=self):
+            self._entry_inicio.focus_set()
+            return
+        FT.guardar_ultimas(d_inicio, d_fin)
 
         self.destroy()
         self._on_confirm((fecha_inicio, fecha_fin))
