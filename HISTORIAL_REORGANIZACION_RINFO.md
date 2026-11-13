@@ -1119,7 +1119,7 @@ En todos los casos, **0 diferencias** en los datos. Solo cambian el mensaje del 
 - **Pregunta de Víctor: ¿se verifica el borrado de la versión anterior?** Ahora sí: al arrancar la versión nueva se borra el `.anterior.exe` y la consola lo indica («Versión anterior borrada»). Si la vieja aún se está cerrando, se reintenta cada 10 s, hasta 6 veces; si no, se avisa y se reintenta en el próximo arranque. En el Organizador, el instalador se instala encima, en la misma carpeta y con el mismo identificador, pero el instalador descargado se queda en `%TEMP%\OrganizadorPrincess_actualizacion` hasta la actualización siguiente (propuesto borrarlo).
 - 13 pruebas nuevas en `tests/test_actualizaciones.py` (125 en total).
 - **Por probar en Windows:** publicar la v10.2.38, compilar y publicar después otra (10.2.40) y abrir la 10.2.38: debe avisar, actualizarse, abrirse sola y borrar el `.anterior.exe`.
-- **Pendiente:** el aviso de GitHub «Node.js 20 is deprecated» en el workflow (subir `actions/checkout`, `setup-python` y `upload-artifact` a sus versiones con Node 24, comprobando antes que existen). También en el Organizador.
+- ~~**Pendiente:** el aviso de GitHub «Node.js 20 is deprecated» en el workflow~~ resuelto (sección 58).
 
 ---
 
@@ -1249,6 +1249,15 @@ Petición de Víctor (con una captura de la ventana real, 560 pendientes): «en 
 
 ---
 
+## 58. Compilación sin el aviso de Node.js 20 y pendiente del «Precio €» cerrado (13 nov 2026) — PR en GitHub
+
+Víctor dio el visto bueno a dos cosas que ofrecí al repasar los pendientes:
+- **Workflow** (`.github/workflows/compilar.yml`): GitHub avisaba «Node.js 20 is deprecated». Se suben las acciones a la primera versión que ya usa Node 24, comprobado en su `action.yml`: `actions/checkout` v4 → v5, `actions/setup-python` v5 → v6 y `actions/upload-artifact` v4 → v6 (la v5 todavía usaba Node 20). Las opciones que usa el workflow (`python-version`, `name`, `path`, `retention-days`) no cambian. Lo mismo en el Organizador y en la app del móvil (con `actions/setup-java` v4 → v5).
+- **Pendiente de la sección 37** («¿guardará la web el "Precio €"?»): resuelto con la etapa 6 (secciones 52 y 54): la web guarda el precio y el código de proveedor de cada tarifa (Acción 4) y una descarga del catálogo ya no pierde los códigos SAP locales.
+- **Por probar:** la próxima compilación desde Actions (debería salir sin el aviso).
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Acción «Asignar SAP pendientes»~~ hecha (sección 55). ~~Regenerar el manual~~ hecho (sección 56).
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
@@ -1264,7 +1273,7 @@ Petición de Víctor (con una captura de la ventana real, 560 pendientes): «en 
 
 **Pendiente (sección 36):** regenerar MAHOU con el código nuevo (140 filas nuevas en Hoja 3, no 130; el RINFO de la pasada anterior sigue incompleto en 10800192 y 10800193) y revisar los RINFO ya cargados con posibles huecos por centro (AHUMADOS TF-GC y de 27/28-07, EMICELA 13-08): hace falta la tarifa de cada uno para separar huecos reales de legítimos.
 
-**Pendiente (sección 37):** confirmar si la web Catálogo Asignaciones va a guardar también "Precio €" (y "Texto UM") antes de que una descarga sobrescriba precios que solo existan en local; decidir si aplicar formato de moneda a la columna "Precio €".
+~~**Pendiente (sección 37):**~~ **Resuelto (sección 58):** con la etapa 6 la web guarda el precio y el código de proveedor (Acción 4) y una descarga ya no pierde los códigos SAP locales. Texto original: confirmar si la web Catálogo Asignaciones va a guardar también "Precio €" (y "Texto UM") antes de que una descarga sobrescriba precios que solo existan en local; decidir si aplicar formato de moneda a la columna "Precio €".
 
 **Pendiente (sección 39):** ninguno de código — la solución es 100% manual en SAP (transacción "Marcar reg.info de compra para borrar"). Si vuelve a aparecer el aviso de `VentanaMaterialesParaReactivar`, seguir esos mismos pasos, centro por centro.
 
