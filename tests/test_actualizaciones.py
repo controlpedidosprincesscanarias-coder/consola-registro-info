@@ -171,6 +171,50 @@ class DescargaYSustitucion(unittest.TestCase):
             self.assertEqual(A.limpiar_restos(self.exe), ([], ["TARIFA_Finder.anterior.exe"]))
         self.assertTrue(os.path.exists(anterior))
 
+    def test_unidad_de_red_exe_en_uso_no_toca_nada(self):
+        """13 nov 2026: en G: (red) Windows no deja renombrar el .exe abierto → ExeEnUso, sin cambios."""
+        nuevo = A.descargar_y_verificar(self.info, self.exe, abrir=_abridor())
+        err = PermissionError(32, "El proceso no tiene acceso al archivo porque está siendo utilizado por otro proceso")
+        with mock.patch.object(A.os, "replace", side_effect=err):
+            with self.assertRaises(A.ExeEnUso):
+                A.sustituir_exe(nuevo, self.exe)
+        self.assertTrue(issubclass(A.ExeEnUso, RuntimeError))       # quien solo esperaba RuntimeError sigue igual
+        with open(self.exe, "rb") as f:
+            self.assertEqual(f.read(), b"VIEJO")
+        self.assertTrue(os.path.exists(nuevo))
+        self.assertFalse(os.path.exists(A.rutas(self.exe)[1]))
+
+    def test_script_al_cerrar(self):
+        exe = r"G:\CARPETA COMPRADORES\COMPRADOR 1\100% CÓDIGO\TARIFA_Finder.exe"
+        nuevo = A.rutas(exe)[0]
+        txt = A.script_sustituir_al_cerrar(nuevo, exe, 4321)
+        self.assertIn("\r\n", txt)                                   # .cmd con saltos de Windows
+        self.assertIn('set "EXE=G:\\CARPETA COMPRADORES\\COMPRADOR 1\\100%% CÓDIGO\\TARIFA_Finder.exe"', txt)
+        self.assertIn("TARIFA_Finder.nuevo.exe", txt)
+        self.assertIn('find " 4321 "', txt)                            # espera a ESTE proceso
+        self.assertIn('move /y "%NUEVO%" "%EXE%"', txt)
+        self.assertIn('start "" /d "G:\\CARPETA COMPRADORES\\COMPRADOR 1\\100%% CÓDIGO" "%EXE%"', txt)
+        self.assertNotIn("timeout", txt)                               # sin consola, timeout no espera
+        self.assertTrue(txt.rstrip().endswith('del "%~f0"'))           # se borra solo
+        # tras agotar la espera o los reintentos sigue adelante: nunca un bucle sin fin
+        self.assertIn("geq 90 goto mover", txt)
+        self.assertIn("geq 60 goto abrir", txt)
+
+    def test_sustituir_al_cerrar_lanza_el_script_oculto(self):
+        nuevo = A.descargar_y_verificar(self.info, self.exe, abrir=_abridor())
+        llamadas = []
+        script = A.sustituir_al_cerrar(nuevo, self.exe, pid=99, carpeta_temp=self.tmp.name,
+                                       popen=lambda *a, **k: llamadas.append((a, k)))
+        self.assertEqual(os.path.basename(script), "actualizar_consola_99.cmd")
+        with open(script, "rb") as f:
+            self.assertIn(b"TARIFA_Finder.nuevo.exe", f.read())
+        (args, kw), = llamadas
+        self.assertEqual(args[0], ["cmd.exe", "/c", script])
+        self.assertEqual(kw["cwd"], self.tmp.name)
+        self.assertEqual(kw["env"]["PYINSTALLER_RESET_ENVIRONMENT"], "1")
+        with open(self.exe, "rb") as f:                                # el .exe lo cambia el script, no Python
+            self.assertEqual(f.read(), b"VIEJO")
+
     def test_entorno_limpio_para_el_exe_nuevo(self):
         env = A.entorno_limpio({"PATH": "x", "_PYI_ARCHIVE_FILE": "y", "_MEIPASS2": "z", "_PYI_PARENT_PROCESS_LEVEL": "1"})
         self.assertEqual(env, {"PATH": "x", "PYINSTALLER_RESET_ENVIRONMENT": "1"})
