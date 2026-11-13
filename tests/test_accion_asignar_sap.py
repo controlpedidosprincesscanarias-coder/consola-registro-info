@@ -160,6 +160,20 @@ class TestVentana(unittest.TestCase):
         self.assertEqual(v._todos, [])
         info.assert_called_once()
 
+    def test_copiar_para_pegar_en_sap(self):
+        v = self.ven
+        v._tabla.selection_set("3")
+        v._al_elegir()
+        self.assertEqual((v._vars_copia["dali"].get(), v._vars_copia["descripcion"].get(), v._vars_copia["unidad"].get()),
+                         ("000003", "LECHE", "L"))
+        v._copiar_campo("descripcion", "Descripción")
+        self.assertEqual(v.clipboard_get(), "LECHE")
+        v._copiar_campo("dali", "Código DALI")
+        self.assertEqual(v.clipboard_get(), "000003")
+        v._copiar_fila()
+        self.assertEqual(v.clipboard_get(), "000003\tLECHE\tL\tQ\tLÁCTEOS")
+        self.assertIn("Copiado", v._lbl_articulo["text"])
+
     def test_filtrar_y_codigo_no_valido(self):
         v = self.ven
         v._var_buscar.set("leche")

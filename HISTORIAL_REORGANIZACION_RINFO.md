@@ -1237,6 +1237,18 @@ Petición de Víctor: «revisar los manuales de Catálogo Asignaciones y Consola
 
 ---
 
+## 57. Acción 8: copiar los datos del artículo para crear el material en SAP (13 nov 2026) — PR en GitHub
+
+Petición de Víctor (con una captura de la ventana real, 560 pendientes): «en esta ventana se deberá poder copiar la información para pegarla en la web de SAP al crear el nuevo material, ya lo hacemos en la ventana de códigos DALI sin SAP en la Acción 4».
+- La tabla (Treeview) no deja seleccionar texto. Ahora el artículo elegido sale abajo en casillas de **solo lectura** (código DALI con sus ceros, descripción y unidad), seleccionables como en la ventana de faltantes de la Acción 4, cada una con **📋 Copiar**. Debajo, proveedor y familia; al copiar se confirma «✔ Copiado (…)».
+- Clic derecho en la tabla: copiar código DALI, descripción, unidad, proveedor o la fila entera (separada por tabuladores). Ctrl+C con la tabla activa copia la descripción.
+- «Código SAP», «Asignar» y «Quitar» siguen juntos en su propia fila.
+- Prueba nueva en `tests/test_accion_asignar_sap.py` (portapapeles real en pantalla virtual). 186 en total.
+- Manual: captura y leyenda de la Acción 8 al día (marca 6) y paso «copia su descripción y su unidad para pegarlas en SAP»; PDF e índice copiados a `assets/`.
+- **Por probar en Windows:** copiar y pegar en la web de SAP.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Acción «Asignar SAP pendientes»~~ hecha (sección 55). ~~Regenerar el manual~~ hecho (sección 56).
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:

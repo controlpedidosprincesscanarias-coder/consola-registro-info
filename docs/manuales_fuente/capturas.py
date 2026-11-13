@@ -378,6 +378,7 @@ def marcas_asignar_sap(v):
         (v._ent_sap, 3, "ir"),
         (v._lbl_productos, 4, "r"),
         (v._btn_guardar, 5, "in"),
+        (caja_de(v, [B(v, "Código DALI", "Label"), B(v, "Copiar", "Button", n=2)]), 6, "r"),
     ]
 
 

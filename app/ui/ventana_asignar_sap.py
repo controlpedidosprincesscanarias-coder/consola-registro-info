@@ -114,21 +114,41 @@ class VentanaAsignarSap(tk.Toplevel):
         # Editor de la fila elegida
         ed = tk.Frame(self, bg=C_DARK, padx=12, pady=8)
         ed.pack(fill="x", padx=14, side="bottom")
-        self._lbl_articulo = tk.Label(ed, text="Elige un artículo de la lista.", font=FONT_BOLD, fg=C_ACCENT2,
+        # Datos del artículo elegido, seleccionables y con «Copiar», para pegarlos en SAP al crear el material
+        # (como en la ventana de códigos SAP faltantes de la Acción 4). Petición de Víctor, 13 nov 2026.
+        copia = tk.Frame(ed, bg=C_DARK)
+        copia.grid(row=0, column=0, columnspan=4, sticky="we")
+        self._vars_copia = {}
+        for col, (clave, titulo, ancho) in enumerate((("dali", "Código DALI", 9), ("descripcion", "Descripción", 46),
+                                                       ("unidad", "Unidad", 10))):
+            celda = tk.Frame(copia, bg=C_DARK)
+            celda.grid(row=0, column=col, sticky="w", padx=(0, 14))
+            tk.Label(celda, text=titulo, font=FONT_SMALL, fg=C_MUTED, bg=C_DARK).pack(anchor="w")
+            fila = tk.Frame(celda, bg=C_DARK)
+            fila.pack(anchor="w")
+            var = tk.StringVar()
+            tk.Entry(fila, textvariable=var, state="readonly", width=ancho, font=FONT_LABEL, relief="flat",
+                     readonlybackground="#FFFFFF", fg="#1A1A2E").pack(side="left", ipady=2)
+            tk.Button(fila, text="📋 Copiar", font=FONT_SMALL, relief="flat", bg=C_BORDER, fg=C_TEXT_LIGHT,
+                      activebackground=C_HOVER, cursor="hand2",
+                      command=lambda c=clave, t=titulo: self._copiar_campo(c, t)).pack(side="left", padx=(4, 0))
+            self._vars_copia[clave] = var
+        self._lbl_articulo = tk.Label(copia, text="Elige un artículo de la lista.", font=FONT_SMALL, fg=C_ACCENT2,
                                       bg=C_DARK, anchor="w")
-        self._lbl_articulo.grid(row=0, column=0, columnspan=4, sticky="w")
-        tk.Label(ed, text="Código SAP", font=FONT_LABEL, fg=C_TEXT_LIGHT, bg=C_DARK).grid(row=1, column=0, sticky="w",
-                                                                                         pady=(6, 0))
+        self._lbl_articulo.grid(row=1, column=0, columnspan=3, sticky="w", pady=(2, 0))
+        fila_sap = tk.Frame(ed, bg=C_DARK)
+        fila_sap.grid(row=1, column=0, columnspan=4, sticky="w", pady=(6, 0))
+        tk.Label(fila_sap, text="Código SAP", font=FONT_LABEL, fg=C_TEXT_LIGHT, bg=C_DARK).pack(side="left")
         self._var_sap = tk.StringVar()
-        self._ent_sap = tk.Entry(ed, textvariable=self._var_sap, font=("Segoe UI", 11), width=16)
-        self._ent_sap.grid(row=1, column=1, sticky="w", padx=(8, 8), pady=(6, 0), ipady=2)
+        self._ent_sap = tk.Entry(fila_sap, textvariable=self._var_sap, font=("Segoe UI", 11), width=16)
+        self._ent_sap.pack(side="left", padx=(8, 8), ipady=2)
         self._var_sap.trace_add("write", lambda *_: self._comprobar_escrito())
         self._ent_sap.bind("<Return>", lambda _e: self._asignar())
         self._ent_sap.bind("<KP_Enter>", lambda _e: self._asignar())
-        tk.Button(ed, text="Asignar (Intro)", font=FONT_BOLD, fg=C_DARK, bg=C_ACCENT, relief="flat",
-                  command=self._asignar).grid(row=1, column=2, padx=(0, 6), pady=(6, 0))
-        tk.Button(ed, text="Quitar", font=FONT_LABEL, relief="flat", bg=C_BORDER, fg=C_TEXT_LIGHT,
-                  command=self._quitar).grid(row=1, column=3, pady=(6, 0))
+        tk.Button(fila_sap, text="Asignar (Intro)", font=FONT_BOLD, fg=C_DARK, bg=C_ACCENT, relief="flat",
+                  command=self._asignar).pack(side="left", padx=(0, 6))
+        tk.Button(fila_sap, text="Quitar", font=FONT_LABEL, relief="flat", bg=C_BORDER, fg=C_TEXT_LIGHT,
+                  command=self._quitar).pack(side="left")
         self._lbl_productos = tk.Label(ed, text="", font=FONT_LABEL, fg=C_MUTED, bg=C_DARK, anchor="w")
         self._lbl_productos.grid(row=2, column=0, columnspan=4, sticky="w", pady=(4, 0))
 
@@ -148,6 +168,17 @@ class VentanaAsignarSap(tk.Toplevel):
         self._tabla.pack(side="left", fill="both", expand=True)
         self._tabla.bind("<<TreeviewSelect>>", lambda _e: self._al_elegir())
         self._tabla.bind("<Double-1>", lambda _e: self._ent_sap.focus_set())
+        # Ctrl+C copia la descripción del artículo elegido; el clic derecho, cualquier dato o la fila entera
+        self._tabla.bind("<Control-c>", lambda _e: self._copiar_campo("descripcion", "Descripción"))
+        self._tabla.bind("<Control-C>", lambda _e: self._copiar_campo("descripcion", "Descripción"))
+        self._menu = tk.Menu(self, tearoff=0)
+        for clave, titulo in (("dali", "Código DALI"), ("descripcion", "Descripción"), ("unidad", "Unidad"),
+                              ("proveedor", "Proveedor")):
+            self._menu.add_command(label=f"Copiar {titulo.lower()}",
+                                   command=lambda c=clave, t=titulo: self._copiar_campo(c, t))
+        self._menu.add_separator()
+        self._menu.add_command(label="Copiar la fila entera", command=self._copiar_fila)
+        self._tabla.bind("<Button-3>", self._abrir_menu)
 
     # ── Datos en pantalla ────────────────────────────────────────────────────────────────────────────
     def _texto_productos(self, sap):
@@ -206,11 +237,53 @@ class VentanaAsignarSap(tk.Toplevel):
         if dali is None:
             return
         p = self._por_dali[dali]
-        self._lbl_articulo.configure(text=f"DALI {str(dali).zfill(6)} · {p['descripcion']}  ({p['proveedor']})")
+        self._vars_copia["dali"].set(str(dali).zfill(6))
+        self._vars_copia["descripcion"].set(p["descripcion"])
+        self._vars_copia["unidad"].set(p["unidad"])
+        self._lbl_articulo.configure(text=f"Proveedor: {p['proveedor'] or '—'}   ·   Familia: {p['familia'] or '—'}",
+                                     fg=C_ACCENT2)
         sap = self._asignados.get(dali)
         self._var_sap.set("" if sap is None else str(sap))
         self._ent_sap.focus_set()
         self._ent_sap.icursor("end")
+
+    # ── Copiar (para pegarlo en SAP al crear el material) ────────────────────────────────────────────
+    def _texto_campo(self, clave):
+        dali = self._dali_elegido()
+        if dali is None:
+            return None
+        if clave == "dali":
+            return str(dali).zfill(6)
+        return self._por_dali[dali].get(clave, "")
+
+    def _al_portapapeles(self, texto, que):
+        self.clipboard_clear()
+        self.clipboard_append(texto)
+        self._lbl_articulo.configure(text=f"✔ Copiado ({que}): {texto[:80]}", fg=C_SUCCESS)
+
+    def _copiar_campo(self, clave, titulo):
+        texto = self._texto_campo(clave)
+        if texto is None:
+            messagebox.showinfo("Copiar", "Elige primero un artículo de la lista.", parent=self)
+            return "break"
+        self._al_portapapeles(texto, titulo.lower())
+        return "break"
+
+    def _copiar_fila(self):
+        dali = self._dali_elegido()
+        if dali is None:
+            return
+        p = self._por_dali[dali]
+        texto = "\t".join([str(dali).zfill(6), p["descripcion"], p["unidad"], p["proveedor"], p["familia"]])
+        self._al_portapapeles(texto, "fila")
+
+    def _abrir_menu(self, evento):
+        fila = self._tabla.identify_row(evento.y)
+        if fila:
+            self._tabla.selection_set(fila)
+            self._tabla.focus(fila)
+            self._al_elegir()
+            self._menu.tk_popup(evento.x_root, evento.y_root)
 
     def _comprobar_escrito(self):
         texto = self._var_sap.get().strip()
