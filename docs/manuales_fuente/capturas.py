@@ -307,7 +307,7 @@ def pasos(app):
          lambda v: [(de_clase(v, "Entry", 0), 1, "r"), (de_clase(v, "Entry", 1), 2, "r"), (boton(v, "Entrar"), 3, "t"),
                     (boton(v, "Salir"), 4, "t")]),
         ("c_publicar", lambda: ventana_publicar_catalogo.pedir_confirmacion(app, DIF_DEMO, SIMS_DEMO, "completar la tarifa (Acción 4)"),
-         lambda v: [(B(v, "Datos DALI:"), 1, "r"), (de_clase(v, "Checkbutton"), 2, "r"), (B(v, "que la web NO cambiará"), 3, "r"),
+         lambda v: [(B(v, "Datos DALI:"), 1, "r"), (B(v, "se cambiaron también en la web"), 2, "r"), (B(v, "que la web NO cambiará"), 3, "r"),
                     (de_clase(v, "Text"), 4, "ir"), (boton(v, "Actualizar la web"), 5, "t"), (boton(v, "Ahora no"), 6, "t")]),
         ("c_asignar_sap", lambda: VentanaAsignarSap(app, asignar_sap.pendientes(CATALOGO), PRODUCTOS_DEMO, lambda n, r: None),
          marcas_asignar_sap),

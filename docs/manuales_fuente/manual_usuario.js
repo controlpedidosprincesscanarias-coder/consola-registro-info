@@ -214,11 +214,17 @@ s.push(p("Al final de la **Acción 1**, después de la **Acción 3**, la **Acci�
 s.push(p("La primera vez en cada PC descarga una copia del catálogo de la web (tarda un poco); después solo pregunta lo que ha cambiado. Antes de tocar nada, la web comprueba el envío y la consola te enseña un resumen:"));
 s.push(...imagen("c_publicar", 13, "Resumen de los cambios para Catálogo Asignaciones (datos de ejemplo)."));
 s.push(...leyenda([[1, "Cuántos artículos cambian de cada tipo: **datos DALI** (con las altas), **datos SAP** y **precio y código de proveedor**."],
-  [2, "Artículos que se **cambiaron en la web** (o que envió otro compañero) desde tu último envío. Por defecto, sus datos SAP, su precio y su código de proveedor **no se tocan**; marca la casilla si quieres sustituirlos por los de la consola. La descripción DALI siempre se envía: solo se carga desde la consola."],
+  [2, "Artículos que se **cambiaron también en la web** (o que envió otro compañero) desde tu último envío. Lo cambiado en la web **ya se ha copiado a tu catálogo** (ver «Lo cambiado en la web llega a tu catálogo», más abajo); aquí solo queda lo que la consola cambió después. La descripción DALI siempre se envía: solo se carga desde la consola."],
   [3, "Artículos que la web **no cambiará**: el proveedor asignado no es el de la tarifa, o el código de proveedor guardado es otro. Revísalos y corrígelos."],
   [4, "**Detalle**: cada cambio, con el valor de la web y el nuevo."],
   [5, "**Actualizar la web**: aplica los cambios."], [6, "**Ahora no**: no envía nada; los cambios volverán a salir la próxima vez."]]));
-s.push(...recuadro("nota", "Al terminar", ["La consola dice si la web y tu catálogo coinciden. Si quedan diferencias (cambios de la web que dejaste fuera o artículos irregulares), te dice cuántas.",
+s.push(h2("Lo cambiado en la web llega a tu catálogo"));
+s.push(p("En la web se pueden cambiar el **código SAP**, su **descripción** y el **código de proveedor** (los datos DALI, no). Esos cambios bajan solos a **RECURSOS/catalogo-dali-completo.xlsx**, sin que tengas que hacer nada, en dos momentos: **antes de cada envío** (también al final de la Acción 1) y **al empezar las Acciones 3, 4 y 8**, para que trabajen ya con lo de la web. Por ejemplo, un código SAP corregido en la web se completa en la Acción 3 con Productos.xlsx y se usa en la siguiente TARIFA."));
+s.push(...pasos(["Si un dato (datos SAP, precio o código de proveedor) solo ha cambiado en la web, se copia a tu catálogo.",
+  "Si solo ha cambiado en la consola, se envía a la web.",
+  "Si ha cambiado en los dos sitios, **gana la última modificación**. La consola lo dice en la ventana de la consola («gana la web» o «gana la Consola»)."]));
+s.push(...recuadro("importante", "Con el catálogo abierto en Excel", ["Si tienes **catalogo-dali-completo.xlsx** abierto, la consola no puede copiar lo de la web y lo avisa. Mientras tanto, esos datos tampoco se envían, para no pisar los de la web; se copiarán la próxima vez, con el archivo cerrado."]));
+s.push(...recuadro("nota", "Al terminar", ["La consola dice si la web y tu catálogo coinciden. Si quedan diferencias (artículos irregulares que la web no aplica), te dice cuántas.",
   "En la web nunca se borra nada desde la consola, y un precio o un código de proveedor vacío en tu catálogo no borra el de la web."]));
 s.push(...recuadro("importante", "Permiso necesario", ["Para enviar cambios (y para abrir la consola) tu cuenta de Catálogo Asignaciones necesita el permiso **«Escribir desde la Consola Registro Info»**. Si falta, la consola lo dice en rojo."]));
 
