@@ -233,7 +233,7 @@ class VentanaResolverSAPDuplicados(tk.Toplevel):
     """
     Se muestra cuando VentanaSAPFaltantes._guardar() detecta que alguno
     de los códigos SAP recién introducidos ya está asignado a otro
-    código DALI -- bien porque ya existía en el LISTADO (asignado a un
+    código DALI -- bien porque ya existía en el catálogo (asignado a un
     DALI distinto), bien porque se ha tecleado el mismo SAP para dos
     DALI distintos dentro del propio lote que se está guardando ahora.
 
@@ -252,7 +252,7 @@ class VentanaResolverSAPDuplicados(tk.Toplevel):
                      descripcion), ...]} -- una entrada por cada DALI que
                      compite por ese mismo código SAP. `es_existente=True`
                      significa que ese DALI ya tenía este SAP asignado en
-                     el LISTADO antes de este guardado (fila_o_None es su
+                     el catálogo antes de este guardado (fila_o_None es su
                      fila real); `es_existente=False` significa que es uno
                      de los códigos que se están tecleando ahora mismo.
         """
@@ -373,28 +373,28 @@ class VentanaSAPFaltantes(tk.Toplevel):
     """
     Muestra una tabla con los códigos DALI que no tienen SAP asignado
     y permite al usuario introducir el código SAP correspondiente.
-    Una vez confirmado, escribe los valores en la columna D del archivo
-    'LISTADO CODIGOS DALI - SAP.xlsx' (desbloquea con Princess2026 y
-    vuelve a bloquear al guardar).
+    Una vez confirmado, escribe los valores en la columna «Código SAP» del
+    catálogo completo (RECURSOS/catalogo-dali-completo.xlsx), buscando por
+    código DALI. Hasta v10.2.54 se escribían en la columna D del LISTADO
+    CODIGOS DALI - SAP, protegido con una contraseña escrita en el código;
+    el LISTADO ya no existe y esa contraseña se ha quitado.
     Devuelve True si el usuario guardó cambios, False si canceló.
     """
-    CLAVE_HOJA = "Princess2026"
 
     def __init__(self, parent, faltantes, ruta_listado, consola_fn=None,
                  descripciones=None, ruta_tarifa=None, catalogo_refresh_fn=None):
         """
         faltantes    : lista de (fila_xlsx_tarifa, codigo_dali)
-        ruta_listado : ruta al archivo LISTADO CODIGOS DALI - SAP.xlsx
+        ruta_listado : ruta al catálogo completo (RECURSOS/catalogo-dali-completo.xlsx;
+                       el nombre del parámetro es el de siempre)
         consola_fn   : función log_consola(msg, nivel) opcional
         descripciones: dict {codigo_dali: descripcion_str} opcional
         ruta_tarifa  : ruta al archivo .xlsx de tarifa recién generado
                        (para escribir también los SAP en col A)
         catalogo_refresh_fn: función opcional (lista_codigos_dali) -> None,
-                       llamada cuando la resolución de duplicados borra el
-                       SAP de un DALI existente -- para que catalogo-dali-
-                       completo.xlsx se mantenga sincronizado incluso para
-                       códigos DALI ajenos a la tarifa en curso (ver
-                       App._refrescar_sap_catalogo_para_dali)
+                       llamada tras guardar con los DALI cuyo SAP ha cambiado
+                       (escritos o borrados por duplicado); en la app envía los
+                       cambios a Catálogo Asignaciones (App._tras_cambiar_sap_en_catalogo)
         """
         super().__init__(parent)
         self.title("Códigos SAP faltantes — Introducir manualmente")
@@ -456,7 +456,7 @@ class VentanaSAPFaltantes(tk.Toplevel):
         frm_btns.pack(fill="x", padx=14, side="bottom")
 
         tk.Button(frm_btns,
-                  text="\u2714  Guardar en LISTADO",
+                  text="\u2714  Guardar en el catálogo",
                   font=FONT_BOLD, fg=C_DARK, bg=C_ACCENT,
                   activebackground=C_ACCENT2, relief="flat", cursor="hand2",
                   command=self._guardar).pack(side="left", ipadx=12, ipady=4)
@@ -468,7 +468,7 @@ class VentanaSAPFaltantes(tk.Toplevel):
                   command=self.destroy).pack(side="left", padx=8, ipadx=10, ipady=4)
 
         tk.Label(frm_btns,
-                 text="Los cambios se escriben directamente en\nLISTADO CODIGOS DALI - SAP.xlsx",
+                 text="Los cambios se escriben directamente en\nRECURSOS/catalogo-dali-completo.xlsx",
                  font=FONT_TINY, fg=C_MUTED, bg=C_MID,
                  justify="left").pack(side="right")
 
@@ -639,43 +639,28 @@ class VentanaSAPFaltantes(tk.Toplevel):
 
         def _tarea_guardar():
             """Ejecutada en hilo secundario — toda la E/S con openpyxl aquí."""
+            _bloqueo = getattr(self.master, "_catalogo_lock", None)
+            _tomado = [False]          # si este hilo tiene el bloqueo del catálogo (se suelta pase lo que pase)
+
+            def _soltar():
+                if _tomado[0]:
+                    _tomado[0] = False
+                    _bloqueo.release()
             try:
                 from openpyxl import load_workbook
+                from app.comun import catalogo_local
 
-                # ── Carga rápida: read_only=False pero keep_vba=False ──
-                # rich_text=False evita parsear formato de texto enriquecido
-                wb = load_workbook(self._ruta_listado, rich_text=False)
-                ws = wb.active
+                # v10.2.54: el código SAP se escribe en el catálogo completo, buscando por código DALI.
+                # Con el bloqueo del catálogo de la app, para no chocar con otra escritura a la vez.
+                if _bloqueo is not None:
+                    _bloqueo.acquire()
+                    _tomado[0] = True
+                wb, ws, _mapa_cat = catalogo_local.abrir_para_editar(self._ruta_listado)
+                _col_sap = _mapa_cat["cod_sap"]
 
-                # Desproteger
-                ws.protection.sheet   = False
-                ws.protection.enabled = False
-
-                # ── Construir mapa DALI→fila y SAP→(DALI, fila) con
-                #    iter_rows (mucho más rápido que ws.cell() fila a
-                #    fila porque lee en bloque). El segundo mapa es lo
-                #    que permite detectar códigos SAP duplicados más
-                #    abajo.
-                _mapa_fila = {}
-                _mapa_sap_existente = {}
-                for idx, row in enumerate(
-                        ws.iter_rows(min_row=8, min_col=1, max_col=4,
-                                     values_only=True),
-                        start=8):
-                    v = row[0]
-                    if v is None:
-                        continue
-                    try:
-                        _dali_int = int(float(v))
-                    except (ValueError, TypeError):
-                        continue
-                    _mapa_fila[_dali_int] = idx
-                    v_sap = row[3]
-                    if v_sap not in (None, ""):
-                        try:
-                            _mapa_sap_existente[int(float(v_sap))] = (_dali_int, idx)
-                        except (ValueError, TypeError):
-                            pass
+                # ── Mapa DALI→fila y SAP→(DALI, fila): el segundo permite
+                #    detectar códigos SAP duplicados más abajo.
+                _mapa_fila, _mapa_sap_existente = catalogo_local.mapas_dali_sap(ws, _mapa_cat)
 
                 # ── Detectar códigos SAP duplicados: ya asignados a otro
                 #    DALI en el listado, o repetidos dentro del propio
@@ -711,6 +696,8 @@ class VentanaSAPFaltantes(tk.Toplevel):
                         "WARN")
                     a_borrar = self._mostrar_resolucion_duplicados_y_esperar(conflictos)
                     if a_borrar is None:
+                        wb.close()
+                        _soltar()
                         self._log(
                             "  ✘ Guardado cancelado por el usuario "
                             "(duplicados sin resolver).", "WARN")
@@ -734,11 +721,11 @@ class VentanaSAPFaltantes(tk.Toplevel):
                                     _dali_limpiados.append(cod_dali)
                                 nuevos.pop(cod_dali, None)
                     for fila in _filas_a_limpiar:
-                        ws.cell(fila, 4).value = None
+                        ws.cell(fila, _col_sap).value = None
                     if _filas_a_limpiar:
                         self._log(
                             f"  ✔ {len(_filas_a_limpiar)} código(s) SAP "
-                            f"duplicados borrados del listado (ya existentes "
+                            f"duplicados borrados del catálogo (ya existentes "
                             f"en conflicto).", "OK")
 
                 # ── Escribir SAP en col D ──────────────────────
@@ -746,7 +733,7 @@ class VentanaSAPFaltantes(tk.Toplevel):
                 no_encontrados = []
                 for cod_dali, cod_sap in nuevos.items():
                     if cod_dali in _mapa_fila:
-                        ws.cell(_mapa_fila[cod_dali], 4).value = cod_sap
+                        ws.cell(_mapa_fila[cod_dali], _col_sap).value = cod_sap
                         escritos += 1
                         self._log(
                             f"  ✔ DALI {cod_dali:06d} → SAP {cod_sap} "
@@ -754,29 +741,26 @@ class VentanaSAPFaltantes(tk.Toplevel):
                     else:
                         no_encontrados.append(cod_dali)
                         self._log(
-                            f"  ✘ DALI {cod_dali:06d} no encontrado en listado", "WARN")
+                            f"  ✘ DALI {cod_dali:06d} no encontrado en el catálogo", "WARN")
 
-                # Volver a proteger col D
-                ws.protection.password = self.CLAVE_HOJA
-                ws.protection.sheet    = True
-                ws.protection.enable()
-
-                wb.save(self._ruta_listado)
+                try:
+                    wb.save(self._ruta_listado)
+                finally:
+                    wb.close()
+                    _soltar()
                 self._guardado = True
-                self._log(f"  └ Listado guardado: {escritos} SAP escritos.", "OK")
+                self._log(f"  └ Catálogo guardado: {escritos} SAP escritos.", "OK")
 
-                # ── Refrescar catalogo-dali-completo.xlsx para los DALI ──
-                #    cuyo SAP se acaba de borrar por duplicado -- pueden
-                #    ser ajenos a esta tarifa, así que el enganche normal
-                #    del catálogo (más abajo, en tarifa_app.py) nunca los
-                #    tocaría por su cuenta.
-                if _dali_limpiados and self._catalogo_refresh_fn:
+                # ── Enviar a Catálogo Asignaciones los DALI cuyo SAP ha cambiado
+                #    (escritos ahora o borrados por duplicado).
+                _cambiados = list(nuevos) + list(_dali_limpiados)
+                if _cambiados and self._catalogo_refresh_fn:
                     try:
-                        self._catalogo_refresh_fn(_dali_limpiados)
+                        self._catalogo_refresh_fn(_cambiados)
                     except Exception as _e_cat_ref:
                         self._log(
-                            f"  ⚠  No se pudo refrescar el catálogo tras "
-                            f"limpiar duplicados: {_e_cat_ref}", "WARN")
+                            f"  ⚠  No se pudieron enviar los cambios a Catálogo "
+                            f"Asignaciones: {_e_cat_ref}", "WARN")
 
                 # ── Escribir también en el xlsx de tarifa (col A) ─
                 _escritos_tarifa = 0
@@ -807,11 +791,11 @@ class VentanaSAPFaltantes(tk.Toplevel):
                 def _fin_ok(e=escritos, nf=no_encontrados,
                             et=_escritos_tarifa):
                     from tkinter import messagebox
-                    msg = f"✔  {e} código(s) SAP guardados en el LISTADO."
+                    msg = f"✔  {e} código(s) SAP guardados en el catálogo."
                     if et:
                         msg += f"\n✔  {et} código(s) escritos también en la tarifa."
                     if nf:
-                        msg += f"\n\n⚠  {len(nf)} código(s) DALI no encontrados en el listado:\n"
+                        msg += f"\n\n⚠  {len(nf)} código(s) DALI no encontrados en el catálogo:\n"
                         msg += ", ".join(str(d) for d in nf)
                     if not et and not self._ruta_tarifa:
                         msg += ("\n\n📋  Recuerda:\n"
@@ -827,6 +811,8 @@ class VentanaSAPFaltantes(tk.Toplevel):
                     pass  # ventana ya destruida; _guardado y _escritos_en_tarifa ya están puestos
 
             except PermissionError:
+                _soltar()
+
                 def _err_perm():
                     from tkinter import messagebox
                     messagebox.showerror(
@@ -841,6 +827,8 @@ class VentanaSAPFaltantes(tk.Toplevel):
                 self.after(0, _err_perm)
 
             except Exception as ex:
+                _soltar()
+
                 def _err_gen(e=str(ex)):
                     from tkinter import messagebox
                     messagebox.showerror("Error al guardar", e)

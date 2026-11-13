@@ -323,7 +323,7 @@ def _cruzar_con_listado_dali_sap(ws, ruta_xls, ultima, log_fn=None) -> list:
     #  como fallback). Construye mapa { DALI(int) → (cod_sap, desc_sap) }
     #  y rellena col A (CODIGO SAP) y col D (DESCRIPCION SAP).
     #
-    _log(log_fn, "Paso 27b: Cruzando CODIGO DALI (col B) con listado DALI-SAP...", "INFO")
+    _log(log_fn, "Paso 27b: Cruzando CODIGO DALI (col B) con el catálogo DALI-SAP...", "INFO")
     _sin_desc_und = []   # DALI cuyo SAP no tiene descripcion/unidad en el listado
 
     _carpeta_xls  = os.path.dirname(os.path.abspath(ruta_xls))
@@ -332,48 +332,27 @@ def _cruzar_con_listado_dali_sap(ws, ruta_xls, ultima, log_fn=None) -> list:
     _log(log_fn, f"  [DIAG] Carpeta .xls : {_carpeta_xls}", "INFO")
     _log(log_fn, f"  [DIAG] Carpeta raíz : {_carpeta_raiz}", "INFO")
 
-    def _buscar_listado(carpeta):
-        """Busca en carpeta cualquier .xlsx que contenga LISTADO+DALI+SAP en el nombre."""
-        try:
-            for f in os.listdir(carpeta):
-                if not f.lower().endswith(".xlsx"):
-                    continue
-                fu = f.upper()
-                if "LISTADO" in fu and "DALI" in fu and "SAP" in fu:
-                    return os.path.join(carpeta, f)
-        except OSError:
-            pass
-        return None
-
-    _listado_ruta = None
-    for _dir in [_carpeta_xls, _carpeta_raiz]:
-        _log(log_fn, f"  [DIAG] Buscando en  : {_dir}", "INFO")
-        _encontrado = _buscar_listado(_dir)
-        if _encontrado:
-            _listado_ruta = _encontrado
-            _log(log_fn, f"  [DIAG] ✔ Encontrado : {os.path.basename(_encontrado)}", "OK")
-            break
-        else:
-            try:
-                _xlsx_dir = [f for f in os.listdir(_dir) if f.lower().endswith(".xlsx")]
-                _log(log_fn, f"  [DIAG] .xlsx en carpeta: {_xlsx_dir}", "INFO")
-            except OSError:
-                pass
-
-    if _listado_ruta is None:
-        _log(log_fn, "  ⚠ Listado no encontrado en ninguna ruta. Se omite paso 27b.", "WARN")
+    # v10.2.54: ya no hay LISTADO CODIGOS DALI - SAP; se lee el catálogo completo (RECURSOS de la carpeta raíz,
+    # la padre de la del .xls), con la misma forma de filas que tenía el LISTADO.
+    from app.comun import catalogo_local as _cl
+    _listado_ruta = _cl.localizar_catalogo(_carpeta_raiz, _carpeta_xls)
+    if _listado_ruta:
+        _log(log_fn, f"  [DIAG] ✔ Catálogo : {_listado_ruta}", "OK")
+    else:
+        _log(log_fn, "  ⚠ catalogo-dali-completo.xlsx no encontrado. Se omite paso 27b.", "WARN")
 
     _mapa_dali_sap = {}
     if _listado_ruta:
         try:
-            _lb  = openpyxl.load_workbook(_listado_ruta, read_only=True, data_only=True)
-            _lws = _lb.active
             _n   = 0
-            for _row in _lws.iter_rows(min_row=8, values_only=True):
+            for _row in _cl.filas_formato_listado(_listado_ruta):
                 _cod_dali   = _row[0]      # col A del listado = CODIGO DALI
                 _cod_sap    = _row[3]      # col D del listado = CODIGO SAP-TEST
                 _desc_sap   = _row[4]      # col E del listado = DESCRIPCION SAP-TEST
-                _unidad_sap = _row[5]      # col F del listado = UNIDAD SAP
+                # col G = UNIDAD SAP. Hasta v10.2.52 se leía la F, que desde la inserción de columnas de
+                # 2026-08 es «Texto UM (expl.)»: la descripción salía «… - Kilogramo» en vez de «… - KG»
+                # (mismo fallo que el de los INC corregido en la sección 496 del historial).
+                _unidad_sap = _row[6] if len(_row) > 6 else None
                 if _cod_dali is None:
                     continue
                 try:
@@ -386,12 +365,11 @@ def _cruzar_con_listado_dali_sap(ws, ruta_xls, ultima, log_fn=None) -> list:
                     str(_unidad_sap).strip()  if _unidad_sap not in (None, "") else None,
                 )
                 _n += 1
-            _lb.close()
             # Mostrar las 3 primeras claves del mapa para confirmar carga
             _muestra = list(_mapa_dali_sap.keys())[:3]
             _log(log_fn, f"  [DIAG] Mapa cargado: {_n} entradas. Primeras claves: {_muestra}", "OK")
         except Exception as _e:
-            _log(log_fn, f"  ⚠ Error leyendo listado: {_e}", "WARN")
+            _log(log_fn, f"  ⚠ Error leyendo el catálogo: {_e}", "WARN")
 
     if _mapa_dali_sap:
         _enc         = 0

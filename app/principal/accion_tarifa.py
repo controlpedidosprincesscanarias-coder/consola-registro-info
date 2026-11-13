@@ -17,7 +17,7 @@ from datetime import datetime
 import threading
 from app.comun.tarifa_core import (
     TARIFA_NAME,
-    FOLDER_TARIFAS, FOLDER_RECURSOS,
+    FOLDER_TARIFAS,
 )
 from app.ui.tarifa_dialogs import (
     VentanaSAPFaltantes,
@@ -607,7 +607,7 @@ class AccionesTarifa:
                         "          https://my405727.s4hana.cloud.sap/ui#Shell-home\n"
                         "          Guárdelo en la carpeta  RECURSOS/\n\n"
                         "  ⚙️   2. Ejecute  Acción 3  (Actualizar listado materiales SAP)\n"
-                        "          para incorporar los nuevos datos al LISTADO.\n\n"
+                        "          para incorporar los nuevos datos al catálogo.\n\n"
                         "  🔄  3. Ejecute de nuevo  Acción 4  (Procesar y generar TARIFA)\n"
                         "          para que las descripciones queden completas.\n\n"
                         "El archivo permanecerá como [INCOMPLETO] hasta que se\n"
@@ -646,35 +646,17 @@ class AccionesTarifa:
                     except Exception as _e_desc:
                         self.log_consola(f"  [INFO] No se pudo leer descripciones: {_e_desc}", "INFO")
 
-                    # Buscar ruta del listado DALI-SAP
-                    # Orden: 1) raíz proyecto  2) RECURSOS/  3) carpeta del .xls  4) padre carpeta .xls
-                    _carpeta_raiz = self._carpeta_proyecto.get().strip()
-                    _carpeta_rec  = os.path.join(_carpeta_raiz, "RECURSOS")
-                    _carpeta_xls  = os.path.dirname(os.path.abspath(self._ruta_resultado)) if self._ruta_resultado else ""
-                    _carpeta_xls_padre = os.path.dirname(_carpeta_xls) if _carpeta_xls else ""
-                    self.log_consola(f"  [DIAG] Buscando listado DALI-SAP en:", "INFO")
-                    self.log_consola(f"    1) {_carpeta_raiz}", "INFO")
-                    self.log_consola(f"    2) {_carpeta_rec}", "INFO")
-                    self.log_consola(f"    3) {_carpeta_xls}", "INFO")
-                    self.log_consola(f"    4) {_carpeta_xls_padre}", "INFO")
-                    _ruta_listado = None
-                    _dirs_busq = [d for d in [
-                        _carpeta_raiz, _carpeta_rec,
-                        _carpeta_xls, _carpeta_xls_padre
-                    ] if d and os.path.isdir(d)]
-                    for _dir_busq in _dirs_busq:
-                        for _fn in os.listdir(_dir_busq):
-                            if (_fn.lower().endswith(".xlsx") and
-                                    "LISTADO" in _fn.upper() and
-                                    "DALI"    in _fn.upper() and
-                                    "SAP"     in _fn.upper()):
-                                _ruta_listado = os.path.join(_dir_busq, _fn)
-                                self.log_consola(f"  [DIAG] ✔ Encontrado: {_ruta_listado}", "OK")
-                                break
-                        if _ruta_listado:
-                            break
-                    if not _ruta_listado:
-                        self.log_consola("  [DIAG] ✘ Listado no encontrado en ninguna ruta.", "WARN")
+                    # Catálogo completo (v10.2.54: ya no hay LISTADO CODIGOS DALI - SAP): RECURSOS del
+                    # proyecto o, si no, el de la carpeta padre de la del .xls.
+                    from app.comun import catalogo_local as _cl
+                    _carpeta_xls = (os.path.dirname(os.path.abspath(self._ruta_resultado))
+                                    if self._ruta_resultado else None)
+                    _ruta_listado = _cl.localizar_catalogo(self._carpeta_proyecto.get().strip() or None,
+                                                           _carpeta_xls)
+                    if _ruta_listado:
+                        self.log_consola(f"  [DIAG] ✔ Catálogo: {_ruta_listado}", "OK")
+                    else:
+                        self.log_consola("  [DIAG] ✘ catalogo-dali-completo.xlsx no encontrado.", "WARN")
 
                     # Construir mensaje para el diálogo de elección
                     _msg_falt = (
@@ -706,7 +688,7 @@ class AccionesTarifa:
                                     consola_fn=self.log_consola,
                                     descripciones=descs,
                                     ruta_tarifa=rs,
-                                    catalogo_refresh_fn=self._refrescar_sap_catalogo_para_dali)
+                                    catalogo_refresh_fn=self._tras_cambiar_sap_en_catalogo)
                                 self.wait_window(ven)
 
                                 # ── Tras cerrar la ventana: comprobar si
@@ -786,8 +768,8 @@ class AccionesTarifa:
                             messagebox.showwarning(
                                 "C\xf3digos SAP faltantes",
                                 f"{len(falt)} c\xf3digo(s) DALI no tienen SAP asignado.\n\n"
-                                "No se encontr\xf3 el archivo LISTADO CODIGOS DALI-SAP en RECURSOS.\n"
-                                "A\xf1\xe1delo y vuelve a ejecutar las acciones.")
+                                "No se encontr\xf3 RECURSOS/catalogo-dali-completo.xlsx.\n"
+                                "Ejecuta la Acci\xf3n 2 (o desc\xe1rgalo de Cat\xe1logo Asignaciones) y vuelve a intentarlo.")
                         self.after(200, _avisar_sin_listado)
 
 
@@ -857,7 +839,7 @@ class AccionesTarifa:
         _n = len(ssd_list)
         tk.Label(frm_body,
                  text=f"Se encontraron {_n} artículo(s) con CÓDIGO SAP asignado\n"
-                      "pero sin DESCRIPCIÓN ni UNIDAD (columnas E y F vacías del LISTADO):",
+                      "pero sin DESCRIPCIÓN ni UNIDAD SAP en el catálogo:",
                  bg=BODY_BG, fg=TEXT_FG,
                  font=("Segoe UI", 9), justify="left", anchor="w").pack(anchor="w")
 
@@ -961,46 +943,29 @@ class AccionesTarifa:
         messagebox.showerror); el llamador solo necesita comprobar
         `if ruta_listado is None: return` sin repetir esa lógica.
         """
-        from openpyxl import load_workbook as _lw
+        from app.comun import catalogo_local as _cl
 
-        # ── 1. Localizar LISTADO CODIGOS DALI-SAP ────────────────
-        _carpeta_raiz = self._carpeta_proyecto.get().strip()
-        _carpeta_rec  = os.path.join(_carpeta_raiz, FOLDER_RECURSOS)
-        _ruta_listado = None
-        for _dir_busq in [_carpeta_raiz, _carpeta_rec]:
-            if not os.path.isdir(_dir_busq):
-                continue
-            for _fn in os.listdir(_dir_busq):
-                if (_fn.lower().endswith(".xlsx") and
-                        "LISTADO" in _fn.upper() and
-                        "DALI"    in _fn.upper() and
-                        "SAP"     in _fn.upper()):
-                    _ruta_listado = os.path.join(_dir_busq, _fn)
-                    break
-            if _ruta_listado:
-                break
-
+        # ── 1. Localizar el catálogo (v10.2.54: ya no hay LISTADO CODIGOS DALI-SAP) ──
+        _ruta_listado = _cl.localizar_catalogo(self._carpeta_proyecto.get().strip() or None)
         if not _ruta_listado:
-            self.log_consola("LISTADO CODIGOS DALI-SAP no encontrado.", "ERROR")
-            self.after(0, lambda: self._barra.reset("Listado no encontrado"))
+            self.log_consola("catalogo-dali-completo.xlsx no encontrado.", "ERROR")
+            self.after(0, lambda: self._barra.reset("Catálogo no encontrado"))
             self.after(0, lambda: messagebox.showerror(
-                "Listado no encontrado",
+                "Catálogo no encontrado",
                 "❌  No se encontró el archivo\n"
-                "   LISTADO CODIGOS DALI - SAP.xlsx\n\n"
-                "Verifique que el archivo está en la raíz del proyecto\n"
-                "o en la carpeta RECURSOS."))
+                "   RECURSOS/catalogo-dali-completo.xlsx\n\n"
+                "Ejecute la Acción 2 (o descárguelo de Catálogo Asignaciones)\n"
+                "y vuelva a intentarlo."))
             return None, None
 
-        self.log_consola(f"  └ Listado: {os.path.basename(_ruta_listado)}", "OK")
+        self.log_consola(f"  └ Catálogo: {os.path.basename(_ruta_listado)}", "OK")
 
         # ── 2. Leer tabla DALI → (SAP, desc_sap, unidad_sap) ─────
-        self.log_consola("Construyendo tabla de cruce desde LISTADO...", "INFO")
+        self.log_consola("Construyendo tabla de cruce desde el catálogo...", "INFO")
         _tabla_listado = {}   # {cod_dali_int: (cod_sap, desc_sap, unidad_sap)}
         try:
-            wb_lst = _lw(_ruta_listado, read_only=True, data_only=True)
-            ws_lst = wb_lst.active
             _n_lst = 0
-            for _row in ws_lst.iter_rows(min_row=8, values_only=True):
+            for _row in _cl.filas_formato_listado(_ruta_listado):   # misma forma que el antiguo LISTADO
                 _v_a = _row[0] if _row else None   # col A: DALI
                 _v_d = _row[3] if len(_row) > 3 else None  # col D: SAP
                 _v_e = _row[4] if len(_row) > 4 else None  # col E: DESC SAP
@@ -1021,13 +986,12 @@ class AccionesTarifa:
                 _unid_sap  = str(_v_f).strip() if _v_f is not None else ""
                 _tabla_listado[_k] = (_cod_sap, _desc_sap, _unid_sap)
                 _n_lst += 1
-            wb_lst.close()
-            self.log_consola(f"  └ {_n_lst} entradas leídas del LISTADO.", "OK")
+            self.log_consola(f"  └ {_n_lst} entradas leídas del catálogo.", "OK")
         except Exception as _e_lst:
-            self.log_consola(f"Error leyendo LISTADO: {_e_lst}", "ERROR")
-            self.after(0, lambda: self._barra.reset("Error leyendo listado"))
+            self.log_consola(f"Error leyendo el catálogo: {_e_lst}", "ERROR")
+            self.after(0, lambda: self._barra.reset("Error leyendo el catálogo"))
             self.after(0, lambda err=str(_e_lst): messagebox.showerror(
-                "Error al leer LISTADO", err))
+                "Error al leer el catálogo", err))
             return None, None
 
         return _ruta_listado, _tabla_listado
@@ -1065,7 +1029,7 @@ class AccionesTarifa:
                 + (" ..." if len(_dup_dali) > 10 else ""), "WARN")
         if _sin_en_lista:
             self.log_consola(
-                f"  ⚠  {len(_sin_en_lista)} DALI no encontrados en LISTADO: "
+                f"  ⚠  {len(_sin_en_lista)} DALI no encontrados en el catálogo: "
                 + ", ".join(str(d).zfill(6) for d in _sin_en_lista[:10])
                 + (" ..." if len(_sin_en_lista) > 10 else ""), "WARN")
 
@@ -1271,7 +1235,7 @@ class AccionesTarifa:
 
         if _sin_sap:
             self.log_consola(
-                f"  ⚠  {len(_sin_sap)} código(s) DALI sin SAP asignado en el LISTADO.",
+                f"  ⚠  {len(_sin_sap)} código(s) DALI sin SAP asignado en el catálogo.",
                 "WARN")
 
             # Leer descripciones para el diálogo
@@ -1295,7 +1259,7 @@ class AccionesTarifa:
 
                 _msg = (
                     f"✔  {n_act} código(s) SAP aplicados correctamente.\n\n"
-                    f"⚠  {len(falt)} código(s) DALI aún sin SAP en el LISTADO:\n\n"
+                    f"⚠  {len(falt)} código(s) DALI aún sin SAP en el catálogo:\n\n"
                     + "\n".join(
                         f"  •  DALI {str(d).zfill(6)}  "
                         f"{descs.get(d, ('',''))[0][:40]}"
@@ -1317,7 +1281,7 @@ class AccionesTarifa:
                         consola_fn=self.log_consola,
                         descripciones=descs,
                         ruta_tarifa=ri,
-                        catalogo_refresh_fn=self._refrescar_sap_catalogo_para_dali)
+                        catalogo_refresh_fn=self._tras_cambiar_sap_en_catalogo)
                     self.wait_window(ven)
 
                     if ven.guardado and ven.escritos_en_tarifa >= 1:
@@ -1396,7 +1360,7 @@ class AccionesTarifa:
             _titulo  = "Completado con advertencias ⚠" if _hay_inc else "Reinscripción completada ✔"
             _msg_fin = (
                 f"✔  {_actualizados} código(s) SAP aplicados.\n"
-                f"✔  Descripciones SAP actualizadas desde el LISTADO.\n"
+                f"✔  Descripciones SAP actualizadas desde el catálogo.\n"
             )
             if _dup_sap:
                 _msg_fin += (
@@ -1416,7 +1380,7 @@ class AccionesTarifa:
                         for _, d, s in _sap_sin_desc[:10])
                     + (" ..." if len(_sap_sin_desc) > 10 else "")
                     + "\n\nLa columna D no ha podido actualizarse para estos artículos.\n"
-                    "Actualice el LISTADO con descripción y unidad SAP y ejecute de nuevo Acción 4.\n"
+                    "Ejecute la Acción 3 para completar la descripción y la unidad SAP en el catálogo y de nuevo la Acción 4.\n"
                 )
             if not _hay_inc:
                 # Sin faltantes, sin duplicados y sin desc vacías → renombrar eliminando INC y [INCOMPLETO]
@@ -1531,9 +1495,9 @@ class AccionesTarifa:
         def proceso():
             _barra_finalizada = {"v": False}   # red de seguridad, ver finally: más abajo
             try:
-                self.consola.separador("REINSCRIPCIÓN SAP DESDE LISTADO (archivo INC)")
+                self.consola.separador("REINSCRIPCIÓN SAP DESDE EL CATÁLOGO (archivo INC)")
                 self.log_consola(f"Archivo INC: {os.path.basename(ruta_inc)}", "INFO")
-                self.after(0, lambda: self._barra.indeterminate("Leyendo LISTADO DALI-SAP..."))
+                self.after(0, lambda: self._barra.indeterminate("Leyendo el catálogo..."))
 
                 _ruta_listado, _tabla_listado = self._leer_tabla_cruce_listado_sap()
                 if _ruta_listado is None:

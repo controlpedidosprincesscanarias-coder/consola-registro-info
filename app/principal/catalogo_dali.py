@@ -30,7 +30,7 @@ from app.comun.credenciales import (
 from app.comun.sap_helpers import (
     CATALOGO_COLUMNAS, CATALOGO_CLAVES_SAP,
     CATALOGO_FILA_CABECERA, CATALOGO_PRIMERA_FILA_DATOS,
-    mapa_columnas_catalogo, datos_sap_desde_fila_listado, es_precio_valido,
+    mapa_columnas_catalogo, es_precio_valido,
 )
 
 # URL del worker de Cloudflare que hace de proxy inverso hacia el backend
@@ -346,6 +346,22 @@ class CatalogoDali:
             with open(ruta_tmp, "wb") as f:
                 f.write(contenido)
 
+            # v10.2.54: sin LISTADO, un código SAP escrito en la Consola y aún no enviado a la web solo está en
+            # el catálogo local: si en el descargado ese artículo no tiene SAP, se conserva el local.
+            if os.path.isfile(ruta_final):
+                try:
+                    from app.comun import catalogo_local
+                    _conservados = catalogo_local.conservar_sap_local(
+                        ruta_tmp, catalogo_local.leer_tabla_sap(ruta_final))
+                    if _conservados:
+                        self.log_consola(
+                            f"  └ {len(_conservados)} artículo(s) sin código SAP en la web conservan el que tenían "
+                            f"en este equipo (pendiente de enviar): "
+                            f"{', '.join(_conservados[:15])}{' …' if len(_conservados) > 15 else ''}", "WARN")
+                except Exception as _e_cons:
+                    self.log_consola(f"  ⚠  No se pudieron comparar los códigos SAP locales con los "
+                                     f"descargados: {_e_cons}", "WARN")
+
             _INTENTOS_REEMPLAZO = 5
             _ESPERA_ENTRE_INTENTOS = 1.0  # segundos
             for _intento in range(1, _INTENTOS_REEMPLAZO + 1):
@@ -508,9 +524,9 @@ class CatalogoDali:
         que Acción 4 dejó de mostrar a propósito (ver _confirmar_catalogo_
         actualizado, que Acción 4 ya no llama).
 
-        Revisa la antigüedad de catalogo-dali-completo.xlsx Y de sus dos
-        ficheros de origen (ARTICULOS_DALI.xlsx, LISTADO CODIGOS DALI -
-        SAP.xlsx) -- si Acciones 1-3 no se han corrido hoy, estos también
+        Revisa la antigüedad de catalogo-dali-completo.xlsx Y de su fichero
+        de origen ARTICULOS_DALI.xlsx (desde v10.2.54 ya no hay LISTADO
+        CODIGOS DALI - SAP) -- si Acciones 1-3 no se han corrido hoy, estos también
         pueden estar desactualizados aunque el catálogo en sí no se haya
         tocado hace mucho.
 
@@ -536,8 +552,6 @@ class CatalogoDali:
              os.path.join(carpeta, FOLDER_RECURSOS, "catalogo-dali-completo.xlsx")),
             ("ARTICULOS_DALI.xlsx",
              os.path.join(carpeta, FOLDER_RECURSOS, "ARTICULOS_DALI.xlsx")),
-            ("LISTADO CODIGOS DALI - SAP.xlsx",
-             os.path.join(carpeta, "LISTADO CODIGOS DALI - SAP.xlsx")),
         ]
 
         if not os.path.isfile(rutas_a_revisar[0][1]):
@@ -683,31 +697,34 @@ class CatalogoDali:
             self._catalogo_verificado_sesion = True
         return exito
 
-    def _regenerar_catalogo_dali_completo(self):
+    def _regenerar_catalogo_dali_completo(self, tabla_sap=None):
         """
         Wrapper con bloqueo global (ver _adquirir_lock_catalogo_con_aviso):
         adquiere self._catalogo_lock antes de tocar catalogo-dali-completo.xlsx
         y lo libera siempre al terminar, delegando en _regenerar_catalogo_
         dali_completo_impl() para la lógica real (sin tocarla).
+
+        tabla_sap (v10.2.54): datos SAP por código DALI que manda la Acción 3; sin ella, los del propio catálogo.
         """
         self._adquirir_lock_catalogo_con_aviso()
         try:
-            resultado = self._regenerar_catalogo_dali_completo_impl()
+            resultado = self._regenerar_catalogo_dali_completo_impl(tabla_sap)
         finally:
             self._catalogo_lock.release()
         # Etapa 6 (v10.2.50): enviar a Catálogo Asignaciones lo que haya cambiado (en segundo plano).
         self._publicar_catalogo_web("regenerar el catálogo (Acción 2 o 3)")
         return resultado
 
-    def _regenerar_catalogo_dali_completo_impl(self):
+    def _regenerar_catalogo_dali_completo_impl(self, tabla_sap=None):
         """
         Regenera RECURSOS/catalogo-dali-completo.xlsx combinando:
           - RECURSOS/ARTICULOS_DALI.xlsx (Acción 1): código, descripción,
             unidad, familia, subfamilia, naturaleza, IGIC, proveedor
             asignado y activo (lado DALI).
-          - <raíz>/LISTADO CODIGOS DALI - SAP.xlsx (Acciones 2/3): código
-            SAP, descripciones/grupos SAP, categoría valoración, tipo de
-            producto, grupo de compras (lado SAP).
+          - Lado SAP (código SAP, descripciones/grupos SAP, categoría valoración, tipo de producto, grupo de
+            compras): desde v10.2.54 sale del PROPIO catálogo anterior (por código DALI), o de `tabla_sap` si la
+            manda la Acción 3. Ya no existe el «LISTADO CODIGOS DALI - SAP.xlsx» (decisión de Víctor, 13 nov
+            2026; ver app/comun/catalogo_local.py). Si todavía está, antes se pasa al catálogo (migrar_listado).
 
         Llamado automáticamente al final de _actualizar_listado_dali()
         (Acción 2) y de _cruzar_y_escribir_listado_sap() (Acción 3) --
@@ -730,16 +747,21 @@ class CatalogoDali:
         if not carpeta:
             return
 
+        from app.comun import catalogo_local
+
         recursos_path        = os.path.join(carpeta, FOLDER_RECURSOS)
         ruta_articulos_dali  = os.path.join(recursos_path, "ARTICULOS_DALI.xlsx")
-        ruta_listado         = os.path.join(carpeta, "LISTADO CODIGOS DALI - SAP.xlsx")
+        ruta_listado         = catalogo_local.ruta_listado(carpeta)
         ruta_catalogo        = os.path.join(recursos_path, "catalogo-dali-completo.xlsx")
 
-        if not os.path.isfile(ruta_articulos_dali) or not os.path.isfile(ruta_listado):
+        if not os.path.isfile(ruta_articulos_dali):
             self.log_consola(
-                "  ℹ catalogo-dali-completo.xlsx no regenerado: falta "
-                "ARTICULOS_DALI.xlsx o LISTADO CODIGOS DALI - SAP.xlsx.", "INFO")
+                "  ℹ catalogo-dali-completo.xlsx no regenerado: falta ARTICULOS_DALI.xlsx "
+                "(Acción 1).", "INFO")
             return
+        # v10.2.54: si todavía existe el LISTADO, sus datos SAP se pasan una vez al catálogo.
+        if tabla_sap is None and os.path.isfile(ruta_catalogo):
+            self._pasar_listado_al_catalogo(con_bloqueo=False)
 
         import openpyxl
         from copy import copy
@@ -820,18 +842,22 @@ class CatalogoDali:
         wb_dali.close()
         self.log_consola(f"  └ {len(tabla_dali)} artículos DALI leídos", "OK")
 
-        # ── 3. Leer LISTADO CODIGOS DALI - SAP.xlsx ─────────────────
-        self.log_consola("Leyendo LISTADO CODIGOS DALI - SAP.xlsx...", "INFO")
-        wb_lst = openpyxl.load_workbook(ruta_listado, read_only=True, data_only=True)
-        ws_lst = wb_lst.active
-        tabla_sap = {}
-        for row in ws_lst.iter_rows(min_row=8, values_only=True):
-            if not row or row[0] is None:
-                continue
-            clave = str(row[0]).strip()
-            tabla_sap[clave] = datos_sap_desde_fila_listado(row)
-        wb_lst.close()
-        self.log_consola(f"  └ {len(tabla_sap)} entrada(s) del LISTADO leídas", "OK")
+        # ── 3. Datos SAP por código DALI (v10.2.54: del catálogo, no del LISTADO) ──
+        if tabla_sap is not None:
+            self.log_consola(f"  └ {len(tabla_sap)} artículo(s) con datos SAP de la Acción 3", "OK")
+        elif os.path.isfile(ruta_catalogo):
+            tabla_sap = catalogo_local.leer_tabla_sap(ruta_catalogo)
+            self.log_consola(f"  └ Datos SAP de {len(tabla_sap)} artículo(s) leídos del catálogo", "OK")
+        elif os.path.isfile(ruta_listado):
+            # Primera vez en un proyecto sin catálogo: el lado SAP sale del LISTADO, que después se renombra.
+            wb_lst = openpyxl.load_workbook(ruta_listado, read_only=True, data_only=True)
+            tabla_sap = catalogo_local.tabla_sap_desde_libro(wb_lst.active)
+            wb_lst.close()
+            self.log_consola(f"  └ Datos SAP de {len(tabla_sap)} artículo(s) leídos del LISTADO (última vez)", "OK")
+        else:
+            tabla_sap = {}
+            self.log_consola("  ⚠  Sin catálogo anterior: el catálogo nuevo saldrá sin datos SAP "
+                             "(se rellenan con la Acción 3).", "WARN")
 
         # ── 4. Construir el catálogo ─────────────────────────────────
         wb_out = openpyxl.Workbook()
@@ -934,6 +960,8 @@ class CatalogoDali:
 
         os.makedirs(recursos_path, exist_ok=True)
         wb_out.save(ruta_catalogo)
+        if os.path.isfile(ruta_listado):              # primera vez sin catálogo: el LISTADO ya está dentro
+            self._pasar_listado_al_catalogo(con_bloqueo=False)
 
         # ── 4b. Si hubo cambios de Proveedor Asignado, dejar constancia en .txt ──
         if _cambios_proveedor_asignado:
@@ -1013,105 +1041,61 @@ class CatalogoDali:
         self.after(0, lambda: self._barra.completado("Catálogo DALI actualizado"))
         self.consola.separador("FIN REGENERAR CATÁLOGO DALI COMPLETO")
 
-    def _refrescar_sap_catalogo_para_dali(self, codigos_dali):
+    def _tras_cambiar_sap_en_catalogo(self, _codigos_dali=None):
         """
-        Actualiza SOLO las columnas J-S (datos de origen SAP: código SAP,
-        descripción, unidad, grupo de producto, IGIC, categoría, tipo,
-        grupo de compras) de las filas de catalogo-dali-completo.xlsx
-        correspondientes a los códigos DALI indicados, leyendo su estado
-        actual desde LISTADO CODIGOS DALI - SAP.xlsx. No toca el resto
-        de columnas (proveedor, datos DALI) ni añade filas nuevas.
-
-        Fix (2026-09-25, hallazgo real del usuario): cuando Ventana
-        SAPFaltantes resuelve un código SAP duplicado y borra el SAP de
-        un DALI que NO pertenece a la tarifa en curso (ver
-        VentanaResolverSAPDuplicados), _actualizar_codigo_proveedor_
-        catalogo() nunca lo refresca -- solo toca los códigos DALI de
-        la propia tarifa. El catálogo se queda con el SAP viejo hasta
-        la siguiente Acción 2/3. Este método cubre ese hueco con una
-        actualización puntual, ligera, sin regenerar el catálogo entero.
-
-        codigos_dali: iterable de códigos DALI (int o str) a refrescar.
-        No hace nada si el catálogo o el LISTADO no existen todavía.
+        (v10.2.54) La ventana de SAP faltantes escribe ya los códigos SAP directamente en el catálogo (antes, en el
+        LISTADO, y _refrescar_sap_catalogo_para_dali los copiaba después). Aquí solo queda enviar a Catálogo
+        Asignaciones lo que haya cambiado.
         """
-        if not codigos_dali:
-            return
-        self._adquirir_lock_catalogo_con_aviso()
+        self._publicar_catalogo_web("asignar códigos SAP")
+
+    def _pasar_listado_al_catalogo(self, con_bloqueo=True):
+        """
+        (v10.2.54) Si todavía existe «LISTADO CODIGOS DALI - SAP.xlsx» en la raíz del proyecto, pasa sus datos SAP
+        al catálogo (el LISTADO manda, como en cada Acción 2/3 hasta ahora), deja un informe de diferencias en
+        RECURSOS y lo renombra a «(antiguo, ya no se usa)». Solo pasa una vez: el primer PC que abra esta versión.
+        Devuelve el resumen o None.
+        """
+        from app.comun import catalogo_local
+        carpeta = self._carpeta_proyecto.get().strip()
+        if not carpeta or not os.path.isfile(catalogo_local.ruta_listado(carpeta)):
+            return None
+        if con_bloqueo:
+            self._adquirir_lock_catalogo_con_aviso()
         try:
-            import openpyxl
-
-            carpeta       = self._carpeta_proyecto.get().strip()
-            recursos_path = os.path.join(carpeta, FOLDER_RECURSOS)
-            ruta_catalogo = os.path.join(recursos_path, "catalogo-dali-completo.xlsx")
-            ruta_listado  = os.path.join(carpeta, "LISTADO CODIGOS DALI - SAP.xlsx")
-            if not os.path.isfile(ruta_catalogo) or not os.path.isfile(ruta_listado):
-                return
-
-            claves = set()
-            for c in codigos_dali:
-                try:
-                    claves.add(str(int(float(str(c).strip()))))
-                except (ValueError, TypeError):
-                    continue
-            if not claves:
-                return
-
-            wb_l = openpyxl.load_workbook(ruta_listado, read_only=True, data_only=True)
-            ws_l = wb_l.active
-            _datos_sap = {}
-            for row in ws_l.iter_rows(min_row=8, values_only=True):
-                if not row or row[0] is None:
-                    continue
-                clave = str(row[0]).strip()
-                if clave not in claves:
-                    continue
-                _datos_sap[clave] = datos_sap_desde_fila_listado(row)
-            wb_l.close()
-
-            wb_cat = openpyxl.load_workbook(ruta_catalogo)
-            ws_cat = wb_cat.active
-            # Columnas localizadas por cabecera: valen tanto el formato viejo
-            # (20 columnas) como el nuevo (con Texto UM y Precio €).
-            _mapa = mapa_columnas_catalogo(
-                [c.value for c in ws_cat[CATALOGO_FILA_CABECERA]])
-            _col_clave = _mapa.get("clave", 1)
-            _fila_por_clave = {}
-            for row in ws_cat.iter_rows(min_row=CATALOGO_PRIMERA_FILA_DATOS):
-                if not row or len(row) < _col_clave or row[_col_clave - 1].value is None:
-                    continue
-                _fila_por_clave[str(row[_col_clave - 1].value).strip()] = row[0].row
-
-            actualizadas = 0
-            for clave in claves:
-                fila = _fila_por_clave.get(clave)
-                if fila is None:
-                    continue
-                s = _datos_sap.get(clave, {})
-                # Solo se tocan las columnas de origen SAP; "Precio €", el
-                # proveedor y los datos DALI no se modifican aquí.
-                for _k in CATALOGO_CLAVES_SAP:
-                    _col = _mapa.get(_k)
-                    if _col:
-                        # ws_cat.cell(..., value=v) NO borra si v es None (bug
-                        # conocido de openpyxl, ya visto antes en este mismo
-                        # proyecto) -- hace falta asignar .value en dos pasos.
-                        ws_cat.cell(row=fila, column=_col).value = s.get(_k)
-                actualizadas += 1
-
-            wb_cat.save(ruta_catalogo)
-            wb_cat.close()
-            if actualizadas:
-                self.log_consola(
-                    f"  └ Catálogo: datos SAP refrescados para {actualizadas} "
-                    f"código(s) DALI tras resolución de duplicados.", "OK")
-        except Exception as _e_ref:
-            self.log_consola(
-                f"  ⚠  No se pudo refrescar el catálogo tras resolver "
-                f"duplicados: {_e_ref}", "WARN")
+            r = catalogo_local.migrar_listado(carpeta)
+        except Exception as e:  # noqa: BLE001
+            self.log_consola(f"  ⚠  No se pudo pasar el LISTADO al catálogo: {e}. Se reintentará la próxima vez.",
+                             "WARN")
+            return None
         finally:
-            self._catalogo_lock.release()
-        # Etapa 6 (v10.2.50): enviar a Catálogo Asignaciones los datos SAP cambiados.
-        self._publicar_catalogo_web("resolver un código SAP duplicado")
+            if con_bloqueo:
+                self._catalogo_lock.release()
+        if not r:
+            return None
+        self.log_consola("Desde esta versión la Consola usa solo catalogo-dali-completo.xlsx.", "SISTEMA")
+        if r["diferencias"]:
+            self.log_consola(
+                f"  ⚠  {r['articulos_cambiados']} artículo(s) tenían datos SAP distintos en el LISTADO y en el "
+                f"catálogo: se ha dejado lo del LISTADO. Detalle en RECURSOS/{os.path.basename(r['informe'])}",
+                "WARN")
+        else:
+            self.log_consola("  └ Los datos SAP del LISTADO y del catálogo coincidían.", "OK")
+        self.log_consola(f"  └ LISTADO renombrado a «{os.path.basename(r['renombrado_a'])}» (no se borra).", "OK")
+
+        def _avisar():
+            texto = ("Desde esta versión la Consola ya no usa «LISTADO CODIGOS DALI - SAP.xlsx»: todo está en "
+                     "RECURSOS/catalogo-dali-completo.xlsx.\n\n")
+            if r["diferencias"]:
+                texto += (f"{r['articulos_cambiados']} artículo(s) tenían datos SAP distintos en los dos archivos; "
+                          f"se ha dejado lo del LISTADO. Revisa el detalle en:\nRECURSOS/"
+                          f"{os.path.basename(r['informe'])}\n\n")
+            texto += f"El LISTADO se ha renombrado a «{os.path.basename(r['renombrado_a'])}» (no se ha borrado)."
+            messagebox.showinfo("Catálogo único", texto)
+        self.after(0, _avisar)
+        if r["diferencias"]:
+            self._publicar_catalogo_web("pasar el LISTADO al catálogo")
+        return r
 
     def _actualizar_codigo_proveedor_catalogo(self, ruta_tarifa):
         """
@@ -1240,24 +1224,10 @@ class CatalogoDali:
                     "  ⚠  ARTICULOS_DALI.xlsx no encontrado — "
                     "catálogo actualizado solo con los datos de la tarifa.", "WARN")
 
-            # ── 3. Datos SAP (Acciones 2/3), solo los códigos que necesitamos ──
-            ruta_listado = os.path.join(carpeta, "LISTADO CODIGOS DALI - SAP.xlsx")
+            # ── 3. Datos SAP: desde v10.2.54 ya están en el propio catálogo (no hay LISTADO) ──
+            #    Con el diccionario vacío, las columnas SAP de las filas existentes se conservan (escribir None no
+            #    borra, ver más abajo); una fila nueva queda sin datos SAP hasta la Acción 3, como antes.
             _datos_sap = {}
-            if os.path.isfile(ruta_listado):
-                wb_l = openpyxl.load_workbook(ruta_listado, read_only=True, data_only=True)
-                ws_l = wb_l.active
-                for row in ws_l.iter_rows(min_row=8, values_only=True):
-                    if not row or row[0] is None:
-                        continue
-                    clave = str(row[0]).strip()
-                    if clave not in _cod_prov_tarifa:
-                        continue
-                    _datos_sap[clave] = datos_sap_desde_fila_listado(row)
-                wb_l.close()
-            else:
-                self.log_consola(
-                    "  ⚠  LISTADO CODIGOS DALI-SAP no encontrado — "
-                    "catálogo actualizado solo parcialmente.", "WARN")
 
             # ── 4. Abrir catálogo, localizar filas existentes por código DALI ──
             wb_cat = openpyxl.load_workbook(ruta_catalogo)
