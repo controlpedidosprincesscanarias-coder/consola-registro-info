@@ -1213,8 +1213,21 @@ Petición de Víctor: «¿Podríamos prescindir de uno de los Excel y mantener �
 
 ---
 
+## 55. Acción 8: Asignar SAP pendientes (13 nov 2026) — PR en GitHub
+
+Petición de Víctor: «una nueva acción, parecida a cuando se abre la ventana para introducir los códigos SAP faltantes en una tarifa, pero con todos los códigos DALI activos sin SAP, para que el usuario vaya grabando los SAP en el orden que quiera». Decisiones: desde la Consola (no desde la web: el código SAP y sus datos salen de los listados de SAP que solo tiene la Consola); botón nuevo (8); un código que no esté en `Productos.xlsx` se anota igualmente y se informa de que hasta que no se descarguen de nuevo `Productos.xlsx` y `Listas de productos.xlsx` en RECURSOS y se pulse otra vez la Acción 3 no quedará todo cumplimentado.
+- `app/comun/asignar_sap.py` (sin tkinter): pendientes (activos sin SAP), filtros sin acentos ni mayúsculas, validación del código, consulta en `Productos.xlsx`, códigos repetidos (con la misma forma que usa `VentanaResolverSAPDuplicados`) y aplicar al catálogo.
+- `app/ui/ventana_asignar_sap.py`: tabla con buscador y filtros por proveedor y familia (pueden ser cientos o miles: no una casilla por fila como en la ventana de faltantes). Se elige una fila, se escribe el código y con Intro se asigna y pasa al siguiente sin asignar; al lado, lo que dice `Productos.xlsx` (verde si está, naranja si no). «Guardar en el catálogo» en un hilo; las filas guardadas desaparecen y se sigue. Al cerrar con códigos sin guardar, pregunta. La pregunta de códigos repetidos y el final del guardado los atiende la ventana desde el hilo principal (sondeo), sin tocar Tk desde el hilo de fondo.
+- `app/principal/accion_asignar_sap.py`: guarda bajo el bloqueo del catálogo y después completa los datos SAP con el mismo cruce de la Acción 3 (que regenera el catálogo y envía a Catálogo Asignaciones). Si falta `Productos.xlsx`, `Listas de productos.xlsx` o `ARTICULOS_DALI.xlsx`, solo se envían los códigos.
+- La lectura de `Productos.xlsx` se movió sin cambios a `sap_helpers.leer_productos_xlsx` (commit propio) para compartirla.
+- Pruebas: `tests/test_asignar_sap.py` (6) y `tests/test_accion_asignar_sap.py` (5: guardado con repetidos resueltos o cancelados, completar los datos con el cruce de la Acción 3 con archivos inventados, y la ventana en pantalla virtual). 185 en total. Ventana vista en pantalla virtual con datos inventados.
+- **Por probar en Windows con datos reales:** abrir la acción con el catálogo real (cuántos pendientes salen y si la tabla va fluida), asignar algunos códigos (uno que esté y otro que no esté en `Productos.xlsx`) y comprobar el catálogo, el resumen de la Acción 3 y la ventana de cambios para Catálogo Asignaciones.
+- **Manual:** pendiente de regenerar con la próxima versión (botón 8).
+
+---
+
 ## Próximos pasos, en orden de prioridad
-- **Siguiente (Víctor, 13 nov 2026):** acción nueva «Asignar SAP pendientes»: ventana con todos los códigos DALI activos sin SAP (buscador y filtros), grabando en el orden que se quiera, con comprobación contra `Productos.xlsx`, sobre el catálogo (sección 54). Pendiente de decidir dónde va el botón y qué hacer con un código que no esté en `Productos.xlsx`.
+- ~~Acción «Asignar SAP pendientes»~~ hecha (sección 55). Pendiente de regenerar el manual (secciones 52-55: inicio de sesión, envío a la web, catálogo único y botón 8).
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
    - ~~etapa 2: carpetas por capas~~ hecha (sección 43);
    - ~~etapa 3: limpieza~~ hecha (sección 44); ~~trocear `crear_registro_info.py`~~ hecho (sección 45); ~~trocear `tarifa_app.py`~~ hecho (sección 46);

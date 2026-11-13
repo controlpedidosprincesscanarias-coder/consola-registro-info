@@ -39,6 +39,7 @@ from app.principal.accion_listado_sap import AccionListadoSap
 from app.principal.catalogo_dali import CatalogoDali
 from app.principal.accion_tarifa import AccionesTarifa
 from app.principal.publicar_catalogo_web import PublicarCatalogoWeb
+from app.principal.accion_asignar_sap import AccionAsignarSap
 from app.principal.catalogo_dali import DALI_APP_API_BASE  # noqa: F401
 
 
@@ -46,7 +47,7 @@ from app.principal.catalogo_dali import DALI_APP_API_BASE  # noqa: F401
 # interfaz, Acción 1 (organizar DALI), Acción 2 (listado DALI), Acción 3 (listado SAP), catálogo
 # DALI y Acciones 4/6 (tarifa). Aquí quedan __init__, la cabecera y el pie (usan APP_VERSION).
 class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap, CatalogoDali, AccionesTarifa,
-          PublicarCatalogoWeb, tk.Tk):
+          PublicarCatalogoWeb, AccionAsignarSap, tk.Tk):
     # SAP_LOGO_PNG (ruta de assets/logo_sap.png) centralizado en tarifa_constants.py
 
     def __init__(self):
