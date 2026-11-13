@@ -138,19 +138,20 @@ class TestVentana(unittest.TestCase):
             self.root.update()
             time.sleep(0.02)
 
-    def test_asignar_con_intro_pasa_al_siguiente_y_guardar(self):
+    def test_escribir_en_la_tabla_intro_pasa_a_la_siguiente_y_guardar(self):
+        """13 nov 2026: la tabla es como la de «Códigos SAP faltantes» de la Acción 4: se escribe en cada fila."""
         v = self.ven
-        v._tabla.selection_set("2")
-        v._al_elegir()
-        v._var_sap.set("2000")
-        self.assertIn("PIMIENTO ROJO", v._lbl_productos["text"])
-        v._asignar()
+        self.assertEqual(v._filas_visibles(), [2, 3])
+        v._vars[2].set("2000")
+        self.assertIn("PIMIENTO ROJO", v._estados[2]["text"])
         self.assertEqual(v._asignados, {2: 2000})
-        self.assertEqual(v._dali_elegido(), 3)           # pasa al siguiente
-        v._var_sap.set("9999")
-        self.assertIn("no está en Productos.xlsx", v._lbl_productos["text"])
-        v._asignar()
+        with mock.patch.object(v._celdas_sap[3], "focus_set") as foco:
+            self.assertEqual(v._siguiente_fila(2), "break")    # Intro: pasa a la fila siguiente
+        foco.assert_called_once()
+        v._vars[3].set("9999")
+        self.assertIn("no está en Productos.xlsx", v._estados[3]["text"])
         self.assertEqual(v._asignados, {2: 2000, 3: 9999})
+        self.assertIn("(2)", v._btn_guardar["text"])
         with mock.patch("app.ui.ventana_asignar_sap.messagebox.showinfo") as info:
             v._guardar()
             fin = time.time() + 5
@@ -158,34 +159,40 @@ class TestVentana(unittest.TestCase):
                 self._bombear(0.05)
         self.assertEqual(self.guardados, [{2: 2000, 3: 9999}])
         self.assertEqual(v._todos, [])
+        self.assertEqual(v._filas_visibles(), [])
         info.assert_called_once()
 
     def test_copiar_para_pegar_en_sap(self):
         v = self.ven
-        v._tabla.selection_set("3")
-        v._al_elegir()
-        self.assertEqual((v._vars_copia["dali"].get(), v._vars_copia["descripcion"].get(), v._vars_copia["unidad"].get()),
-                         ("000003", "LECHE", "L"))
-        v._copiar_campo("descripcion", "Descripción")
+        v._copiar_campo("descripcion", "Descripción", dali=3)
         self.assertEqual(v.clipboard_get(), "LECHE")
-        v._copiar_campo("dali", "Código DALI")
+        v._copiar_campo("dali", "Código DALI", dali=3)
         self.assertEqual(v.clipboard_get(), "000003")
-        v._copiar_fila()
+        v._copiar_fila(3)
         self.assertEqual(v.clipboard_get(), "000003\tLECHE\tL\tQ\tLÁCTEOS")
-        self.assertIn("Copiado", v._lbl_articulo["text"])
+        self.assertIn("Copiado", v._lbl_info["text"])
+        # Ctrl+C en una celda sin seleccionar nada copia la celda entera
+        celda = [w for w in v._rejilla.grid_slaves(row=2, column=1)][0]
+        v._copiar_celda(celda)
+        self.assertEqual(v.clipboard_get(), "LECHE")
 
-    def test_filtrar_y_codigo_no_valido(self):
+    def test_filtrar_conserva_lo_escrito_y_codigo_no_valido(self):
         v = self.ven
+        v._vars[2].set("2000")
         v._var_buscar.set("leche")
-        self.assertEqual(v._tabla.get_children(), ("3",))
+        self.assertEqual(v._filas_visibles(), [3])
         v._quitar_filtros()
-        self.assertEqual(len(v._tabla.get_children()), 2)
-        v._tabla.selection_set("2")
-        v._var_sap.set("abc")
-        with mock.patch("app.ui.ventana_asignar_sap.messagebox.showwarning") as aviso:
-            v._asignar()
-        aviso.assert_called_once()
-        self.assertEqual(v._asignados, {})
+        self.assertEqual(v._filas_visibles(), [2, 3])
+        self.assertEqual(v._vars[2].get(), "2000")              # lo escrito sigue ahí tras filtrar
+        self.assertEqual(v._celdas_sap[2].get(), "2000")
+        v._vars[3].set("abc")
+        self.assertTrue(v._estados[3]["text"].startswith("✘"))
+        self.assertEqual(v._asignados, {2: 2000})               # el no válido no se guarda
+        v._vars[3].set("2000")                                   # repetido con el DALI 2
+        self.assertIn("repetido con el DALI 000002", v._estados[3]["text"])
+        self.assertIn("repetido con el DALI 000003", v._estados[2]["text"])
+        v._vars[3].set("")
+        self.assertNotIn("repetido", v._estados[2]["text"])
 
 
 if __name__ == "__main__":

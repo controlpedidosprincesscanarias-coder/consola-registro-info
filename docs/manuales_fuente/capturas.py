@@ -367,18 +367,19 @@ SIMS_DEMO = {"accion4": {"irregulares": [{"codigo_dali": 10003, "tipo": "codigo_
 
 def marcas_asignar_sap(v):
     B = buscar
-    v._tabla.selection_set("10011"); v._al_elegir(); v._var_sap.set("10509011"); v._asignar()
-    v._var_sap.set("10509099"); v._asignar()
-    v.update()                                   # que la tabla termine de elegir la fila siguiente
-    v._var_sap.set("10509012")                   # código a medio confirmar: se ve lo que dice Productos.xlsx
+    filas = v._filas_visibles()
+    cab = lambda col: v._rejilla.grid_slaves(row=0, column=col)[0]   # noqa: E731  (cabecera de la columna)
+    v._vars[filas[0]].set("10509011")            # en Productos.xlsx
+    v._vars[filas[1]].set("10509099")            # no está en Productos.xlsx: se avisa, pero se guarda
+    v._vars[filas[2]].set("10509012")
+    v._celdas_sap[filas[3]].focus_set()
     v.update()
     return [
         (caja_de(v, [B(v, "Buscar"), B(v, "Quitar filtros")]), 1, "tr"),
-        (de_clase(v, "Treeview"), 2, "ir"),
-        (v._ent_sap, 3, "ir"),
-        (v._lbl_productos, 4, "r"),
+        (caja_de(v, [cab(0), cab(4)]), 2, "ir"),
+        (caja_de(v, [cab(5)] + [v._celdas_sap[d] for d in filas[:4]]), 3, "b"),
+        (caja_de(v, [cab(6)] + [v._estados[d] for d in filas[:3]]), 4, "b"),
         (v._btn_guardar, 5, "in"),
-        (caja_de(v, [B(v, "Código DALI", "Label"), B(v, "Copiar", "Button", n=2)]), 6, "r"),
     ]
 
 
