@@ -608,6 +608,38 @@ class AccionListadoSap:
 
         self.after(0, _mostrar_resultado)
 
+    def _avisar_listados_sap(self, codigos_sap, desde=None):
+        """(13 nov 2026, petición de Víctor) Tras guardar códigos SAP (Acción 8 o códigos SAP faltantes de la
+        Acción 4): si alguno no está en Productos.xlsx, avisa de que faltan los listados de SAP actualizados, guía la
+        descarga (app/ui/ventana_listados_sap.py) y, cuando están en RECURSOS, lanza sola la Acción 3. Si se deja para
+        más tarde, avisa de que la web queda parcialmente actualizada. Llamar desde el hilo principal.
+        Devuelve "actualizar", "despues" o None (no hacía falta avisar)."""
+        from app.comun import listados_sap
+        from app.ui.ventana_listados_sap import VentanaListadosSap
+        carpeta = self._carpeta_proyecto.get().strip()
+        if not carpeta or not codigos_sap:
+            return None
+        recursos = os.path.join(carpeta, FOLDER_RECURSOS)
+        ruta_prod = listados_sap.rutas(recursos)[listados_sap.PRODUCTOS]
+        tabla = None
+        if os.path.isfile(ruta_prod):
+            try:
+                tabla, _filas = leer_productos_xlsx(ruta_prod)
+            except Exception as e:  # noqa: BLE001
+                self.log_consola(f"  ⚠  No se pudo leer Productos.xlsx: {e}", "WARN")
+        fuera = listados_sap.codigos_sin_datos(codigos_sap, tabla)
+        if not fuera:
+            return None
+        ven = VentanaListadosSap(self, fuera, recursos, ahora=desde)
+        self.wait_window(ven)
+        if ven.resultado == "actualizar":
+            self.log_consola("Listados de SAP actualizados en RECURSOS: se lanza la Acción 3 para completar los "
+                             "datos SAP.", "INFO")
+            self.after(300, self._actualizar_listado_sap)
+        else:
+            self.log_consola("  ⚠  " + listados_sap.AVISO_PARCIAL, "WARN")
+        return ven.resultado
+
     def _actualizar_listado_sap(self):
         """
         PUNTO 3 — Actualizar listado materiales SAP.

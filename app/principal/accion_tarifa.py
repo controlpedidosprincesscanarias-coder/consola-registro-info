@@ -690,6 +690,8 @@ class AccionesTarifa:
                                     ruta_tarifa=rs,
                                     catalogo_refresh_fn=self._tras_cambiar_sap_en_catalogo)
                                 self.wait_window(ven)
+                                if ven.guardado:   # (13 nov 2026) ¿faltan los listados de SAP actualizados?
+                                    self._avisar_listados_sap(list(ven.nuevos_sap.values()))
 
                                 # ── Tras cerrar la ventana: comprobar si
                                 #    se completaron todos y no hay duplicados
@@ -1283,6 +1285,8 @@ class AccionesTarifa:
                         ruta_tarifa=ri,
                         catalogo_refresh_fn=self._tras_cambiar_sap_en_catalogo)
                     self.wait_window(ven)
+                    if ven.guardado:   # (13 nov 2026) ¿faltan los listados de SAP actualizados?
+                        self._avisar_listados_sap(list(ven.nuevos_sap.values()))
 
                     if ven.guardado and ven.escritos_en_tarifa >= 1:
                         _todos = (ven.escritos_en_tarifa == len(falt))

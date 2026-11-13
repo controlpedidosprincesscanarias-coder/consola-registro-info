@@ -38,13 +38,15 @@ C_OK, C_AVISO, C_MAL = "#1B7A3A", "#A15C00", "#B03A2E"
 
 
 class VentanaAsignarSap(tk.Toplevel):
-    def __init__(self, parent, pendientes, tabla_productos, guardar_fn, consola_fn=None):
+    def __init__(self, parent, pendientes, tabla_productos, guardar_fn, consola_fn=None, listados_fn=None):
         """
         pendientes      : lista de asignar_sap.pendientes()
         tabla_productos : sap_helpers.leer_productos_xlsx()[0], o None si no hay Productos.xlsx
         guardar_fn      : (nuevos {dali: sap}, resolver_fn) -> dict con escritos/limpiados/no_encontrados/
                           fuera_productos, o None si se canceló. Se llama en un hilo de fondo; resolver_fn
                           (conflictos) muestra VentanaResolverSAPDuplicados y devuelve el set a borrar o None.
+        listados_fn     : (códigos SAP guardados que no están en Productos.xlsx) -> None. Tras guardar, avisa de que
+                          faltan los listados de SAP actualizados y guía su descarga (App._avisar_listados_sap).
         """
         super().__init__(parent)
         self.title("Asignar SAP pendientes — Códigos DALI activos sin SAP")
@@ -56,6 +58,7 @@ class VentanaAsignarSap(tk.Toplevel):
         self._productos = tabla_productos
         self._guardar_fn = guardar_fn
         self._log = consola_fn or (lambda m, n="INFO": None)
+        self._listados_fn = listados_fn
         self._vars = {}               # {dali: StringVar} de la columna CÓDIGO SAP (se conservan al filtrar)
         self._asignados = {}          # {dali: sap} escritos y válidos, sin guardar
         self._celdas_sap = {}         # {dali: Entry} de las filas en pantalla
@@ -417,17 +420,18 @@ class VentanaAsignarSap(tk.Toplevel):
         if r["no_encontrados"]:
             msg += ("\n\n⚠  No están en el catálogo (¿se han dado de baja?): "
                     + ", ".join(str(d) for d in r["no_encontrados"]))
-        if r["fuera_productos"]:
-            msg += (f"\n\n⚠  {len(r['fuera_productos'])} código(s) no están en Productos.xlsx: "
-                    + ", ".join(str(r["escritos"][d]) for d in r["fuera_productos"][:15])
-                    + (" …" if len(r["fuera_productos"]) > 15 else "")
-                    + "\nSe han guardado igualmente. Para completar sus datos SAP (descripción, unidad, grupos…):"
-                      "\n  1. Descarga de SAP Productos.xlsx y Listas de productos.xlsx actualizados."
-                      "\n  2. Guárdalos en la carpeta RECURSOS."
-                      "\n  3. Pulsa de nuevo la Acción 3 (Actualizar listado materiales SAP).")
+        fuera_sap = [str(r["escritos"][d]) for d in r["fuera_productos"]]
+        if fuera_sap:
+            msg += (f"\n\n⚠  {len(fuera_sap)} código(s) no están en Productos.xlsx: se han guardado y se envían a "
+                    "Catálogo Asignaciones, pero faltan sus datos SAP. A continuación se explica cómo descargar de "
+                    "SAP los listados actualizados.")
         if r.get("completando"):
             msg += "\n\nLos datos SAP de los que sí están en Productos.xlsx se están completando ahora (como en la Acción 3)."
         messagebox.showinfo("Asignar SAP pendientes", msg, parent=self)
+        if fuera_sap and self._listados_fn:
+            self._listados_fn(fuera_sap)          # «Faltan los listados de SAP actualizados» (13 nov 2026)
+            if self.winfo_exists():
+                self.grab_set()                    # la ventana de la guía se había quedado el foco modal
         if y_cerrar and not self._asignados:
             self.destroy()
 

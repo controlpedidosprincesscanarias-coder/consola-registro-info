@@ -162,6 +162,19 @@ class TestVentana(unittest.TestCase):
         self.assertEqual(v._filas_visibles(), [])
         info.assert_called_once()
 
+    def test_tras_guardar_codigos_fuera_de_productos_abre_la_guia(self):
+        """13 nov 2026: los códigos que no están en Productos.xlsx llevan al aviso de los listados de SAP."""
+        v = self.ven
+        avisos = []
+        v._listados_fn = avisos.append
+        r = {"escritos": {2: 2000, 3: 9999}, "limpiados": [], "no_encontrados": [], "fuera_productos": [3],
+             "completando": True}
+        v._asignados = {2: 2000, 3: 9999}
+        with mock.patch("app.ui.ventana_asignar_sap.messagebox.showinfo") as info:
+            v._tras_guardar({2: 2000, 3: 9999}, r, None, False)
+        self.assertIn("A continuación se explica cómo descargar", info.call_args[0][1])
+        self.assertEqual(avisos, [["9999"]])
+
     def test_copiar_para_pegar_en_sap(self):
         v = self.ven
         v._copiar_campo("descripcion", "Descripción", dali=3)
