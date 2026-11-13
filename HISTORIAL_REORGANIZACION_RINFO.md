@@ -1226,8 +1226,19 @@ Petición de Víctor: «una nueva acción, parecida a cuando se abre la ventana 
 
 ---
 
+## 56. Manual de usuario al día (13 nov 2026) — PR en GitHub
+
+Petición de Víctor: «revisar los manuales de Catálogo Asignaciones y Consola y actualizarlos».
+- **Capturas** (`docs/manuales_fuente/capturas.py`): la consola se arranca sin el inicio de sesión real y su ventana se fotografía aparte; el proyecto de ejemplo ya no lleva LISTADO sino un catálogo inventado; capturas nuevas `c_login`, `c_publicar` (cambios para Catálogo Asignaciones) y `c_asignar_sap` (Acción 8); `c_sap_faltantes` con «Guardar en el catálogo»; la principal con el botón 8 y la versión del `.exe` que llevará el manual (v 10.2.52); fuera `c_credenciales` (ya lo hace el inicio de sesión).
+- **Texto** (`manual_usuario.js`): inicio de sesión (capítulo 2), archivos del proyecto sin LISTADO (4), capítulo 5 «El catálogo DALI / SAP» (Acciones 1, 2, 3 y 8, descarga del catálogo y nota del paso del LISTADO), códigos SAP faltantes en el catálogo (6), capítulo 8 nuevo «Cambios en Catálogo Asignaciones» y tabla de problemas frecuentes al día (10). 27 páginas, 31 apartados en el índice de la consulta.
+- Regenerados `docs/Manual_Usuario_ConsolaRegistroInfo.docx` / `.pdf` y copiados el PDF y `manual_indice.json` a `assets/` (van dentro del `.exe`). La consulta del manual encuentra los apartados nuevos («usuario no autorizado», «asignar sap pendientes», «enviar cambios a la web»).
+- En commits propios: (1) los comentarios y la documentación decían v10.2.52 / v10.2.54 / v10.2.56 para lo de hoy, pero todo salió junto en la **v10.2.50** (borrador compilado del commit 86d157c); (2) textos visibles que aún nombraban el LISTADO (aviso de la tarifa «sin DESCRIPCION/UNIDAD SAP», ventana de duplicados, auditoría de la Acción 3 y mensajes de RINFO).
+- **Para que llegue a los compañeros:** compilar otra vez (saldrá la v10.2.52, con el manual nuevo dentro) y publicar esa en lugar del borrador v10.2.50.
+
+---
+
 ## Próximos pasos, en orden de prioridad
-- ~~Acción «Asignar SAP pendientes»~~ hecha (sección 55). Pendiente de regenerar el manual (secciones 52-55: inicio de sesión, envío a la web, catálogo único y botón 8).
+- ~~Acción «Asignar SAP pendientes»~~ hecha (sección 55). ~~Regenerar el manual~~ hecho (sección 56).
 0. **Reorganización en GitHub** (sección 42), siguientes etapas, cada una en su PR:
    - ~~etapa 2: carpetas por capas~~ hecha (sección 43);
    - ~~etapa 3: limpieza~~ hecha (sección 44); ~~trocear `crear_registro_info.py`~~ hecho (sección 45); ~~trocear `tarifa_app.py`~~ hecho (sección 46);

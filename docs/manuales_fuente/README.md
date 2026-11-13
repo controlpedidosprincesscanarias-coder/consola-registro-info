@@ -31,6 +31,11 @@ Después, copiar:
 
 `SOLO=c_principal` rehace solo esa captura; `VOLCAR=1` guarda el árbol de widgets de cada ventana (sirve para situar las marcas).
 
+## Cómo se arranca la consola para las capturas
+- Sin red: no hay Catálogo Asignaciones ni GitHub. El **inicio de sesión** se salta (`_iniciar_sesion_consola`) y su ventana se fotografía aparte (`c_login`).
+- El proyecto de ejemplo lleva un `catalogo-dali-completo.xlsx` inventado (desde la v10.2.50 es el único archivo de artículos; no hay LISTADO), que usa la captura de la Acción 8.
+- La versión que se ve en las capturas es la del `.exe` que llevará el manual (variable `VERSION`, por defecto la del manual), no la de `APP_VERSION` del código.
+
 ## Reglas
 - **Solo datos inventados** en las capturas (proveedores DEMO / EJEMPLO / MODELO, ruta `G:\CENTRAL COMPRAS\PROYECTO`). Nunca tarifas, Purchasing ni listados reales.
 - Si cambia una pantalla que sale en el manual, rehacer su captura y regenerar.
