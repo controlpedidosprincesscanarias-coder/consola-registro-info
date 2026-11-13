@@ -23,6 +23,7 @@ from app.comun.tarifa_constants import (
     FONT_BOLD, FONT_SMALL,
 )
 from app.comun.tarifa_core import cargar_icono_ventana, ajustar_geometria_pantalla
+from app.comun.selector_fecha import boton_calendario  # (13 nov 2026) calendario de las fechas de validez
 # normalizar_codigo_sap vive en sap_helpers.py (sin tkinter) para que
 # también pueda importarla test_crear_registro_info.py sin arrastrar
 # la UI. Ver ese fichero para la implementación y el porqué.
@@ -1052,8 +1053,11 @@ class VentanaFechasRINFO(tk.Toplevel):
                                       width=14, relief="solid", bd=1)
         self._entry_inicio.pack(side="left", padx=(4, 0))
         self._entry_inicio.bind("<Return>", lambda e: self._entry_fin.focus_set())
+        # (13 nov 2026, petición de Víctor) Calendario para no escribir la fecha; el formato no cambia
+        self._btn_cal_inicio = boton_calendario(frm_inicio, self._var_inicio, bg=C_BG, font=("Segoe UI", 12))
+        self._btn_cal_inicio.pack(side="left", padx=(6, 0))
 
-        tk.Label(frm_inicio, text="  p.ej. 01-01-2025",
+        tk.Label(frm_inicio, text="  p.ej. 01-01-2025 (o 📅)",
                  bg=C_BG, fg="#999", font=FONT_SMALL).pack(side="left", padx=(8, 0))
 
         self._lbl_error_inicio = tk.Label(cuerpo, text="",
@@ -1083,8 +1087,10 @@ class VentanaFechasRINFO(tk.Toplevel):
                                    width=14, relief="solid", bd=1)
         self._entry_fin.pack(side="left", padx=(4, 0))
         self._entry_fin.bind("<Return>", lambda e: self._confirmar())
+        self._btn_cal_fin = boton_calendario(frm_fin, self._var_fin, bg=C_BG, font=("Segoe UI", 12))
+        self._btn_cal_fin.pack(side="left", padx=(6, 0))
 
-        tk.Label(frm_fin, text="  p.ej. 31-12-2025",
+        tk.Label(frm_fin, text="  p.ej. 31-12-2025 (o 📅)",
                  bg=C_BG, fg="#999", font=FONT_SMALL).pack(side="left", padx=(8, 0))
 
         self._lbl_error_fin = tk.Label(cuerpo, text="",
