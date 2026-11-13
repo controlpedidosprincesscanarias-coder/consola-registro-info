@@ -355,3 +355,89 @@ def leer_productos_xlsx(ruta_productos):
         filas_prod += 1
     wb_prod.close()
     return tabla_productos, filas_prod
+
+
+# ── Listas de productos.xlsx (Categoría valoración) ─────────────────────────────────────────────────────────
+# (13 nov 2026) Hasta ahora se leía por posición (A = código SAP, F = Categoría valoración). Con una exportación de
+# SAP con otras columnas, la A traía «QUESO BRIE (10100050)» y la F el centro: ningún código casó, la Acción 3 dejó
+# sin categoría a 7.159 materiales y lo envió a la web. Ahora se buscan las columnas por su cabecera, se saca el
+# código de entre paréntesis y, si el listado no casa con Productos.xlsx, se para antes de escribir nada.
+
+def _sin_acentos(texto):
+    import unicodedata
+    t = unicodedata.normalize("NFKD", str(texto or ""))
+    return "".join(c for c in t if not unicodedata.combining(c)).lower().strip()
+
+
+def clave_entre_parentesis(valor):
+    """«QUESO BRIE (10100050)» → «10100050»; «3101» → «3101». SAP exporta así los campos con «descripción (clave)»."""
+    import re
+    t = str(valor).strip()
+    m = re.search(r"\(([^()]+)\)\s*$", t)
+    return m.group(1).strip() if m else t
+
+
+def columnas_listas_productos(cabecera):
+    """(índice del código SAP, índice de la Categoría valoración) según la fila de cabecera; si no se encuentran,
+    las posiciones de siempre (A y F). Devuelve también si se han encontrado por cabecera."""
+    nombres = [_sin_acentos(c) for c in (cabecera or ())]
+    i_cod = next((i for i, n in enumerate(nombres)
+                  if n in ("producto", "material", "numero de producto", "codigo sap", "codigo de producto")), None)
+    i_cat = next((i for i, n in enumerate(nombres) if "categor" in n and "valor" in n), None)
+    if i_cod is None or i_cat is None:
+        return 0, 5, False
+    return i_cod, i_cat, True
+
+
+def leer_listas_productos(ruta_listas):
+    """Lee Listas de productos.xlsx: ({código SAP: Categoría valoración más frecuente}, conflictos, filas leídas,
+    por_cabecera). conflictos = [(código, {valor: n})] para los códigos con valores distintos según el centro."""
+    import openpyxl
+    from collections import Counter
+    wb = openpyxl.load_workbook(ruta_listas, read_only=True, data_only=True)
+    try:
+        filas = wb.active.iter_rows(values_only=True)
+        cabecera = next(filas, ())
+        i_cod, i_cat, por_cabecera = columnas_listas_productos(cabecera)
+        contadores, n = {}, 0
+        for fila in filas:
+            if not fila or all(v is None for v in fila):
+                continue
+            clave = fila[i_cod] if len(fila) > i_cod else None
+            valor = fila[i_cat] if len(fila) > i_cat else None
+            if clave is None or str(clave).strip() == "" or valor is None or str(valor).strip() == "":
+                continue
+            if por_cabecera:      # «DESCRIPCIÓN (código)» → código; sin cabeceras, como siempre (sin adivinar)
+                clave, valor = clave_entre_parentesis(clave), clave_entre_parentesis(valor)
+            else:
+                clave, valor = str(clave).strip(), str(valor).strip()
+            if isinstance(fila[i_cod], float) and fila[i_cod].is_integer():
+                clave = str(int(fila[i_cod]))
+            contadores.setdefault(clave, Counter())[valor] += 1
+            n += 1
+    finally:
+        wb.close()
+    tabla, conflictos = {}, []
+    for clave, contador in contadores.items():
+        if len(contador) > 1:
+            conflictos.append((clave, dict(contador)))
+        tabla[clave] = contador.most_common(1)[0][0]
+    return tabla, conflictos, n, por_cabecera
+
+
+def comprobar_listas_productos(tabla_categoria, tabla_productos, minimo=0.5):
+    """None si Listas de productos.xlsx casa con Productos.xlsx; si no, el motivo (para parar antes de escribir).
+    Casa si al menos `minimo` de sus códigos están en Productos.xlsx (en una descarga buena, casi todos)."""
+    if not tabla_categoria:
+        return ("No se ha leído ninguna Categoría valoración de Listas de productos.xlsx. Comprueba que se ha "
+                "exportado con las columnas «Producto» y «Categoría valoración».")
+    if not tabla_productos:
+        return None
+    casan = sum(1 for c in tabla_categoria if c in tabla_productos)
+    if casan < minimo * len(tabla_categoria):
+        ejemplo = next(iter(tabla_categoria))
+        return (f"Listas de productos.xlsx no casa con Productos.xlsx: solo {casan} de {len(tabla_categoria)} "
+                f"códigos están en Productos.xlsx (ejemplo de código leído: «{ejemplo}»). Puede que se haya "
+                "exportado con otras columnas. No se ha cambiado nada: descárgalo de nuevo desde «Lista de "
+                "productos» con las columnas «Producto» y «Categoría valoración» y repite la Acción 3.")
+    return None

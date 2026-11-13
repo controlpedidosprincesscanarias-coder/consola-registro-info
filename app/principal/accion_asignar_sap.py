@@ -138,7 +138,8 @@ class AccionAsignarSap:
                     self._tras_cambiar_sap_en_catalogo(cambiados)
                     return
                 tabla_dali = self._leer_articulos_dali_sap(rutas["ARTICULOS_DALI.xlsx"])
-                tabla_categoria, conflictos_cat = self._leer_categoria_valoracion(rutas["Listas de productos.xlsx"])
+                tabla_categoria, conflictos_cat = self._leer_categoria_valoracion(rutas["Listas de productos.xlsx"],
+                                                                                    tabla_productos)
                 dt = datetime.fromtimestamp(os.path.getmtime(rutas["Productos.xlsx"]))
                 self._cruzar_y_escribir_listado_sap(
                     catalogo_local.ruta_catalogo(carpeta), tabla_productos, tabla_dali, tabla_categoria,

@@ -69,68 +69,40 @@ class AccionListadoSap:
 
         return tabla_productos, filas_prod
 
-    def _leer_categoria_valoracion(self, ruta_listas):
+    def _leer_categoria_valoracion(self, ruta_listas, tabla_productos=None):
         """
-        LECTURA (nueva, 2026-08): lee "Listas de productos.xlsx" y
-        construye tabla_categoria, clave=código SAP (str), valor=
-        Categoría valoración -> destino columna K (nueva).
+        Lee "Listas de productos.xlsx" (sap_helpers.leer_listas_productos): {código SAP: Categoría valoración}
+        -> columna K del catálogo. Una fila por código y centro: si un código tiene valores distintos según el
+        centro, se toma el más frecuente y se devuelve en conflictos (clave, {valor: n}).
 
-        Clave cruce: col A (índice 0) → Código SAP.
-        Valor: col F (índice 5) → Categoría valoración.
-
-        El archivo trae una fila por combinación código+centro, así que
-        un mismo código puede repetirse con el mismo valor (normal) o,
-        en casos raros, con valores DISTINTOS según el centro. Para esos
-        casos se toma el valor más frecuente (moda), asumiendo que los
-        demás son errores de introducción, y se devuelve la lista de
-        conflictos para avisar al usuario.
-
-        Devuelve (tabla_categoria, conflictos), donde conflictos es una
-        lista de (clave, {valor: nº_apariciones}) para los códigos con
-        más de un valor distinto.
+        (13 nov 2026) Las columnas se buscan por su cabecera («Producto», «Categoría valoración») y el código se
+        saca de «DESCRIPCIÓN (código)». Con `tabla_productos`, si el listado no casa con Productos.xlsx lanza
+        ValueError ANTES de escribir nada (sap_helpers.comprobar_listas_productos): así no se vacía la categoría
+        de todo el catálogo ni se envía a la web, como pasó ese día con una exportación con otras columnas.
+        Devuelve (tabla_categoria, conflictos).
         """
-        import openpyxl
-        from collections import Counter
+        from app.comun.sap_helpers import comprobar_listas_productos, leer_listas_productos
 
         self.log_consola("Leyendo Listas de productos.xlsx...", "INFO")
-        wb_listas = openpyxl.load_workbook(ruta_listas, read_only=True, data_only=True)
-        ws_listas = wb_listas.active
-
-        contadores = {}   # clave -> Counter({valor: n})
-        filas_listas = 0
-        for fila in ws_listas.iter_rows(min_row=2, values_only=True):
-            if all(v is None for v in fila):
-                continue
-            clave = fila[0] if len(fila) > 0 else None
-            if clave is None or str(clave).strip() == "":
-                continue
-            clave = str(clave).strip()
-            valor = fila[5] if len(fila) > 5 else None   # F
-            if valor is None or str(valor).strip() == "":
-                continue
-            valor = str(valor).strip()
-            contadores.setdefault(clave, Counter())[valor] += 1
-            filas_listas += 1
-        wb_listas.close()
-
-        tabla_categoria = {}
-        conflictos = []
-        for clave, contador in contadores.items():
-            if len(contador) > 1:
-                conflictos.append((clave, dict(contador)))
-            # most_common()[0] = (valor, n) más frecuente; en empate,
-            # Counter conserva el orden de primera aparición.
-            tabla_categoria[clave] = contador.most_common(1)[0][0]
-
+        tabla_categoria, conflictos, filas_listas, por_cabecera = leer_listas_productos(ruta_listas)
         self.log_consola(
             f"  └ {filas_listas} fila(s) leídas, {len(tabla_categoria)} "
             f"código(s) SAP con Categoría valoración (Listas de productos.xlsx)", "OK")
+        if not por_cabecera:
+            self.log_consola("  ⚠  No se encontraron las columnas «Producto» y «Categoría valoración» por su "
+                             "nombre: se usan las de siempre (A y F).", "WARN")
+        motivo = comprobar_listas_productos(tabla_categoria, tabla_productos) if tabla_productos is not None else None
+        if motivo:
+            self.log_consola(f"  ✘  {motivo}", "ERROR")
+            raise ValueError(motivo)
         if conflictos:
             self.log_consola(
                 f"  ⚠  {len(conflictos)} código(s) con Categoría valoración "
                 f"distinta según el centro — se tomó el valor más frecuente:", "WARN")
-            for clave, valores in conflictos:
+            for clave, valores in conflictos[:20]:
                 self.log_consola(f"      · {clave}: {valores}", "WARN")
+            if len(conflictos) > 20:
+                self.log_consola(f"      … y {len(conflictos) - 20} más (omitidos del log)", "WARN")
 
         return tabla_categoria, conflictos
 
@@ -799,7 +771,7 @@ class AccionListadoSap:
                 # ── LECTURA 3: Listas de productos.xlsx ──────────────────────
                 #    Extraido a _leer_categoria_valoracion().
                 tabla_categoria, conflictos_categoria = \
-                    self._leer_categoria_valoracion(ruta_listas)
+                    self._leer_categoria_valoracion(ruta_listas, tabla_productos)
 
                 # ── CRUCE Y ESCRITURA EN DESTINO ─────────────────────────────
                 #    Extraido a _cruzar_y_escribir_listado_sap() -- ver ese
