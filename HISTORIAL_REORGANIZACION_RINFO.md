@@ -1420,6 +1420,18 @@ Petición de Víctor: auditar el estado de la Consola.
   - Tres borradores antiguos en Releases (v10.2.38, .46 y .52): no los ve nadie; se pueden borrar a mano si ya no sirven.
   - El aviso «Node.js 20 is deprecated» ya no aparece en el registro de la última compilación.
 - **Manual:** se regenera en la PR siguiente (sección 73) con lo del 18 nov (secciones 68–71).
+## 73. Manual al día con lo del 18 nov 2026 (secciones 68–71) — PR en GitHub
+
+Petición de Víctor, tras la auditoría (sección 72).
+- **Texto nuevo:**
+  - capítulo 3: marca 12, el indicador «Catálogo Asignaciones» de la cabecera;
+  - capítulo 6: «Códigos SAP faltantes» completa los datos SAP como la Acción 8;
+  - capítulo 7: aviso «sin unidad de medida» antes de cargar en SAP, y periodo posterior solapado con inicio retrasado;
+  - capítulo 8: recuadro «Si cambias el proveedor asignado» y apartado «Si no se puede acceder a Catálogo Asignaciones», con la captura nueva `c_sin_conexion`;
+  - capítulo 10: dos filas nuevas.
+- **Capturas:** todas rehechas con la versión v 10.2.72 (la de la próxima compilación) y el indicador en verde. Antes de cada captura el ratón se lleva a una esquina, porque un botón con el ratón encima salía en negro sobre fondo oscuro.
+- **Regenerados:** `docs/Manual_Usuario_ConsolaRegistroInfo.docx` / `.pdf` (33 páginas) y, en `assets/`, el PDF y `manual_indice.json` (30 apartados, con «Si no se puede acceder a Catálogo Asignaciones»).
+- **Pruebas:** las 269 en verde.
 
 ---
 

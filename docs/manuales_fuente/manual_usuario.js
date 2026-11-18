@@ -1,7 +1,7 @@
 // Manual de usuario de la Consola Registro Info SAP (TARIFA Finder).
 // La idea y el desarrollo de la aplicación, incluidas sus pruebas, son de Víctor Alejandro Martín Andrade,
 // para el Departamento de Central de Compras de Princess Hotels en Canarias.
-const V = process.env.VERSION || "v 10.2.64";
+const V = process.env.VERSION || "v 10.2.72";
 const L = require("./lib.js");
 const { p, vineta, pasos, h1, h2, imagen, leyenda, recuadro, tabla, flujo, portada, indice, generar } = L;
 const fecha = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
@@ -75,7 +75,8 @@ s.push(...leyenda([[1, "**Carpeta del proyecto**: la ruta y el botón 📁 para 
   [8, "**Consola**: cada paso con su hora. Colores: SISTEMA (dorado), INFO (azul), OK (verde), WARN (amarillo, revisar) y ERROR (rojo)."],
   [9, "**guardar log** guarda la consola en un .txt; **limpiar** la vacía."],
   [10, "**Accesos rápidos**: portal de **SAP S/4HANA**, **Crear / Actualizar Registro Info SAP** (capítulo 7) y **Manual de usuario** (abre este PDF)."],
-  [11, "**Versión** instalada. Púlsala para ver las **novedades** de esa versión."]]));
+  [11, "**Versión** instalada. Púlsala para ver las **novedades** de esa versión."],
+  [12, "**Catálogo Asignaciones**: ● en verde, conectado; en rojo, «sin conexión desde las HH:MM» (capítulo 8, «Si no se puede acceder a Catálogo Asignaciones»)."]]));
 s.push(...recuadro("consejo", "Lee la consola", ["Las líneas **WARN** (amarillas) no son errores, pero piden que revises algo: códigos SAP que faltan, duplicados, proveedores distintos… Si algo «se queda parado», mira la última línea de la consola antes de volver a pulsar."]));
 
 // ── 4 ──────────────────────────────────────────────────────────────────────
@@ -154,7 +155,7 @@ s.push(...pasos(["Deja la tarifa del proveedor (el **.xls** que envía) en **TAR
 s.push(...imagen("c_seleccion_xls", 11, "Elegir la tarifa del proveedor."));
 s.push(...leyenda([[1, "Los **.xls** que hay en TARIFAS."], [2, "**Usar este archivo**: lo renombra a TARIFA.xls y sigue."]]));
 s.push(h2("Códigos SAP faltantes"));
-s.push(p("Si algún código DALI de la tarifa no tiene SAP en el catálogo, se abre esta ventana para escribirlo. Lo que guardes se escribe a la vez en el catálogo y en la tarifa, y se envía a Catálogo Asignaciones. Si algún código no está todavía en Productos.xlsx, después te guía para descargar los listados de SAP (capítulo 5). Para los artículos sin SAP que no son de esta tarifa, usa la **Acción 8** (capítulo 5)."));
+s.push(p("Si algún código DALI de la tarifa no tiene SAP en el catálogo, se abre esta ventana para escribirlo. Lo que guardes se escribe a la vez en el catálogo y en la tarifa, se **completan sus datos SAP** (descripción, unidad de medida, grupos y categoría de valoración, con Productos.xlsx y Listas de productos.xlsx, igual que en la Acción 8) y se envía a Catálogo Asignaciones. Si algún código no está todavía en Productos.xlsx, después te guía para descargar los listados de SAP (capítulo 5). Para los artículos sin SAP que no son de esta tarifa, usa la **Acción 8** (capítulo 5)."));
 s.push(...imagen("c_sap_faltantes", 16, "Códigos DALI sin SAP asignado (datos de ejemplo)."));
 s.push(...leyenda([[1, "Código DALI, descripción y formato de cada artículo sin SAP."], [2, "Escribe aquí su **código SAP**. Deja en blanco los que no quieras completar ahora."], [3, "**Guardar en el catálogo**."]]));
 s.push(h2("Códigos SAP duplicados"));
@@ -200,6 +201,8 @@ s.push(...leyenda([[1, "Materiales del Purchasing que no están en la tarifa, co
 s.push(p("Y si algún material sigue en la tarifa pero su Registro Info está **marcado para borrar** en SAP, te avisa de que hay que reactivarlo a mano en SAP, con los centros afectados:"));
 s.push(...imagen("c_rinfo_reactivar", 13, "Materiales a reactivar manualmente en SAP."));
 s.push(...leyenda([[1, "Material, Registro Info y centros afectados."], [2, "Los pasos en SAP («Marcar reg.info de compra para borrar»), con una captura de referencia."]]));
+s.push(p("Antes de terminar, si algún material va a quedar **sin unidad de medida** en el catálogo, la consola avisa: «⚠ N material(es) sin unidad de medida… SAP rechazará su registro info», con sus códigos, y lo repite en el **RESUMEN VALIDACIÓN SAP** como «SIN UNIDAD DE MEDIDA». Suele ser un código SAP recién asignado cuyo material aún no está en Productos.xlsx: descarga de nuevo los dos listados de SAP a RECURSOS, pasa la Acción 3 y genera el RINFO otra vez."));
+s.push(p("Si un periodo de precios que ya está en SAP **empieza dentro del periodo nuevo y termina después**, el periodo nuevo queda entero y el antiguo pasa a empezar al día siguiente de que termine el nuevo. En la consola sale una línea por material: «periodo posterior solapado — inicio retrasado»."));
 s.push(h2("Resultado"));
 s.push(...imagen("c_rinfo_generado", 10, "Registro Info generado desde un Purchasing."));
 s.push(...leyenda([[1, "Resumen: materiales que ya existían y nuevos añadidos."], [2, "**Sí, abrir ahora** para revisarlo en Excel."]]));
@@ -226,6 +229,14 @@ s.push(...pasos(["Si un dato (datos SAP, precio o código de proveedor) solo ha 
 s.push(...recuadro("importante", "Con el catálogo abierto en Excel", ["Si tienes **catalogo-dali-completo.xlsx** abierto, la consola no puede copiar lo de la web y lo avisa. Mientras tanto, esos datos tampoco se envían, para no pisar los de la web; se copiarán la próxima vez, con el archivo cerrado."]));
 s.push(...recuadro("nota", "Al terminar", ["La consola dice si la web y tu catálogo coinciden. Si quedan diferencias (artículos irregulares que la web no aplica), te dice cuántas.",
   "En la web nunca se borra nada desde la consola, y un precio o un código de proveedor vacío en tu catálogo no borra el de la web."]));
+s.push(...recuadro("nota", "Si cambias el proveedor asignado", ["Cuando un artículo pasa a otro **proveedor asignado** en DALI, su **precio** y su **código de proveedor** se vacían en tu catálogo y en la web, porque eran del proveedor anterior. Los rellena la próxima TARIFA del proveedor nuevo (Acción 4)."]));
+s.push(h2("Si no se puede acceder a Catálogo Asignaciones"));
+s.push(p("Debajo de la versión, en la cabecera, un punto dice cómo está la conexión con la web: **verde**, conectado; **rojo**, «sin conexión desde las HH:MM». La primera vez que falla al traer o al enviar cambios, sale este aviso:"));
+s.push(...imagen("c_sin_conexion", 12, "No se ha podido acceder a Catálogo Asignaciones."));
+s.push(...leyenda([[1, "**Qué ha pasado**, en palabras claras: sin red, la web arrancando (si llevaba un rato sin usarse tarda hasta un minuto), un error de la web, el usuario o la contraseña rechazados o falta de permiso."],
+  [2, "La consola **sigue trabajando con el catálogo Excel** de RECURSOS; lo que cambie se enviará a la web la próxima vez que conecte."],
+  [3, "**Reintentar**: lo intenta otra vez en el momento (también el envío)."], [4, "**Seguir sin la web**: continúa la acción sin conectar."]]));
+s.push(p("Mientras siga sin conexión no vuelve a salir en cada acción: lo dicen el punto rojo y la consola. Si el problema es el usuario, la contraseña o el permiso, solo hay un botón, **Entendido**."));
 s.push(...recuadro("importante", "Permiso necesario", ["Para enviar cambios (y para abrir la consola) tu cuenta de Catálogo Asignaciones necesita el permiso **«Escribir desde la Consola Registro Info»**. Si falta, la consola lo dice en rojo."]));
 
 // ── 9 ──────────────────────────────────────────────────────────────────────
@@ -259,6 +270,8 @@ s.push(...tabla(["Si ves…", "Qué significa", "Qué hacer"], [
   ["Ventana «Cambios para Catálogo Asignaciones»", "La consola va a enviar a la web lo que ha cambiado", "Revisa el resumen y pulsa Actualizar la web (capítulo 8)"],
   ["paso_listado_a_catalogo_….txt en RECURSOS", "Diferencias encontradas al pasar el antiguo LISTADO al catálogo (solo una vez)", "Revísalo por si alguna diferencia era un error"],
   ["«Listado no encontrado» en otro PC", "Ese PC tiene una consola antigua, que aún busca el LISTADO", "Actualízala (Actualizar ahora al abrirla)"],
+  ["Ventana «No se ha podido acceder a Catálogo Asignaciones» o punto rojo en la cabecera", "La web no responde (sin red, arrancando o con un error)", "Espera un minuto y pulsa Reintentar; si sigue, la consola trabaja con el Excel y enviará después (capítulo 8)"],
+  ["«⚠ material(es) sin unidad de medida» al crear el RINFO", "El catálogo no tiene la unidad de esos materiales SAP: SAP rechazaría su registro info", "Descarga los dos listados de SAP a RECURSOS, pasa la Acción 3 y genera el RINFO otra vez"],
   ["«No se pudo comprobar si hay versión nueva»", "Sin conexión con GitHub en ese momento", "Nada: se comprobará la próxima vez"],
   ["La app parece «colgada»", "Está trabajando o espera una ventana", "Mira la consola y si hay una ventana detrás; guarda el log si hay un error"],
 ], [3000, 3300, 3338]));

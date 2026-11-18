@@ -108,7 +108,7 @@ import tarifa_app  # noqa: E402
 # El inicio de sesión de Catálogo Asignaciones (sin red) se fotografía aparte (c_login); aquí se entra sin él.
 tarifa_app.App._iniciar_sesion_consola = lambda self: (self.deiconify(), self._tras_iniciar_sesion())
 # La versión que se enseña es la del .exe que llevará este manual (en el código fuente, APP_VERSION es la antigua).
-tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.64")
+tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.72")
 _crear_catalogo_demo()
 
 
@@ -225,6 +225,12 @@ def foto(v, nombre, marcas=(), titulo=None):
     if SOLO and not nombre.startswith(SOLO):
         return
     v.lift(); v.update_idletasks(); v.update()
+    # El ratón, a una esquina: si queda encima de un botón, Tk lo pinta «activo» (texto negro sobre fondo oscuro)
+    try:
+        v.event_generate("<Motion>", warp=True, x=0, y=0)
+        v.update()
+    except Exception:  # noqa: BLE001
+        pass
     volcar(v, nombre)
     vx, vy, W, H = v.winfo_rootx(), v.winfo_rooty(), v.winfo_width(), v.winfo_height()
     img = pantalla().crop((vx, vy, vx + W, vy + H)).resize((W * E, H * E), Image.LANCZOS)
@@ -279,6 +285,8 @@ def pasos(app):
     from app.ui.ventana_asignar_sap import VentanaAsignarSap
     from app.ui.ventana_listados_sap import VentanaListadosSap
     from app.comun import asignar_sap
+    from app.comun import estado_web                          # (18 nov 2026) aviso sin conexión
+    from app.ui.ventana_sin_conexion import VentanaSinConexion
     tarifa = os.path.join(TARIFAS, "SUMINISTROS DEMO SL [11-11-2026].xlsx")
     win_tarifas = RUTA_WIN + "\\TARIFAS"
     B = buscar
@@ -313,6 +321,10 @@ def pasos(app):
          marcas_asignar_sap),
         ("c_listados_sap", lambda: VentanaListadosSap(app, ["10509099"], RECURSOS), marcas_listados_sap),
         ("c_volcado_dali", lambda: _abrir_volcado_dali(app), marcas_volcado_dali),
+        ("c_sin_conexion", lambda: VentanaSinConexion(app, "traer lo cambiado en Catálogo Asignaciones",
+                                                      estado_web.clasificar(TimeoutError("timed out"))),
+         lambda v: [(B(v, "tarda en responder"), 1, "r"), (B(v, "sigue trabajando con el catálogo Excel"), 2, "r"),
+                    (boton(v, "Reintentar"), 3, "l"), (boton(v, "Seguir sin la web"), 4, "r")]),
         ("c_rinfo_tarifa", lambda: cri.VentanaSeleccionTarifa(app, cri._listar_tarifas_validas(TARIFAS), TARIFAS), lambda v: [(de_clase(v, "Treeview"), 1, "ir"), (boton(v, "Continuar"), 2, "t")]),
         ("c_rinfo_purchasing", lambda: cri.VentanaPurchasingEncontrado(app, tarifa, os.path.basename(tarifa), "SUMINISTROS DEMO SL",
                                                                       "SUMINISTROS DEMO SL", "1009999",
@@ -430,7 +442,9 @@ def marcas_listados_sap(v):
 def marcas_principal(v):
     B = buscar
     v._carpeta_proyecto.set(RUTA_WIN)          # solo lo que se ve; las ventanas anteriores ya se capturaron
-    v.update_idletasks()
+    v._estado_conexion_web().marcar_ok()       # (18 nov 2026) el indicador de la cabecera, en verde
+    v._pintar_indicador_web()
+    v.update(); v.update_idletasks()
     ent = de_clase(v, "Entry", 0)
     prog = next((w for w in widgets(v) if texto(w) == "TARIFA.xls no encontrada"), None)
     return [
@@ -445,6 +459,7 @@ def marcas_principal(v):
         (caja_de(v, [B(v, "guardar log"), B(v, "limpiar")]), 9, "b"),
         (B(v, "ACCESOS RÁPIDOS").master, 10, "t"),
         (B(v, "v 10.", n=0), 11, "l"),
+        (getattr(v, "_lbl_web", None), 12, "l"),
     ]
 
 
