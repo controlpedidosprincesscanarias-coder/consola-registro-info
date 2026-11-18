@@ -91,6 +91,25 @@ class TestFusionar(unittest.TestCase):
         f = W.fusionar({1: _loc(precio=None)}, c, hora_excel=NUEVO)
         self.assertEqual(f["bajar"], {1: {"precio": 4.5}})
 
+    def test_cambio_de_proveedor_no_baja_el_precio_del_anterior(self):
+        # (18 nov 2026, caso real GARAU) La regeneración vació precio y código de proveedor porque cambió el
+        # Proveedor Asignado; la web aún tiene el proveedor anterior con sus valores: no deben volver al Excel.
+        c = _cache({1: _art(1, proveedor="GRUPO DISTRIBUIDOR GARAU SL", precio=9.26, codigo_proveedor="7439",
+                           codigo_sap="10800098", modificado_en=NUEVO)},
+                   base={1: {"precio": 9.26, "codigo_proveedor": "7439", "codigo_sap": "10800500"}})
+        loc = _loc(codigo_sap="10800500") | {"proveedor": "GRUPO DISTRIBUIDOR GARAU"}
+        f = W.fusionar({1: loc}, c, hora_excel=VIEJO)
+        self.assertEqual(f["bajar"], {1: {"codigo_sap": "10800098"}}, "los datos SAP siguen bajando; el precio no")
+        # mismo proveedor: el precio vacío en el Excel sigue sin borrar el de la web (baja)
+        loc_igual = _loc() | {"proveedor": "GRUPO DISTRIBUIDOR GARAU SL"}
+        f = W.fusionar({1: loc_igual}, c, hora_excel=VIEJO)
+        self.assertEqual(f["bajar"][1]["precio"], 9.26)
+        # y lo vacío tampoco se intenta subir (no se borra nada en la web desde aquí)
+        dif = W.calcular_diferencias({1: loc}, c.articulos)
+        self.assertEqual(dif["accion4"], [])
+        self.assertEqual([d["campos"].get("proveedor") for d in dif["accion2"]],
+                         [("GRUPO DISTRIBUIDOR GARAU SL", "GRUPO DISTRIBUIDOR GARAU")])
+
     def test_datos_dali_no_se_tocan_y_articulos_nuevos_no_bajan(self):
         c = _cache({1: _art(1, nombre_articulo="WEB", modificado_en=NUEVO)})
         f = W.fusionar({1: _loc() | {"nombre_articulo": "CONSOLA"}, 2: _loc(codigo_sap="9")}, c, hora_excel=VIEJO)
