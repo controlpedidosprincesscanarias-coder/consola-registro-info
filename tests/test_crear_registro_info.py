@@ -868,9 +868,10 @@ class TC21_SolapamientoParcialPrecioDistinto(unittest.TestCase):
     CENTROS = ["0110", "0120"]
 
     def _ejecutar_cadena(self, periodo_heredado, precio_heredado, precio_nuevo,
-                         fecha_inicio, fecha_fin, centros_con_h3=None):
+                         fecha_inicio, fecha_fin, centros_con_h3=None, mensajes=None):
         """Monta un libro mínimo y encadena los pasos 6c → 9b → 10 reales.
-        Devuelve {centro: [(inicio, fin, precio), ...]} ordenado por inicio."""
+        Devuelve {centro: [(inicio, fin, precio), ...]} ordenado por inicio.
+        Si se pasa `mensajes` (lista), ahí quedan los (mensaje, nivel) del log."""
         import openpyxl
 
         wb = openpyxl.Workbook()
@@ -916,7 +917,11 @@ class TC21_SolapamientoParcialPrecioDistinto(unittest.TestCase):
         }
         gen._fila_h1_por_codigo = {}
 
-        with _parchear_rinfo("_log", lambda *a, **k: None):
+        def _capturar(_destino, mensaje, nivel="INFO"):
+            if mensajes is not None:
+                mensajes.append((mensaje, nivel))
+
+        with _parchear_rinfo("_log", _capturar):
             absorbidas = gen._actualizar_h3_heredados(
                 wb, ws1, {self.MAT}, [(self.MAT, "05")], {self.MAT: precio_nuevo})
             filas = gen._generar_filas_absorbidas_con_tarifa(wb, absorbidas, {})
@@ -973,6 +978,38 @@ class TC21_SolapamientoParcialPrecioDistinto(unittest.TestCase):
         for centro in self.CENTROS:
             self.assertEqual(por_centro[centro],
                              [("01.09.2026", "30.09.2026", 2.10)])
+
+    def test_periodo_posterior_solapado_se_retrasa_y_el_nuevo_queda_integro(self):
+        # (18 nov 2026, caso real CASA DELFIN 16-11) Periodo heredado posterior que empieza
+        # dentro del nuevo y acaba después. Antes: «cierre inválido evitado… Fila omitida»
+        # (una línea por fila, 9.540 líneas, ~64 min) y la rama «sin solape» sobrescribía el
+        # periodo posterior con el nuevo. Decisión de Víctor: el nuevo queda íntegro y el
+        # posterior empieza el día siguiente a su fin. Aviso: una línea por material.
+        mensajes = []
+        por_centro = self._ejecutar_cadena(
+            ("01.02.2027", "31.05.2027"), 10.00, 11.00,
+            "01.03.2026", "28.02.2027", mensajes=mensajes)
+        for centro in self.CENTROS:
+            self.assertEqual(
+                por_centro[centro],
+                [("01.03.2026", "28.02.2027", 11.00),    # nuevo, íntegro, precio de tarifa
+                 ("01.03.2027", "31.05.2027", 10.00)],   # posterior, retrasado, su precio
+                f"centro {centro}: periodos mal resueltos")
+        self.assertFalse([m for m, _n in mensajes if "cierre inválido evitado" in m])
+        avisos = [m for m, _n in mensajes if "inicio retrasado" in m]
+        self.assertEqual(len(avisos), 1, f"se esperaba una sola línea agrupada: {avisos}")
+        self.assertIn(self.MAT, avisos[0])
+        self.assertIn("2 centros (0110,0120)", avisos[0])
+
+    def test_periodo_posterior_que_empieza_el_mismo_dia_tambien_se_retrasa(self):
+        # Límite: I_per == I_nueva y J_per > J_nueva (antes también «cierre inválido»).
+        por_centro = self._ejecutar_cadena(
+            ("01.03.2026", "31.05.2027"), 10.00, 11.00,
+            "01.03.2026", "28.02.2027")
+        for centro in self.CENTROS:
+            self.assertEqual(por_centro[centro],
+                             [("01.03.2026", "28.02.2027", 11.00),
+                              ("01.03.2027", "31.05.2027", 10.00)])
 
     def test_mismo_precio_solo_extiende_fin_sin_crear_filas(self):
         por_centro = self._ejecutar_cadena(

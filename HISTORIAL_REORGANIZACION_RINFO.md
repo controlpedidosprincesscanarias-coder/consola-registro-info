@@ -1365,6 +1365,18 @@ Petición de Víctor: «la sincronización de las modificaciones realizadas en l
 
 ---
 
+## 68. RINFO de CASA DELFIN: periodo posterior solapado retrasado y aviso agrupado (18 nov 2026) — PR en GitHub
+
+Revisión de los logs del 13 al 18 nov 2026 pedida por Víctor. `RINFO CASA DELFIN,SA [16-11-2026]` tardó 68 min: de ellos, ~64 en el paso 6c, que escribió **9.540** líneas «H3 fila N [...]: cierre inválido evitado en paso 6c … Fila omitida», una por fila y centro. Como ya se vio en el paso de propagación (comentario de `generador_existente.py`, «llamar a _log() una vez por fila fuerza una repintada de la consola»), escribir en la consola fila a fila es lo que se come el tiempo.
+- **Cambio:** ese aviso pasa por `_LogAgrupado` (`_agr_inicio_retrasado_6c`, con su `flush()` junto a los otros del paso 6c): una línea por material y periodo con la lista de centros y filas. Lo que se hace con las filas no cambia.
+- **Además, la causa (decisión de Víctor, 18 nov 2026: «retrasar el heredado para que no se solapen, el nuevo queda íntegro»):** el aviso salía en la rama del solapamiento parcial con I_nueva ≤ I_per y J_per > J_nueva (periodo heredado **posterior** que empieza dentro del nuevo y acaba después). Calculaba el cierre como I_per − 1, siempre anterior a I_per, así que la fila se omitía siempre: el RINFO quedaba con dos precios para los mismos días y, si no había otro solape, la rama «sin solape» sobrescribía con el periodo y el precio nuevos la fila más reciente, que es justo la posterior. Ahora es el **CASO C**: el heredado pasa a empezar en J_nueva + 1 (col I), se marca como modificado (Z=X) y el periodo nuevo se crea aparte en los pasos 9b/10, como en el CASO B. El aviso dice «periodo posterior solapado — inicio retrasado …», una línea por material. En el CASO B (I_nueva > I_per) el cierre I_nueva − 1 siempre es válido y se quita la comprobación que ya no hacía falta.
+- **Pruebas:** `TC21.test_periodo_posterior_solapado_se_retrasa_y_el_nuevo_queda_integro` (código real 6c → 9b → 10, el caso de CASA DELFIN con dos centros: nuevo 01.03.2026–28.02.2027 a 11 € y posterior 01.03.2027–31.05.2027 a 10 €; una sola línea con «2 centros (0110,0120)») y `test_periodo_posterior_que_empieza_el_mismo_dia_tambien_se_retrasa`. `_ejecutar_cadena` admite `mensajes=` para recoger el log. 254 pruebas.
+- **Comprobar en SAP:** que al importar el RINFO se acepta el cambio de «Válido de» del periodo posterior (SAP, al crear una condición que solapa, ya recorta las existentes de la misma forma).
+- **En Windows:** `test_casos_limite_pir` falla en una consola cp1252 al imprimir los emojis (también sin este cambio); con `PYTHONIOENCODING=utf-8` pasa. Ojo: las pruebas con tkinter abren ventanas de la Consola en el PC; lanzarlas cuando no moleste.
+- **Por probar en Windows con datos reales:** volver a generar un RINFO grande (CASA DELFIN o PILSA), comparar el tiempo y revisar en Hoja 3 los materiales del aviso «inicio retrasado».
+
+---
+
 ## 69. Al cambiar de proveedor no vuelve el precio del anterior (18 nov 2026) — PR en GitHub
 
 Petición de Víctor, tras la revisión de los logs del 13 al 18 nov 2026: «cuando se cambia de proveedor el precio ya no corresponde, entonces el borrado o cambio de precio a su nuevo proveedor debe ser corregido».
@@ -1377,6 +1389,8 @@ Petición de Víctor, tras la revisión de los logs del 13 al 18 nov 2026: «cua
 ---
 
 ## Próximos pasos, en orden de prioridad
+- ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
+- ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).
 - ~~Lo cambiado en la web baja solo al Excel y la Consola nunca lo pisa~~ hecho (sección 67): gana la última modificación.
 - **PENDIENTE (petición de Víctor, 13 nov 2026): auditar la sincronización con la web, unir las Acciones 1 y 2 y guiar la Acción 3.** ~~Auditoría, nuevo final de la Acción 1 y quitar la Acción 2~~ hechos (sección 66); queda la Acción 3 y el Excel cambiando solo lo necesario.
   - Petición: «auditar que todos los pasos se están sincronizando directamente con la web. Me gustaría que al terminar la acción 1, después de limpiar los Excel 1 y 2 y crear el limpio que se guarda en recursos, esta información ya se vuelque directamente en la web, ya que todas las columnas se integran luego en la acción dos al Excel "catálogo completo" y a la web; de esta manera podríamos eliminar creo el paso 2. Antes de subirlo a la web, se le pregunta al usuario si desea revisar el Excel limpio antes del volcado final en la web, dos botones sí - no; si dice que sí, se abre el Excel para revisión del usuario; una vez que el usuario cierre y guarde los cambios en Excel, en la misma ventana anterior se debe abrir un nuevo botón que indique subir datos a la web o actualizar catálogo asignaciones; este botón deberá estar oculto hasta que el usuario no indique sí o no a la primera pregunta».
