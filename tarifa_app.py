@@ -31,6 +31,7 @@ APP_VERSION = "v 10.2.36"   # ← actualiza aquí cada vez que termines una fase
 
 # DALI_APP_API_BASE (URL del Worker de Catálogo Asignaciones) vive en app/principal/catalogo_dali.py.
 # ─────────────────────────────────────────────────────────────────────────────
+from app.comun.estado_web import EstadoConexion
 from app.principal.interfaz import InterfazApp
 from app.ui import ventana_notas_version as notas_version
 from app.principal.accion_organizar_dali import AccionOrganizarDali
@@ -83,6 +84,8 @@ class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap,
         self._publicacion_web_pendiente = None
         # (13 nov 2026) La copia de la web (catalogo_web.json) la usan el envío y la bajada antes de las acciones
         self._cache_web_lock = threading.RLock()
+        # (18 nov 2026) Estado de la conexión con Catálogo Asignaciones: indicador de la cabecera y aviso al fallar
+        self._estado_web = EstadoConexion()
         self._carpeta_proyecto = tk.StringVar(
             value=self.config_data.get("carpeta_proyecto", ""))
         self._ruta_tarifa      = None
@@ -180,6 +183,10 @@ class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap,
         lbl_version.pack(anchor="e", pady=(3, 0))
         # (nov 2026) Al pulsar la versión se ven sus novedades (app/ui/ventana_notas_version.py)
         notas_version.hacer_pulsable(lbl_version, self, APP_VERSION)
+        # (18 nov 2026) Estado de la conexión con Catálogo Asignaciones (lo pinta _pintar_indicador_web)
+        self._lbl_web = tk.Label(frm_clock, text="", bg=C_DARK, fg=C_MUTED, font=("Segoe UI", 7), anchor="e")
+        self._lbl_web.pack(anchor="e", pady=(2, 0))
+        self._pintar_indicador_web()
 
         # Franja dorada inferior (2 px)
         tk.Frame(hdr, bg=C_ACCENT, height=2).pack(fill="x")

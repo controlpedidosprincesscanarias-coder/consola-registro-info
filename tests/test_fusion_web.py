@@ -183,6 +183,8 @@ class TestDePuntaAPunta(unittest.TestCase):
         self.web = WebFalsa([])
         web = self.web
         self.parches = [
+            # (18 nov 2026) el aviso «sin conexión» no abre ventanas en las pruebas
+            mock.patch.object(P.ventana_sin_conexion, "preguntar", lambda *a, **k: "seguir"),
             mock.patch.object(W, "ruta_cache_por_defecto", lambda: self.cache),
             mock.patch.object(W.ClienteCatalogo, "__init__",
                               lambda s, base=W.DALI_APP_API_BASE, abrir=None: (setattr(s, "base", "https://x"),

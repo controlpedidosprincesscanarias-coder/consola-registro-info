@@ -74,7 +74,12 @@ class TestPublicar(unittest.TestCase):
         self.app._publicacion_web_pendiente = None
         self.cache = os.path.join(self.dir.name, "cache.json")
         web = self.web
+        # (18 nov 2026) El aviso «sin conexión» no abre ventanas en las pruebas: se apunta y responde self.respuesta
+        self.avisos, self.respuesta = [], "seguir"
         self.parches = [
+            mock.patch.object(P.ventana_sin_conexion, "preguntar",
+                              lambda parent, que, info, detalle="": (self.avisos.append((que, info["tipo"])),
+                                                                     self.respuesta)[1]),
             mock.patch.object(W, "ruta_cache_por_defecto", lambda: self.cache),
             mock.patch.object(W.ClienteCatalogo, "__init__",
                               lambda s, base=W.DALI_APP_API_BASE, abrir=None: (setattr(s, "base", "https://x"),
@@ -126,6 +131,40 @@ class TestPublicar(unittest.TestCase):
         self.web.estado_lote = 403
         self.app._publicar_catalogo_web_una_vez("Acción 4", "TARIFA.xls")
         self.assertTrue(any(n == "ERROR" and "Escribir desde la Consola Registro Info" in m for n, m in self.app.logs))
+
+    def test_sin_permiso_avisa_sin_reintentar(self):
+        self.web.estado_lote = 403
+        self.app._publicar_catalogo_web_una_vez("Acción 4", "TARIFA.xls")
+        self.assertEqual(self.avisos, [("enviar a la web los cambios de la Consola", "permiso")])
+
+    def test_sin_conexion_avisa_una_vez_y_el_indicador_lo_dice(self):
+        # (18 nov 2026, petición de Víctor) La primera vez sale el aviso; mientras siga sin conexión, no se repite
+        self.web.fallos_login = 99
+        self.app._publicar_catalogo_web_una_vez("Acción 2", None)
+        self.app._traer_cambios_web("la Acción 3")
+        self.assertEqual(self.avisos, [("enviar a la web los cambios de la Consola", "sin_red")])
+        texto, clave = self.app._estado_web.indicador()
+        self.assertEqual(clave, "fallo")
+        self.assertIn("sin conexión desde las", texto)
+        self.assertEqual(self._lotes(False), [])
+        # al volver la conexión, el indicador se pone en verde y el siguiente fallo vuelve a avisar
+        self.web.fallos_login = 0
+        with mock.patch.object(V, "pedir_confirmacion", lambda *a: (False, False)):
+            self.app._publicar_catalogo_web_una_vez("Acción 2", None)
+        self.assertEqual(self.app._estado_web.indicador()[1], "ok")
+        self.web.fallos_login = 1
+        self.app._traer_cambios_web("la Acción 3")
+        self.assertEqual(len(self.avisos), 2)
+        self.assertEqual(self.avisos[1], ("traer lo cambiado en la web antes de la Acción 3", "sin_red"))
+
+    def test_reintentar_vuelve_a_conectar_y_sigue(self):
+        self.web.fallos_login = 1
+        self.respuesta = "reintentar"
+        with mock.patch.object(V, "pedir_confirmacion", lambda *a: (True, False)):
+            self.app._publicar_catalogo_web_una_vez("Acción 2", None)
+        self.assertEqual(len(self.avisos), 1)
+        self.assertEqual([l["origen"] for l in self._lotes(False)], ["accion2", "accion4"])
+        self.assertEqual(self.app._estado_web.indicador()[1], "ok")
 
     def test_sin_credenciales(self):
         self.app._obtener_credenciales_dali_app = lambda: (None, None)
