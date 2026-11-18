@@ -80,6 +80,42 @@ Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app
 - La contraseña de Catálogo Asignaciones solo se guarda cifrada con DPAPI. Si no se puede cifrar, no se guarda. No reintroducir el guardado en claro.
 - Datos reales (tarifas, Purchasing, listados `.xls`/`.xlsx`, logs) **nunca** al repositorio.
 
+## Forma de trabajar con Víctor (común a todas las aplicaciones)
+> Esta sección es **la misma en los siete `CLAUDE.md`**: Control Pedidos, chat (`control-pedidos-chat`), chat móvil (`chat-movil-princess`), Organizador, Catálogo Asignaciones (`dali-sap-articulos-app`), Activo Operacional y Consola Registro Info. Si cambia, se cambia igual en todos (decisión de Víctor, 18 nov 2026). Lo propio de cada aplicación está en el resto de este archivo y manda sobre lo general.
+
+**Las aplicaciones y cómo se publican** (todo el acceso público, a través de los Workers de Cloudflare; nunca directo a onrender.com):
+
+| Repositorio | Qué es | Cómo llega a producción |
+|---|---|---|
+| `control-pedidos-princess` | Control Pedidos (web, Flask) | Render, al fusionar en `main` |
+| `control-pedidos-chat` | Servidor del chat | Render, al fusionar en `main` |
+| `dali-sap-articulos-app` | Catálogo Asignaciones (web) | Render (`autoDeploy`), al fusionar; migraciones SQL **a mano** |
+| `activo-operacional-princess` | Activo Operacional (web) | Render (`autoDeploy`), al fusionar; migraciones SQL **a mano** |
+| `organizador-princess` | Organizador (Windows) | Workflow `compilar.yml` a mano → Release en **borrador** → Víctor pulsa «Publish release» |
+| `consola-registro-info` | Consola Registro Info (Windows) | Igual que el Organizador |
+| `chat-movil-princess` | Chat en el móvil (Android) | Igual que el Organizador |
+
+**Al empezar un hilo:** leer este archivo y el de los repositorios que toque. Si la tarea afecta a otra aplicación (contrato del chat o del puente, base de datos compartida, historial compartido), añadir ese repositorio al hilo en vez de suponer cómo está. Responder siempre en **español**, claro y sin jerga: Víctor no siempre ve los comandos ni su salida.
+
+**Cómo se trabaja una petición:**
+1. Investigar en el código real antes de proponer. Lo que solo puede decidir Víctor (un criterio de negocio, qué manda sobre qué) se le pregunta con opciones y una recomendada; lo demás se decide y se dice.
+2. Rama nueva desde `main` al día, commits pequeños con la versión en el mensaje y cada error encontrado en su **propio commit**.
+3. Cada entrega lleva, sin esperar a que se pida: versión (con la regla de numeración de cada repositorio), CHANGELOG, historial, README, pruebas al día y, si cambia una pantalla que sale en un manual, **regenerar el manual** con el generador del repositorio (`docs/manuales_fuente/` o el que diga su apartado), siempre con **datos inventados**.
+4. **Historial compartido:** el mismo texto en `docs/HISTORIAL_CAMBIOS.md` de Control Pedidos y en `HISTORIAL_CAMBIOS.md` del Organizador (entrada nueva arriba, `## AAAA-MM-DD HH:MM — [Componente] Título (versión)`), aunque la entrega sea de otra aplicación: entonces hay PR también en esos dos repositorios. Comprobar que quedan idénticos.
+5. Pruebas siempre en **local** (nunca contra Supabase, Render ni Control de Pedidos de producción). Decir siempre qué se ha probado y qué no (y qué queda por probar en Windows, en el móvil o con datos reales).
+6. Abrir la PR con `gh api repos/controlpedidosprincesscanarias-coder/<repo>/pulls`. Cuerpo: qué cambia (con la petición de Víctor), «Probado» y «No probado», y las dependencias con otras PR o aplicaciones. Citar siempre las PR como enlace completo (`owner/repo#n`).
+7. Mantener informado: una frase cuando un trabajo largo va por la mitad. Al terminar, resumen corto: qué cambia, enlace a la PR, qué queda por probar y qué tiene que hacer Víctor (aplicar una migración, lanzar una compilación, publicar una Release, comprobar un despliegue).
+
+**Qué quiere decir Víctor con…**
+- «Sí», «adelante», «prepara la PR»: hacer el trabajo y abrir la PR, **sin fusionar**.
+- «Fusionar» / «fusionar todo»: fusionar las PR abiertas de lo hablado («todo»: todas las del hilo). Antes, comprobar `mergeable_state` (si sale `unknown`, esperar y volver a mirar); método `merge`; en orden de dependencia (la que contiene a otra, después; el servidor antes que los clientes). Después, decir qué se despliega solo y qué hay que compilar o publicar.
+- «Regenerar»: los manuales afectados, con su generador.
+- Un log o una captura de Render, GitHub, Cloudflare o cron-job.org: diagnosticarlo y decirle el paso concreto que tiene que dar en esa pantalla.
+
+**Nunca sin que Víctor lo confirme:** push a `main`; publicar una Release (los workflows solo crean borradores) o borrar o renombrar Releases y etiquetas; cambiar datos de producción (y entonces idempotente, avisado y con ⚠️ en el historial); credenciales, tokens o correos de cuentas en el código, commits o documentos.
+
+**Después de fusionar:** las apps de Render se despliegan solas (pedir que confirme «Live», o revisar el log si lo pega). Las de Windows y Android esperan a que Víctor lance la compilación y publique el borrador. Recordar las migraciones SQL que haya que aplicar a mano y anotar lo que quede pendiente (pruebas del lunes, logs que va a mandar…) en el apartado de pendientes del repositorio.
+
 ## Reglas de trabajo
 1. Leer el código real antes de proponer cambios y buscar todos los usos de una función antes de modificarla.
 2. Trabajar en rama y con PR; **no hacer push a `main` sin confirmación de Víctor**. Commits pequeños con mensaje claro.
