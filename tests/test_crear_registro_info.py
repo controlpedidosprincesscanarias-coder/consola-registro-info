@@ -979,18 +979,37 @@ class TC21_SolapamientoParcialPrecioDistinto(unittest.TestCase):
             self.assertEqual(por_centro[centro],
                              [("01.09.2026", "30.09.2026", 2.10)])
 
-    def test_cierre_invalido_sale_en_una_linea_por_material(self):
+    def test_periodo_posterior_solapado_se_retrasa_y_el_nuevo_queda_integro(self):
         # (18 nov 2026, caso real CASA DELFIN 16-11) Periodo heredado posterior que empieza
-        # dentro del nuevo y acaba después: el paso 6c no puede cerrarlo y lo avisaba UNA LÍNEA
-        # POR FILA (9.540 líneas, ~64 min). Ahora, una línea por material con sus centros.
+        # dentro del nuevo y acaba después. Antes: «cierre inválido evitado… Fila omitida»
+        # (una línea por fila, 9.540 líneas, ~64 min) y la rama «sin solape» sobrescribía el
+        # periodo posterior con el nuevo. Decisión de Víctor: el nuevo queda íntegro y el
+        # posterior empieza el día siguiente a su fin. Aviso: una línea por material.
         mensajes = []
-        self._ejecutar_cadena(
+        por_centro = self._ejecutar_cadena(
             ("01.02.2027", "31.05.2027"), 10.00, 11.00,
             "01.03.2026", "28.02.2027", mensajes=mensajes)
-        avisos = [m for m, _n in mensajes if "cierre inválido evitado" in m]
+        for centro in self.CENTROS:
+            self.assertEqual(
+                por_centro[centro],
+                [("01.03.2026", "28.02.2027", 11.00),    # nuevo, íntegro, precio de tarifa
+                 ("01.03.2027", "31.05.2027", 10.00)],   # posterior, retrasado, su precio
+                f"centro {centro}: periodos mal resueltos")
+        self.assertFalse([m for m, _n in mensajes if "cierre inválido evitado" in m])
+        avisos = [m for m, _n in mensajes if "inicio retrasado" in m]
         self.assertEqual(len(avisos), 1, f"se esperaba una sola línea agrupada: {avisos}")
         self.assertIn(self.MAT, avisos[0])
         self.assertIn("2 centros (0110,0120)", avisos[0])
+
+    def test_periodo_posterior_que_empieza_el_mismo_dia_tambien_se_retrasa(self):
+        # Límite: I_per == I_nueva y J_per > J_nueva (antes también «cierre inválido»).
+        por_centro = self._ejecutar_cadena(
+            ("01.03.2026", "31.05.2027"), 10.00, 11.00,
+            "01.03.2026", "28.02.2027")
+        for centro in self.CENTROS:
+            self.assertEqual(por_centro[centro],
+                             [("01.03.2026", "28.02.2027", 11.00),
+                              ("01.03.2027", "31.05.2027", 10.00)])
 
     def test_mismo_precio_solo_extiende_fin_sin_crear_filas(self):
         por_centro = self._ejecutar_cadena(

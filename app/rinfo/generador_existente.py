@@ -2411,9 +2411,10 @@ class GeneradorDesdeExistente:
         # centro, hasta 10 por material) en una única línea resumen.
         _agr_j_omitida    = _LogAgrupado(self._parent)
         _agr_absorcion_6c = _LogAgrupado(self._parent)
-        # (18 nov 2026) «cierre inválido evitado» también agrupado: en CASA DELFIN
-        # (16-11) salió 9.540 veces, una línea por fila, y el paso 6c tardó ~64 min.
-        _agr_cierre_invalido_6c = _LogAgrupado(self._parent)
+        # (18 nov 2026) Periodo posterior solapado (CASO C): agrupado por material. Su
+        # aviso anterior («cierre inválido evitado») salió 9.540 veces en CASA DELFIN
+        # (16-11), una línea por fila, y el paso 6c tardó ~64 min.
+        _agr_inicio_retrasado_6c = _LogAgrupado(self._parent)
 
         # ── Estado heredado incoherente: periodos solapados con otro precio ──
         #
@@ -2592,7 +2593,9 @@ class GeneradorDesdeExistente:
                     #  Para cada período de estado.periodos_h3[clave_pir] (ordenados I asc):
                     #    Solapa ⟺ NOT (J_per < I_nueva  OR  J_nueva < I_per)
                     #    Si solapa y I_nueva > I_per  → J_per = I_nueva - 1
-                    #    Si solapa y I_nueva ≤ I_per  → J_per = I_per  - 1 (absorbido)
+                    #    Si solapa, I_nueva ≤ I_per y J_per ≤ J_nueva → fila eliminada (absorbido)
+                    #    Si solapa, I_nueva ≤ I_per y J_per > J_nueva → I_per = J_nueva + 1
+                    #      (posterior retrasado; el nuevo queda íntegro — Víctor, 18 nov 2026)
                     #  Si ningún período solapa → actualización directa (caso sin solap).
 
                     periodos_clave   = estado.periodos_h3.get(clave_pir, [])
@@ -2683,26 +2686,47 @@ class GeneradorDesdeExistente:
                                     estado.warn_solap[clave_pir] = (
                                         f"absorbida total — fila {fila_per} eliminada"
                                     )
+                            elif d_inicio_nueva <= d_i_per:
+                                # CASO C — heredado POSTERIOR que empieza dentro del
+                                # nuevo y acaba después (I_nueva ≤ I_per ≤ J_nueva <
+                                # J_per). (18 nov 2026, caso real CASA DELFIN 16-11:
+                                # nuevo 01.03.2026–28.02.2027, heredado
+                                # 01.02.2027–31.05.2027.) Antes se calculaba
+                                # J_per = I_per - 1, siempre inválido: la fila se
+                                # omitía («cierre inválido evitado», 9.540 veces), el
+                                # RINFO quedaba con dos precios para los mismos días
+                                # y, si no había otro solape, la rama «sin solape»
+                                # sobrescribía la fila más reciente (la posterior).
+                                # Decisión de Víctor: el nuevo queda ÍNTEGRO y el
+                                # heredado se RETRASA: I_per = J_nueva + 1.
+                                d_inicio_retrasado = d_fin_nueva + _dt_mod.timedelta(days=1)
+                                ws_h3_act.cell(row=fila_per, column=9,
+                                               value=_date_a_str_h3(d_inicio_retrasado))
+                                per["i"] = d_inicio_retrasado
+                                _agr_inicio_retrasado_6c.registrar(
+                                    clave=("inicio_retrasado_6c", clave_pir[2], d_i_per, d_inicio_retrasado),
+                                    fila=fila_per, centro=clave_pir[3], nivel="WARN",
+                                    plantilla=("  H3 material {mat}: periodo posterior solapado — "
+                                               "inicio retrasado {ini_per} → {ini_nuevo} (el nuevo "
+                                               "[{ini_nueva}→{fin_nueva}] queda íntegro) — {resumen}."),
+                                    mat=clave_pir[2], ini_per=_date_a_str_h3(d_i_per),
+                                    ini_nuevo=_date_a_str_h3(d_inicio_retrasado),
+                                    ini_nueva=_date_a_str_h3(d_inicio_nueva),
+                                    fin_nueva=_date_a_str_h3(d_fin_nueva))
+                                estado.n_solapamiento += 1
+                                n_solap_este_pir += 1
+                                _marcar_modificado(clave_m, fila_per)
+                                # El periodo nuevo se crea aparte (pasos 9b/10), como en CASO B.
+                                if clave_pir[2] in heredados_con_match:
+                                    estado.absorbidas_con_tarifa[clave_pir] = True
+                                if clave_pir not in estado.warn_solap:
+                                    estado.warn_solap[clave_pir] = (
+                                        f"inicio del posterior retrasado a "
+                                        f"{_date_a_str_h3(d_inicio_retrasado)}")
                             else:
-                                # CASO B — solapamiento parcial: ajustar fin
-                                if d_inicio_nueva > d_i_per:
-                                    # I_nueva posterior: cerrar J al día anterior
-                                    d_cierre = d_inicio_nueva - _dt_mod.timedelta(days=1)
-                                else:
-                                    # I_nueva igual o anterior pero J_per extiende más allá
-                                    # del rango nuevo (parcial): cerrar J_per = I_per - 1
-                                    d_cierre = d_i_per - _dt_mod.timedelta(days=1)
-                                # GUARD: evitar periodo inválido (Inicio > Fin calculado).
-                                if d_i_per is not None and d_cierre < d_i_per:
-                                    _agr_cierre_invalido_6c.registrar(
-                                        clave=("cierre_invalido_6c", clave_pir[2], d_i_per, d_cierre),
-                                        fila=fila_per, centro=clave_pir[3], nivel="WARN",
-                                        plantilla=("  H3 material {mat}: cierre inválido evitado en "
-                                                   "paso 6c — I_per={ini_per} > cierre calculado="
-                                                   "{cierre}. Filas omitidas — {resumen}."),
-                                        mat=clave_pir[2], ini_per=d_i_per, cierre=d_cierre)
-                                    _alguno_sin_solap = True
-                                    continue
+                                # CASO B — solapamiento parcial (I_nueva > I_per):
+                                # cerrar el heredado el día antes del nuevo.
+                                d_cierre = d_inicio_nueva - _dt_mod.timedelta(days=1)
                                 per["cell_j"].value = _date_a_str_h3(d_cierre)
                                 estado.n_solapamiento    += 1
                                 n_solap_este_pir  += 1
@@ -2778,7 +2802,7 @@ class GeneradorDesdeExistente:
         # grupo se queda en buffer hasta que se fuerza aquí).
         _agr_j_omitida.flush()
         _agr_absorcion_6c.flush()
-        _agr_cierre_invalido_6c.flush()
+        _agr_inicio_retrasado_6c.flush()
 
         if _claves_incoherentes:
             _mats_inc = sorted({c[2] for c in _claves_incoherentes})
