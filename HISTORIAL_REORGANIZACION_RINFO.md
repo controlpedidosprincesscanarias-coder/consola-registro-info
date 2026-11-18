@@ -1396,6 +1396,16 @@ Petición de Víctor: «¿se puede lanzar un aviso en la consola cuando no se pu
 - **No cubre** que la web responda con una versión antigua (lo del 18 nov: la publicación en Render falló y la web seguía en v1.20.68). Para eso la web tendría que decir su versión.
 - **Por probar en Windows:** desconectar la red (o con la web dormida) y lanzar la Acción 4: aviso, «Reintentar» y «Seguir sin la web». Conviene regenerar el manual (capítulo de la ventana principal y Catálogo Asignaciones).
 
+## 71. Material nuevo sin unidad en el RINFO: la ventana «Códigos SAP faltantes» completa el catálogo (18 nov 2026) — PR en GitHub
+
+Caso real: `RINFO PRO A PRO HOSTELERIA ORGANIZADA SAU [18-11-2026]` cargado en SAP. Los 260 registros heredados, bien; el material nuevo **10104121** (DALI 30245, PULLED COCHINITA PIBIL) dio «Introduzca UM de pedido» y «adecúe la UM-base y el factor de conversión» y no se creó: el RINFO lo llevaba sin unidad (cols N/P), descripción ni grupo.
+- **Causa:** el código SAP se puso a las 12:08 en la ventana «Códigos SAP faltantes» de la Acción 4, después de la última Acción 3 (11:43). Esa ventana guardaba solo el código y enviaba a la web (`_tras_cambiar_sap_en_catalogo`), sin completar sus datos SAP; la Acción 8 sí lo hace. El RINFO tomó del catálogo una fila con el SAP pero sin unidad.
+- **Cambio:** la ventana «Códigos SAP faltantes» (los dos sitios de `accion_tarifa.py`) usa `_completar_datos_sap_tras_asignar`, el mismo cruce de la Acción 3 que la Acción 8 (Productos, Listas de productos y ARTICULOS_DALI; si falta alguno, solo envía los códigos como antes). Decisión de Víctor: el catálogo es la fuente de los datos SAP de la tarifa; no se busca en otros archivos (el respaldo de `Productos.xlsx` para materiales del Purchasing sin código DALI sigue como estaba).
+- **Aviso antes de cargar en SAP:** al crear el Registro Info (desde cero y desde un Purchasing), si un material queda sin unidad en el catálogo, sale «⚠ N material(es) sin unidad de medida… SAP rechazará su registro info» con los códigos, y en el RESUMEN VALIDACIÓN SAP como categoría de aviso «SIN UNIDAD DE MEDIDA» (`comun_rinfo._materiales_sin_unidad` / `AVISO_SIN_UNIDAD`).
+- **Pruebas:** `tests/test_rinfo_sin_unidad.py` (la comprobación y «Crear desde cero» con el caso real). 269 pruebas.
+- **En SAP, aparte:** el 10102164 (registro 5300002788) sigue marcado para borrar aunque está en la tarifa: hay que quitar la marca a mano (limpiarla en el archivo no basta).
+- **Por probar en Windows:** poner un SAP en «Códigos SAP faltantes» y comprobar en el log «Completando los datos SAP…» y que el RINFO sale con su unidad.
+
 ---
 
 ## Próximos pasos, en orden de prioridad

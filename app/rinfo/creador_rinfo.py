@@ -27,9 +27,11 @@ from app.rinfo.comun_rinfo import (  # noqa: F401
     FOLDER_RECURSOS,
     HOJAS_PURCHASING,
     HOJA_TARIFA,
+    AVISO_SIN_UNIDAD,
     _CENTROS_LIST,
     _localizar_ruta_listado_dali,
     _log,
+    _materiales_sin_unidad,
     _postprocesar_para_sap,
     _safe_after,
     aplicar_formato_fila,
@@ -537,6 +539,13 @@ class CreadorRINFO:
         _log(self._parent,
              f"  Cruce DALI-SAP: {matches} coincidencia(s) de {total_e} articulo(s).",
              "OK")
+        # (18 nov 2026) Un material sin unidad de medida lo rechaza SAP: avisarlo antes de cargar
+        _codigos = [str(normalizar_codigo_sap(c.value)).strip()
+                    for (c,) in ws_rinfo.iter_rows(min_row=2, min_col=5, max_col=5) if c.value is not None]
+        _sin_um = _materiales_sin_unidad(_codigos, diccionario)
+        self.nuevos_sin_unidad = _sin_um
+        if _sin_um:
+            _log(self._parent, "  " + AVISO_SIN_UNIDAD.format(n=len(_sin_um), lista=", ".join(_sin_um)), "WARN")
 
         self._aplicar_valores_fijos(ws_rinfo)
 

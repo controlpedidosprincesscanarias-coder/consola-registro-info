@@ -1048,6 +1048,29 @@ def _localizar_ruta_productos(carpeta_tarifas, carpeta_proyecto=None, parent=Non
 
     return ruta if os.path.isfile(ruta) else None
 
+
+def _materiales_sin_unidad(codigos, diccionario):
+    """Códigos SAP (en orden, sin repetir) sin unidad de medida en el diccionario del catálogo
+    {código SAP: (desc_sap, unidad, …)}: SAP rechazará su registro info."""
+    vistos, faltan = set(), []
+    for cod in codigos:
+        cod = str(cod).strip()
+        if not cod or cod in vistos:
+            continue
+        vistos.add(cod)
+        datos = diccionario.get(cod)
+        if not datos or not datos[1]:
+            faltan.append(cod)
+    return faltan
+
+
+# (18 nov 2026, caso real PRO A PRO / SAP 10104121: el código SAP se puso después de la última Acción 3 y el
+# catálogo no tenía su unidad; SAP rechazó el registro con «Introduzca UM de pedido».) El catálogo es la fuente de
+# los datos SAP de la tarifa: si falta la unidad, se avisa antes de cargar en SAP.
+AVISO_SIN_UNIDAD = ("⚠  {n} material(es) sin unidad de medida en catalogo-dali-completo.xlsx: SAP rechazará su "
+                    "registro info («Introduzca UM de pedido»): {lista}. Pasa la Acción 3 (con Productos.xlsx y "
+                    "Listas de productos.xlsx actualizados en RECURSOS) y vuelve a crear el Registro Info.")
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  HELPER UI
 # ─────────────────────────────────────────────────────────────────────────────
