@@ -1365,6 +1365,17 @@ Petición de Víctor: «la sincronización de las modificaciones realizadas en l
 
 ---
 
+## 69. Al cambiar de proveedor no vuelve el precio del anterior (18 nov 2026) — PR en GitHub
+
+Petición de Víctor, tras la revisión de los logs del 13 al 18 nov 2026: «cuando se cambia de proveedor el precio ya no corresponde, entonces el borrado o cambio de precio a su nuevo proveedor debe ser corregido».
+- **Antes:** al regenerar el catálogo, `_regenerar_catalogo_dali_completo` vacía el precio y el código de proveedor de los artículos que cambian de Proveedor Asignado («CASO IRREGULAR … vaciados»). Pero en el mismo envío `_bajar_de_la_web` los volvía a traer de la web (un vacío en el Excel no borra lo de la web) y la web conservaba el precio. Caso real GARAU (18-11): 182 artículos vaciados, 182 traídos otra vez de la web y luego «Siguen distintos de la web: 180» (la web guarda el código de proveedor por proveedor, así que con el proveedor nuevo lo ve vacío). También CANDELAS, BORGES y EMICELA.
+- **Cambio en la Consola:** `catalogo_web.fusionar` no baja el precio ni el código de proveedor de un artículo cuyo Proveedor Asignado en el Excel es distinto del de la web (cambio de proveedor aún no enviado). Los datos SAP siguen bajando igual, y con el mismo proveedor un precio vacío en el Excel sigue sin borrar el de la web.
+- **Cambio en la web** (`dali-sap-articulos-app`, v1.20.69, su PR): al recibir el proveedor nuevo (`accion2`) vacía el precio del anterior. Sin ese cambio, en la pasada siguiente el precio antiguo volvería a bajar: **hay que fusionar los dos**, primero el de la web.
+- **Prueba:** `test_fusion_web.test_cambio_de_proveedor_no_baja_el_precio_del_anterior` (caso GARAU: el código SAP baja, el precio y el código de proveedor no, y no se intenta borrar nada en la web). 254 pruebas.
+- **Por probar en Windows con datos reales:** cambiar el proveedor asignado de un artículo de pruebas en DALI, pasar la Acción 1 y comprobar que el precio queda vacío en el Excel y en la web, sin «Siguen distintos», y que la tarifa del proveedor nuevo lo rellena en la Acción 4.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Lo cambiado en la web baja solo al Excel y la Consola nunca lo pisa~~ hecho (sección 67): gana la última modificación.
 - **PENDIENTE (petición de Víctor, 13 nov 2026): auditar la sincronización con la web, unir las Acciones 1 y 2 y guiar la Acción 3.** ~~Auditoría, nuevo final de la Acción 1 y quitar la Acción 2~~ hechos (sección 66); queda la Acción 3 y el Excel cambiando solo lo necesario.
