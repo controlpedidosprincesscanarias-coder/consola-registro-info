@@ -2411,6 +2411,9 @@ class GeneradorDesdeExistente:
         # centro, hasta 10 por material) en una única línea resumen.
         _agr_j_omitida    = _LogAgrupado(self._parent)
         _agr_absorcion_6c = _LogAgrupado(self._parent)
+        # (18 nov 2026) «cierre inválido evitado» también agrupado: en CASA DELFIN
+        # (16-11) salió 9.540 veces, una línea por fila, y el paso 6c tardó ~64 min.
+        _agr_cierre_invalido_6c = _LogAgrupado(self._parent)
 
         # ── Estado heredado incoherente: periodos solapados con otro precio ──
         #
@@ -2691,11 +2694,13 @@ class GeneradorDesdeExistente:
                                     d_cierre = d_i_per - _dt_mod.timedelta(days=1)
                                 # GUARD: evitar periodo inválido (Inicio > Fin calculado).
                                 if d_i_per is not None and d_cierre < d_i_per:
-                                    _log(self._parent,
-                                         f"  H3 fila {fila_per} [{_fmt_clave(clave_pir)}]: "
-                                         f"cierre inválido evitado en paso 6c — "
-                                         f"I_per={d_i_per} > cierre calculado={d_cierre}. "
-                                         f"Fila omitida.", "WARN")
+                                    _agr_cierre_invalido_6c.registrar(
+                                        clave=("cierre_invalido_6c", clave_pir[2], d_i_per, d_cierre),
+                                        fila=fila_per, centro=clave_pir[3], nivel="WARN",
+                                        plantilla=("  H3 material {mat}: cierre inválido evitado en "
+                                                   "paso 6c — I_per={ini_per} > cierre calculado="
+                                                   "{cierre}. Filas omitidas — {resumen}."),
+                                        mat=clave_pir[2], ini_per=d_i_per, cierre=d_cierre)
                                     _alguno_sin_solap = True
                                     continue
                                 per["cell_j"].value = _date_a_str_h3(d_cierre)
@@ -2773,6 +2778,7 @@ class GeneradorDesdeExistente:
         # grupo se queda en buffer hasta que se fuerza aquí).
         _agr_j_omitida.flush()
         _agr_absorcion_6c.flush()
+        _agr_cierre_invalido_6c.flush()
 
         if _claves_incoherentes:
             _mats_inc = sorted({c[2] for c in _claves_incoherentes})
