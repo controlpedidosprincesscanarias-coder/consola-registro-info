@@ -698,7 +698,8 @@ class AccionesTarifa:
                                     consola_fn=self.log_consola,
                                     descripciones=descs,
                                     ruta_tarifa=rs,
-                                    catalogo_refresh_fn=self._tras_cambiar_sap_en_catalogo)
+                                    # (18 nov 2026) como la Acción 8: completa también los datos SAP
+                                    catalogo_refresh_fn=self._completar_datos_sap_tras_asignar)
                                 self.wait_window(ven)
                                 if ven.guardado:   # (13 nov 2026) ¿faltan los listados de SAP actualizados?
                                     self._avisar_listados_sap(list(ven.nuevos_sap.values()))
@@ -1294,7 +1295,8 @@ class AccionesTarifa:
                         consola_fn=self.log_consola,
                         descripciones=descs,
                         ruta_tarifa=ri,
-                        catalogo_refresh_fn=self._tras_cambiar_sap_en_catalogo)
+                        # (18 nov 2026) como la Acción 8: completa también los datos SAP
+                        catalogo_refresh_fn=self._completar_datos_sap_tras_asignar)
                     self.wait_window(ven)
                     if ven.guardado:   # (13 nov 2026) ¿faltan los listados de SAP actualizados?
                         self._avisar_listados_sap(list(ven.nuevos_sap.values()))

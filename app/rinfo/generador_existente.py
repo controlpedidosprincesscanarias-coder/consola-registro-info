@@ -31,11 +31,13 @@ from app.rinfo.comun_rinfo import (  # noqa: F401
     FECHA_FIN_FIJA_HOJA1,
     FECHA_INICIO_FIJA_HOJA1,
     HOJA_TARIFA,
+    AVISO_SIN_UNIDAD,
     _CENTROS_LIST,
     _LogAgrupado,
     _eliminar_filas_agrupadas,
     _localizar_ruta_listado_dali,
     _localizar_ruta_productos,
+    _materiales_sin_unidad,
     _log,
     _parchear_column_dimension,
     _postprocesar_para_sap,
@@ -3774,6 +3776,11 @@ class GeneradorDesdeExistente:
              f"  {insertados} material(es) insertado(s) en Hoja1 "
              f"a partir de fila {primera_fila_nueva}.",
              "OK")
+        # (18 nov 2026) Un material nuevo sin unidad de medida lo rechaza SAP: avisarlo antes de cargar
+        _sin_um = _materiales_sin_unidad([c for c, _p in nuevos], diccionario)
+        self._audit["nuevos_sin_unidad"] = _sin_um
+        if _sin_um:
+            _log(self._parent, "  " + AVISO_SIN_UNIDAD.format(n=len(_sin_um), lista=", ".join(_sin_um)), "WARN")
 
         # ── 9. Añadir filas nuevas a Hoja 2 ───────────────────────────────────
         self._barra("set", "Rellenando Hoja 2 (Datos org.compr.)...", 72, 100)
@@ -4293,6 +4300,14 @@ class GeneradorDesdeExistente:
                  f"Verificar si el material tiene cobertura para estos centros.",
                  "WARN")
 
+        # ── ⚠ Materiales nuevos sin unidad de medida (18 nov 2026) ───────────
+        _sin_um = a.get("nuevos_sin_unidad") or []
+        if _sin_um:
+            _log(self._parent,
+                 f"  ⚠ SIN UNIDAD DE MEDIDA: {len(_sin_um)} material(es) nuevo(s) — SAP rechazará su registro info: "
+                 f"{', '.join(_sin_um)}. Pasa la Acción 3 y vuelve a crear el Registro Info antes de cargarlo.",
+                 "WARN")
+
         n_cat = sum([
             1 if a["n_solapamientos"] > 0 else 0,
             1 if n_dup_total > 0 else 0,
@@ -4300,6 +4315,7 @@ class GeneradorDesdeExistente:
             1 if a["n_reducciones"] > 0 else 0,
             1 if a["n_absorbidos"] > 0 else 0,
             1 if a["centros_sin_ext"] else 0,
+            1 if _sin_um else 0,
         ])
         _log(self._parent,
              f"  ── {n_cat} categoría(s) de aviso. Revisar antes de importar en SAP.",
