@@ -337,9 +337,15 @@ def fusionar(local, cache, hora_excel, ahora=None):
             continue
         base = cache.base.get(cod) or {}
         vistos = cache.local_cambiado_en.get(cod) or {}
+        # (18 nov 2026, petición de Víctor) Proveedor Asignado cambiado en el Excel y aún no en la web: el precio y el
+        # código de proveedor de la web son del proveedor anterior y ya no corresponden. No bajan (la regeneración
+        # del catálogo los acaba de vaciar); al recibir el proveedor nuevo, la web vacía su precio.
+        cambia_proveedor = "proveedor" in loc and loc.get("proveedor") != web.get("proveedor")
         for campo in CAMPOS_COMPARTIDOS:
             vl, vw = loc.get(campo), web.get(campo)
             if vl == vw:
+                continue
+            if cambia_proveedor and campo in GRUPOS["accion4"]:
                 continue
             if campo in base:
                 vb = base[campo]
