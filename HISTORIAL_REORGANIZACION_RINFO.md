@@ -1408,6 +1408,21 @@ Caso real: `RINFO PRO A PRO HOSTELERIA ORGANIZADA SAU [18-11-2026]` cargado en S
 
 ---
 
+## 72. Auditoría del 18 nov 2026: versiones fijas para compilar y documentación al día — PR en GitHub
+
+Petición de Víctor: auditar el estado de la Consola.
+- **Estado:** `main` limpio, sin PR ni incidencias abiertas; v10.2.70 publicada con su `.exe` y `.sha256`; las cinco últimas compilaciones, bien. Repositorio público, sin credenciales, correos ni datos reales. 269 pruebas en verde (1 saltada a propósito).
+- **Cambiado:**
+  - `compilacion/requisitos.txt` con **versiones fijas**, las que instaló la compilación de la v10.2.70. Antes cada compilación cogía la última de cada dependencia, así que un cambio grande de PyInstaller o pandas podía romper el `.exe` sin tocar el código.
+  - `CLAUDE.md`: 269 pruebas (decía 252) y la nota de las versiones fijas.
+- **Visto y sin cambiar:**
+  - Restos inofensivos que señalan pyflakes y vulture: 33 importaciones sin usar, ~10 variables sin usar (`_alguno_sin_solap`, `COL_AN_BORRADO`, `df1`…) y 9 `f""` sin nada dentro. Revisados los que podían esconder un error de lógica: no lo esconden. Se pueden quitar en una limpieza aparte.
+  - Tres borradores antiguos en Releases (v10.2.38, .46 y .52): no los ve nadie; se pueden borrar a mano si ya no sirven.
+  - El aviso «Node.js 20 is deprecated» ya no aparece en el registro de la última compilación.
+- **Manual:** se regenera en la PR siguiente (sección 73) con lo del 18 nov (secciones 68–71).
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
 - ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).

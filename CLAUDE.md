@@ -15,7 +15,7 @@ App de escritorio para Windows (Python + Tkinter) de la Central de Compras: prep
   - «solo-descarga»: el `.exe` queda como descarga del propio workflow.
   - «borrador»: además crea una Release en **borrador**, con las novedades generadas a partir de los PR. Se publica a mano con «Publish release».
 
-  Nunca publicar una Release directamente desde el workflow ni lanzarlo al subir código. Dependencias de la compilación: `compilacion/requisitos.txt`.
+  Nunca publicar una Release directamente desde el workflow ni lanzarlo al subir código. Dependencias de la compilación: `compilacion/requisitos.txt`, **con versiones fijas** (las de la v10.2.70): para subir una, cambiarla allí y probar el `.exe` de una compilación «solo-descarga» antes de publicar.
 - **Versión automática** (`compilacion/version.py`, pruebas en `tests/test_version.py`):
   - La versión de cada compilación es la mayor entre `APP_VERSION` de `tarifa_app.py` y las Releases ya creadas (también los borradores), **+2**, siempre par: 10.2.36 → 10.2.38.
   - Se escribe en la copia que se compila, así que el `.exe` la muestra y la Release lleva esa etiqueta (`v10.2.38`). El workflow **no** sube ese cambio al repositorio: las versiones publicadas quedan en las etiquetas de las Releases.
@@ -93,7 +93,7 @@ Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app
 ```bash
 python -m unittest discover -s tests -v
 ```
-- 252 pruebas (desde la raíz). 18 de ellas importan `crear_registro_info` (que usa tkinter): sin tkinter se saltan. En Linux hay que lanzarlas con un Python que tenga tkinter y con `xvfb-run`.
+- 269 pruebas (desde la raíz). 18 de ellas importan `crear_registro_info` (que usa tkinter): sin tkinter se saltan. En Linux hay que lanzarlas con un Python que tenga tkinter y con `xvfb-run`.
 - Dependencias para probar: `pandas openpyxl xlrd pillow psutil`. Para compilar, además `pyinstaller pywin32`.
 - Código muerto: `vulture tarifa_app.py app --min-confidence 60`, comprobando cada resultado con `grep` (también en cadenas) antes de quitar nada.
 - `tests/test_crear_registro_info.py` prueba el código real a través de `sap_helpers.py` y de `crear_registro_info`; no se deben reimplementar funciones dentro de la prueba.
