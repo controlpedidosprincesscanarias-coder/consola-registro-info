@@ -1386,6 +1386,16 @@ Petición de Víctor, tras la revisión de los logs del 13 al 18 nov 2026: «cua
 - **Prueba:** `test_fusion_web.test_cambio_de_proveedor_no_baja_el_precio_del_anterior` (caso GARAU: el código SAP baja, el precio y el código de proveedor no, y no se intenta borrar nada en la web). 254 pruebas.
 - **Por probar en Windows con datos reales:** cambiar el proveedor asignado de un artículo de pruebas en DALI, pasar la Acción 1 y comprobar que el precio queda vacío en el Excel y en la web, sin «Siguen distintos», y que la tarifa del proveedor nuevo lo rellena en la Acción 4.
 
+## 70. Aviso cuando no se puede acceder a Catálogo Asignaciones (18 nov 2026) — PR en GitHub
+
+Petición de Víctor: «¿se puede lanzar un aviso en la consola cuando no se pueda acceder a Catálogo Asignaciones?». Antes solo salía una línea WARN en el log y la acción seguía con el Excel sin que se notara.
+- **Indicador en la cabecera**, debajo de la versión: «● Catálogo Asignaciones: sin comprobar / conectado (verde) / sin conexión desde las HH:MM (rojo)». Se pone en verde al iniciar sesión y se actualiza en cada conexión (`_pintar_indicador_web`, desde cualquier hilo con `after`).
+- **Ventana de aviso** (`app/ui/ventana_sin_conexion.py`) la primera vez que falla al traer lo cambiado en la web (`_traer_cambios_web`) o al enviar (`_publicar_catalogo_web_una_vez`): qué no se ha podido hacer, la causa y que la Consola sigue con el catálogo Excel. «Reintentar» vuelve a intentarlo en el momento (también el envío); «Seguir sin la web» sigue. Mientras siga sin conexión no se repite en cada acción (solo el indicador y el log); al volver a conectar, se reinicia. Credenciales rechazadas o sin permiso: solo «Entendido».
+- **Causa en palabras claras** (`app/comun/estado_web.py`, sin tkinter): sin red, la web arrancando (Render en plan gratuito tarda hasta un minuto tras un rato sin uso: «espera y pulsa Reintentar»), error de la web (HTTP 5xx), credenciales, permiso u otro.
+- **Pruebas:** `tests/test_estado_web.py` (tipos de fallo, cuándo avisa, indicador y la ventana con sus botones) y, en `test_publicar_catalogo_web.py`, de punta a punta con la web falsa (`WebFalsa.fallos_login`): un aviso aunque falle dos veces, indicador en rojo y en verde al volver, «Reintentar» que conecta y envía, y sin permiso sin reintentar. 266 pruebas.
+- **No cubre** que la web responda con una versión antigua (lo del 18 nov: la publicación en Render falló y la web seguía en v1.20.68). Para eso la web tendría que decir su versión.
+- **Por probar en Windows:** desconectar la red (o con la web dormida) y lanzar la Acción 4: aviso, «Reintentar» y «Seguir sin la web». Conviene regenerar el manual (capítulo de la ventana principal y Catálogo Asignaciones).
+
 ---
 
 ## Próximos pasos, en orden de prioridad

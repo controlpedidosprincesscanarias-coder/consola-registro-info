@@ -23,9 +23,14 @@ from contextlib import nullcontext
 
 from app.comun import catalogo_local
 from app.comun import catalogo_web as W
+from app.comun import estado_web
 from app.comun.credenciales import borrar_credenciales_dali
+from app.comun.tarifa_constants import C_ERROR, C_MUTED, C_SUCCESS
 from app.comun.tarifa_core import FOLDER_RECURSOS, guardar_config
 from app.ui import ventana_publicar_catalogo
+from app.ui import ventana_sin_conexion
+
+_COLOR_INDICADOR = {"pendiente": C_MUTED, "ok": C_SUCCESS, "fallo": C_ERROR}
 
 
 class PublicarCatalogoWeb:
@@ -82,27 +87,82 @@ class PublicarCatalogoWeb:
         lock = getattr(self, "_cache_web_lock", None)
         return lock if lock is not None else nullcontext()
 
-    def _conectar_catalogo_web(self):
-        """Inicia sesión en Catálogo Asignaciones. Devuelve el cliente o None (ya explicado en la consola)."""
+    # ── (18 nov 2026, petición de Víctor) Aviso cuando no se puede acceder a Catálogo Asignaciones ──────────
+    def _estado_conexion_web(self):
+        estado = getattr(self, "_estado_web", None)
+        if estado is None:                        # pruebas con object.__new__: se crea al primer uso
+            estado = self._estado_web = estado_web.EstadoConexion()
+        return estado
+
+    def _pintar_indicador_web(self):
+        """Pinta el indicador de la cabecera (desde cualquier hilo)."""
+        lbl = getattr(self, "_lbl_web", None)
+        if lbl is None:
+            return
+        texto, clave = self._estado_conexion_web().indicador()
+
+        def _pintar():
+            try:
+                lbl.config(text=texto, fg=_COLOR_INDICADOR.get(clave, C_MUTED))
+            except Exception:  # noqa: BLE001 — la ventana se está cerrando
+                pass
+        try:
+            self.after(0, _pintar)
+        except Exception:  # noqa: BLE001
+            pass
+
+    def _web_conectada(self):
+        if self._estado_conexion_web().marcar_ok():
+            self._pintar_indicador_web()
+
+    def _web_no_disponible(self, error, que):
+        """Apunta el fallo y, si es el primero desde que conectó (o tras «Reintentar»), saca el aviso.
+        Devuelve True si el usuario ha pulsado «Reintentar». Se llama desde el hilo de la acción o del envío."""
+        estado = self._estado_conexion_web()
+        avisar = estado.marcar_fallo(error)
+        self._pintar_indicador_web()
+        if not avisar:
+            return False
+        info = estado_web.clasificar(error)
+        try:
+            r = self._ejecutar_en_hilo_principal_y_esperar(
+                lambda: ventana_sin_conexion.preguntar(self, que, info, str(error)))
+        except Exception as e:  # noqa: BLE001 — sin ventana (cerrándose): la acción sigue igual
+            self.log_consola(f"Catálogo Asignaciones: no se pudo enseñar el aviso de conexión ({e}).", "WARN")
+            return False
+        if r == "reintentar":
+            estado.permitir_nuevo_aviso()
+            self.log_consola("Catálogo Asignaciones: reintentando la conexión...", "INFO")
+            return True
+        return False
+
+    def _conectar_catalogo_web(self, que="conectar con Catálogo Asignaciones"):
+        """Inicia sesión en Catálogo Asignaciones. Devuelve el cliente o None (ya explicado en la consola).
+        `que`: lo que no se podrá hacer si falla, para el aviso («traer lo cambiado en la web…»)."""
         log = self.log_consola
         email, password = self._ejecutar_en_hilo_principal_y_esperar(self._obtener_credenciales_dali_app)
         if not email or not password:
             log("Catálogo Asignaciones: sin credenciales, no se han enviado los cambios a la web "
                 "(saldrán la próxima vez).", "WARN")
             return None
-        cliente = W.ClienteCatalogo()
-        try:
-            cliente.login(email, password)
-        except W.ErrorWeb as e:
-            if e.codigo in (401, 403):
-                borrar_credenciales_dali(self.config_data)
-                guardar_config(self.config_data)
-                log(f"Catálogo Asignaciones: inicio de sesión rechazado ({e}). Se han borrado las credenciales "
-                    "guardadas; se pedirán otra vez.", "ERROR")
-            else:
+        while True:
+            cliente = W.ClienteCatalogo()
+            try:
+                cliente.login(email, password)
+            except W.ErrorWeb as e:
+                if e.codigo in (401, 403):
+                    borrar_credenciales_dali(self.config_data)
+                    guardar_config(self.config_data)
+                    log(f"Catálogo Asignaciones: inicio de sesión rechazado ({e}). Se han borrado las credenciales "
+                        "guardadas; se pedirán otra vez.", "ERROR")
+                    self._web_no_disponible(e, que)
+                    return None
                 log(f"Catálogo Asignaciones: {e}. Los cambios saldrán la próxima vez.", "WARN")
-            return None
-        return cliente
+                if self._web_no_disponible(e, que):
+                    continue
+                return None
+            self._web_conectada()
+            return cliente
 
     def _bajar_de_la_web(self, cache, ruta_local):
         """Baja al Excel lo que gana la web (catalogo_web.fusionar) y apunta como base lo que ya coincide.
@@ -144,25 +204,34 @@ class PublicarCatalogoWeb:
         ruta_local = os.path.join(carpeta, FOLDER_RECURSOS, "catalogo-dali-completo.xlsx") if carpeta else ""
         if not ruta_local or not os.path.isfile(ruta_local):
             return
-        try:
-            with self._lock_cache_web():
-                self.log_consola(f"Catálogo Asignaciones: trayendo lo cambiado en la web antes de {motivo}...", "INFO")
-                cliente = self._conectar_catalogo_web()
-                if cliente is None:
-                    return
-                cache = W.Cache().cargar()
-                cache.sincronizar(cliente)
-                self._bajar_de_la_web(cache, ruta_local)
-                cache.guardar()
-        except W.ErrorWeb as e:
-            self.log_consola(f"Catálogo Asignaciones: {e}. Se sigue sin traer lo de la web (se traerá la próxima "
-                             "vez).", "WARN")
-        except Exception as e:  # noqa: BLE001 — que la acción siga aunque falle esto
-            self.log_consola(f"Catálogo Asignaciones: no se ha podido traer lo cambiado en la web ({e}).", "WARN")
+        que = f"traer lo cambiado en la web antes de {motivo}"
+        while True:
+            try:
+                with self._lock_cache_web():
+                    self.log_consola(f"Catálogo Asignaciones: trayendo lo cambiado en la web antes de {motivo}...",
+                                     "INFO")
+                    cliente = self._conectar_catalogo_web(que)
+                    if cliente is None:
+                        return
+                    cache = W.Cache().cargar()
+                    cache.sincronizar(cliente)
+                    self._bajar_de_la_web(cache, ruta_local)
+                    cache.guardar()
+                return
+            except W.ErrorWeb as e:
+                self.log_consola(f"Catálogo Asignaciones: {e}. Se sigue sin traer lo de la web (se traerá la "
+                                 "próxima vez).", "WARN")
+                if self._web_no_disponible(e, que):
+                    continue
+                return
+            except Exception as e:  # noqa: BLE001 — que la acción siga aunque falle esto
+                self.log_consola(f"Catálogo Asignaciones: no se ha podido traer lo cambiado en la web ({e}).", "WARN")
+                return
 
     def _publicar_catalogo_web_una_vez(self, motivo, archivo):
         with self._lock_cache_web():
-            self._publicar_catalogo_web_una_vez_impl(motivo, archivo)
+            while self._publicar_catalogo_web_una_vez_impl(motivo, archivo) == "reintentar":
+                pass
 
     def _publicar_catalogo_web_una_vez_impl(self, motivo, archivo):
         log = self.log_consola
@@ -171,7 +240,8 @@ class PublicarCatalogoWeb:
         if not ruta_local or not os.path.isfile(ruta_local):
             return
 
-        cliente = self._conectar_catalogo_web()
+        que = "enviar a la web los cambios de la Consola"
+        cliente = self._conectar_catalogo_web(que)
         if cliente is None:
             return
         log("Catálogo Asignaciones: comprobando qué ha cambiado...", "INFO")
@@ -243,3 +313,5 @@ class PublicarCatalogoWeb:
         except W.ErrorWeb as e:
             log(f"Catálogo Asignaciones: {e}. Los cambios que falten saldrán la próxima vez.",
                 "ERROR" if e.codigo == 403 else "WARN")
+            if self._web_no_disponible(e, que):
+                return "reintentar"

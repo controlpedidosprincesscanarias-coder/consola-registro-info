@@ -42,11 +42,15 @@ class WebFalsa:
         self.por_pagina = por_pagina
         self.estado_lote = estado_lote
         self.peticiones = []
+        self.fallos_login = 0             # (18 nov 2026) cuántos inicios de sesión fallan por falta de red
 
     def __call__(self, req, timeout=None):
         url = urlparse(req.full_url)
         cuerpo = json.loads(req.data.decode("utf-8")) if req.data else None
         self.peticiones.append((req.get_method(), url.path, parse_qs(url.query), cuerpo))
+        if url.path == "/auth/login" and self.fallos_login > 0:
+            self.fallos_login -= 1
+            raise urllib.error.URLError("[Errno 11001] getaddrinfo failed")
         if url.path == "/auth/login":
             return _Resp(json.dumps({"ok": True}).encode())
         if url.path == "/admin/catalogo/cambios":

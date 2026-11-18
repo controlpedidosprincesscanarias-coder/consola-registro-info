@@ -169,6 +169,9 @@ class CatalogoDali:
             return
         email, password, usuario = r
         self._credenciales_sesion = (email, password)
+        conectada = getattr(self, "_web_conectada", None)   # (18 nov 2026) indicador de la cabecera en verde
+        if conectada:                                        # (mixin PublicarCatalogoWeb; en pruebas puede faltar)
+            conectada()
         if not guardar_credenciales_dali(self.config_data, email, password):
             self.log_consola("No se pudo cifrar la contraseña de Catálogo Asignaciones: se usa solo en esta "
                              "sesión y se volverá a pedir la próxima vez.", "WARN")
