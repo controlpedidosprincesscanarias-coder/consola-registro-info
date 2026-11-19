@@ -114,6 +114,26 @@ class TestPublicar(unittest.TestCase):
         cache = W.Cache(self.cache).cargar()
         self.assertIsNotNone(cache.publicado_hasta)
 
+    def test_codigo_de_proveedor_que_la_web_no_acepta_se_queda_el_de_la_web(self):
+        """19 nov 2026 (DALI 21905): la web tiene 243528 y el Excel «COMODIN». La web no lo cambia; antes el aviso
+        salía en cada envío. Ahora se queda el de la web también en el Excel y la vez siguiente ya no se envía."""
+        _excel(self.ruta, [{"Código DALI": 1, "Descripción - DALI": "Tomate", "Activo": "SI",
+                            "Proveedor Asignado - DALI": "PROV A", "Precio €": 1.0, "Código SAP": "S1",
+                            "Código Proveedor": "COMODIN"}])
+        self.web.articulos = [_art(1, nombre_articulo="Tomate", activo="SI", proveedor="PROV A", precio=1.0,
+                                   codigo_sap="S1", codigo_proveedor="243528")]
+        self.web.irregulares = {"accion4": [{"codigo_dali": 1, "tipo": "codigo_proveedor_distinto",
+                                             "antes": "243528", "despues": "COMODIN", "detalle": "…"}]}
+        with mock.patch.object(V, "pedir_confirmacion", lambda *a: (True, False)):
+            self.app._publicar_catalogo_web_una_vez("Acción 4", None)
+        self.assertEqual(W.leer_catalogo_local(self.ruta)[1]["codigo_proveedor"], "243528")
+        self.assertTrue(any("se queda el de la web" in m for _n, m in self.app.logs))
+        self.assertFalse(any("Siguen distintos" in m for _n, m in self.app.logs))
+        antes = len(self._lotes(True))
+        with mock.patch.object(V, "pedir_confirmacion", lambda *a: self.fail("no debía preguntar")):
+            self.app._publicar_catalogo_web_una_vez("Acción 4", None)
+        self.assertEqual(len(self._lotes(True)), antes, "ya coinciden: no se envía nada")
+
     def test_ahora_no_no_envia_nada(self):
         with mock.patch.object(V, "pedir_confirmacion", lambda *a: (False, False)):
             self.app._publicar_catalogo_web_una_vez("Acción 2", None)

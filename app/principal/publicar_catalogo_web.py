@@ -196,6 +196,27 @@ class PublicarCatalogoWeb:
         W.acordar(cache, local)
         return local, fus
 
+    def _quedarse_codigo_de_la_web(self, ruta_local, rechazados, local):
+        """(19 nov 2026, petición de Víctor) La web no cambia un código de proveedor que ya tiene guardado y es
+        distinto (irregular «codigo_proveedor_distinto»). Antes, el del Excel se volvía a enviar en cada envío y el
+        aviso salía siempre, aunque ya se hubiera corregido en la web. Ahora se queda el de la web también en el
+        catálogo local, y se dice una vez. Devuelve el catálogo local tal como queda."""
+        log = self.log_consola
+        try:
+            with self._catalogo_lock:
+                catalogo_local.escribir_campos(ruta_local, {cod: {"cod_prov": irr["antes"]}
+                                                            for cod, irr in rechazados.items()})
+        except PermissionError:
+            for cod, irr in rechazados.items():
+                log(f"    ⚠ DALI {cod}: {irr.get('detalle') or irr.get('tipo')} — catalogo-dali-completo.xlsx está "
+                    "abierto en Excel: se corregirá la próxima vez.", "WARN")
+            return local
+        for cod, irr in rechazados.items():
+            log(f"    ⬇ DALI {cod}: la web tiene el código de proveedor «{irr['antes']}» y no acepta «{irr.get('despues')}»: "
+                f"se queda el de la web también en el catálogo local. Si el bueno es «{irr.get('despues')}», "
+                "cámbialo en la ficha del artículo en Catálogo Asignaciones.", "WARN")
+        return W.leer_catalogo_local(ruta_local)
+
     def _traer_cambios_web(self, motivo):
         """(13 nov 2026) Al empezar las acciones que escriben datos SAP, precio o código de proveedor (3, 4 y 8): baja
         al Excel lo cambiado en la web, para trabajar ya con ello. Síncrono (se llama desde el hilo de la acción).
@@ -280,6 +301,7 @@ class PublicarCatalogoWeb:
                 log("  └ No se ha enviado nada a la web («Ahora no»): los cambios saldrán la próxima vez.", "WARN")
                 return
 
+            rechazados = {}                           # código de proveedor que la web no acepta: {dali: irregular}
             for grupo in W.GRUPOS:                    # en orden: altas (accion2), SAP (accion3), precios (accion4)
                 filas = W.filas_para_enviar(dif, grupo, incluir_editados)
                 if not filas:
@@ -293,8 +315,13 @@ class PublicarCatalogoWeb:
                 for irr in r["irregulares"]:
                     if irr.get("tipo") == "no_existe" and irr.get("codigo_dali") in nuevos:
                         continue
+                    if irr.get("tipo") == "codigo_proveedor_distinto" and irr.get("antes"):
+                        rechazados[irr.get("codigo_dali")] = irr        # se arregla abajo, en el catálogo local
+                        continue
                     log(f"    ⚠ DALI {irr.get('codigo_dali')}: {irr.get('detalle') or irr.get('tipo')} "
                         "— corrígelo para que la web y el catálogo local coincidan.", "WARN")
+            if rechazados:
+                local = self._quedarse_codigo_de_la_web(ruta_local, rechazados, local)
 
             W.actualizar_protegidos(cache, dif, incluir_editados)
             cache.sincronizar(cliente)                # trae lo recién aplicado
