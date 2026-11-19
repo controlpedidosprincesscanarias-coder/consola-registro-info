@@ -11,17 +11,21 @@ y Listas de productos.xlsx («Lista de productos») y guardarlos en RECURSOS. Op
   - «Ya están en RECURSOS: actualizar ahora» → resultado "actualizar" (la app lanza la Acción 3);
   - «Más tarde» (o cerrar) → avisa de que la web queda parcialmente actualizada; resultado "despues".
 La lógica y los textos están en app/comun/listados_sap.py.
+Desde v10.2.74 también VentanaAntesAccion3: la misma guía al pulsar la Acción 3, con la comprobación de si hace falta
+descargar los listados (ver su docstring).
 """
 import os
 import sys
+import threading
 import time
 import tkinter as tk
 from tkinter import messagebox, ttk
 
 from app.comun import listados_sap as L
+from app.comun.sap_helpers import abierto_en_excel
 from app.comun.tarifa_constants import (
-    C_ACCENT, C_ACCENT2, C_BORDER, C_CARD, C_DARK, C_HOVER, C_MID, C_MUTED, C_SUCCESS, C_TEXT_LIGHT, C_WARNING,
-    FONT_BOLD, FONT_LABEL, FONT_SMALL, FONT_TITLE, resource_path,
+    C_ACCENT, C_ACCENT2, C_BORDER, C_CARD, C_DARK, C_ERROR, C_HOVER, C_MID, C_MUTED, C_SUCCESS, C_TEXT_LIGHT,
+    C_WARNING, FONT_BOLD, FONT_LABEL, FONT_SMALL, FONT_TITLE, resource_path,
 )
 from app.comun.tarifa_core import cargar_icono_ventana
 
@@ -88,7 +92,11 @@ class VentanaListadosSap(tk.Toplevel):
         self._lbl_estado = tk.Label(self, text="", font=FONT_LABEL, fg=C_MUTED, bg=C_MID, justify="left")
         self._lbl_estado.pack(fill="x", padx=14, side="bottom")
 
-        # Guía con scroll
+        self._construir_guia("   Después pulsa «Ya están en RECURSOS»: la Consola lanza sola la Acción 3 y completa "
+                             "los datos SAP en el catálogo y en la web.")
+
+    def _construir_guia(self, texto_final):
+        """La guía de descarga con imágenes, con scroll (v10.2.74: separada de _construir para la Acción 3)."""
         caja = tk.Frame(self, bg=C_MID)
         caja.pack(fill="both", expand=True, padx=10, pady=4)
         canvas = tk.Canvas(caja, bg=C_CARD, highlightthickness=0)
@@ -137,9 +145,9 @@ class VentanaListadosSap(tk.Toplevel):
         titulo("4.  Guarda los dos archivos en la carpeta RECURSOS del proyecto (sustituyendo a los anteriores)")
         tk.Label(guia, text=f"   {self._recursos}", font=FONT_SMALL, fg=C_MUTED, bg=C_CARD, anchor="w").pack(
             anchor="w")
-        tk.Label(guia, text="   Después pulsa «Ya están en RECURSOS»: la Consola lanza sola la Acción 3 y completa "
-                            "los datos SAP en el catálogo y en la web.",
+        tk.Label(guia, text=texto_final,
                  font=FONT_LABEL, fg=C_TEXT_LIGHT, bg=C_CARD, anchor="w").pack(anchor="w", pady=(4, 0))
+        return caja
 
     # ── Estado de los archivos ───────────────────────────────────────────────────────────────────────
     def _texto_estado(self):
@@ -179,4 +187,166 @@ class VentanaListadosSap(tk.Toplevel):
     def _mas_tarde(self):
         messagebox.showwarning("Web parcialmente actualizada", L.AVISO_PARCIAL, parent=self)
         self.resultado = "despues"
+        self.destroy()
+
+
+_COLOR_TIPO = {"ok": C_SUCCESS, "error": C_ERROR, "aviso": C_WARNING, "info": C_TEXT_LIGHT}
+
+
+class VentanaAntesAccion3(VentanaListadosSap):
+    """(v10.2.74, petición de Víctor, 13 nov 2026) Sale al pulsar la Acción 3, con el resultado de la comprobación
+    (listados_sap.diagnostico):
+      - Si hace falta preguntar (códigos SAP que los listados de RECURSOS no tienen, un listado que no está o con
+        más de 7 días): la guía de descarga y «¿Necesita descargar de nuevo Productos.xlsx y Listas de
+        productos.xlsx?» Sí / No. Con «Sí» se abre RECURSOS y la línea de estado (cada 2 s) dice si cada listado se ha
+        descargado de nuevo y, si tenía que traer códigos, si ya los tiene. El botón «Actualizar Catálogo
+        Asignaciones» está oculto hasta contestar, como al final de la Acción 1.
+      - Si no: el botón sale directamente.
+    resultado: "actualizar" (la app lanza la Acción 3 de siempre y el envío a la web) o "cancelar"."""
+
+    def __init__(self, parent, diag, lineas, carpeta_recursos, leer=None):
+        tk.Toplevel.__init__(self, parent)
+        self.title("Acción 3 — Listados de SAP")
+        self.configure(bg=C_MID)
+        self.transient(parent)
+        cargar_icono_ventana(self)
+        self.resultado = "cancelar"
+        self.respuesta = None               # None hasta contestar; True = «Sí»; False = «No»
+        self._diag = diag
+        self._recursos = carpeta_recursos
+        self._desde = None                  # cuándo se contestó «Sí» (para «descargado de nuevo»)
+        self._imagenes = []
+        self._contiene = {}                 # {listado: códigos que el archivo nuevo aún no tiene}
+        self._leido = {}                    # {listado: fecha del archivo ya leído o leyéndose}
+        self._leer = leer or L.codigos_que_faltan_en     # sustituible en las pruebas
+        self._construir_accion3(lineas)
+        self.protocol("WM_DELETE_WINDOW", self._cancelar)
+        self.update_idletasks()
+        sw, sh = self.winfo_screenwidth(), self.winfo_screenheight()
+        if diag["preguntar"]:
+            w, h = min(980, sw - 40), min(860, sh - 60)
+        else:
+            w = min(max(self.winfo_reqwidth(), 680), sw - 40)
+            h = min(self.winfo_reqheight() + 40, sh - 60)
+        self.geometry(f"{w}x{h}+{max(0, (sw - w) // 2)}+{max(5, (sh - h) // 5)}")
+        self.grab_set()
+        if not diag["preguntar"]:
+            self._mostrar_boton(L.TEXTO_BOTON)
+
+    # ── Interfaz ─────────────────────────────────────────────────────────────────────────────────────
+    def _boton(self, padre, texto, comando, principal=False):
+        return tk.Button(padre, text=texto, font=FONT_BOLD, relief="flat", cursor="hand2", command=comando,
+                         fg=C_DARK if principal else C_TEXT_LIGHT, bg=C_ACCENT if principal else C_BORDER,
+                         activebackground=C_ACCENT2 if principal else C_HOVER)
+
+    def _construir_accion3(self, lineas):
+        hdr = tk.Frame(self, bg=C_DARK, pady=10)
+        hdr.pack(fill="x")
+        tk.Label(hdr, text="🔄  Acción 3 — Listados de SAP", font=FONT_TITLE, fg=C_ACCENT, bg=C_DARK).pack(
+            side="left", padx=14)
+
+        resumen = tk.Frame(self, bg=C_CARD, padx=14, pady=8)
+        resumen.pack(fill="x", padx=12, pady=(10, 4))
+        for texto, tipo in lineas:
+            tk.Label(resumen, text=texto, font=FONT_LABEL, fg=_COLOR_TIPO.get(tipo, C_TEXT_LIGHT), bg=C_CARD,
+                     justify="left", anchor="w", wraplength=900).pack(fill="x", anchor="w")
+
+        # Botones abajo (antes que la guía, para que siempre se vean)
+        abajo = tk.Frame(self, bg=C_MID, pady=10)
+        abajo.pack(fill="x", padx=14, side="bottom")
+        # Oculto (sin pack) hasta contestar a la pregunta
+        self._btn_actualizar = self._boton(abajo, "⬆  Actualizar Catálogo Asignaciones", self._actualizar,
+                                           principal=True)
+        self._btn_cancelar = self._boton(abajo, "Cancelar", self._cancelar)
+        self._btn_cancelar.pack(side="right", ipadx=10, ipady=4)
+        self._lbl_estado = tk.Label(self, text="", font=FONT_LABEL, fg=C_MUTED, bg=C_MID, justify="left",
+                                    anchor="w", wraplength=900)
+        self._lbl_estado.pack(fill="x", padx=14, side="bottom")
+
+        if not self._diag["preguntar"]:
+            return
+        pregunta = tk.Frame(self, bg=C_MID, padx=14, pady=4)
+        pregunta.pack(fill="x")
+        tk.Label(pregunta, text=L.PREGUNTA_ACCION3, font=FONT_BOLD, fg=C_TEXT_LIGHT, bg=C_MID).pack(
+            anchor="w", pady=(0, 6))
+        fila = tk.Frame(pregunta, bg=C_MID)
+        fila.pack(anchor="w")
+        self._btn_si = self._boton(fila, "Sí, abrir RECURSOS", self._si)
+        self._btn_si.pack(side="left", ipadx=12, ipady=4)
+        self._btn_no = self._boton(fila, "No", self._no)
+        self._btn_no.pack(side="left", padx=8, ipadx=18, ipady=4)
+        self._construir_guia("   Después pulsa «Actualizar Catálogo Asignaciones»: la Consola completa los datos "
+                             "SAP del catálogo y los envía a la web.")
+
+    def _mostrar_boton(self, texto_estado):
+        for nombre in ("_btn_si", "_btn_no"):
+            if hasattr(self, nombre):
+                getattr(self, nombre).configure(state="disabled")
+        self._lbl_estado.configure(text=texto_estado, fg=C_TEXT_LIGHT)
+        if not self._btn_actualizar.winfo_manager():          # aún sin colocar (oculto)
+            self._btn_actualizar.pack(side="left", ipadx=12, ipady=4)
+        self._btn_actualizar.focus_set()
+
+    # ── Estado de la descarga (tras «Sí») ────────────────────────────────────────────────────────────
+    def _leer_en_hilo(self, nombre, ruta, fuera, mtime):
+        def _hilo():
+            try:
+                self._contiene[nombre] = self._leer(nombre, ruta, fuera)
+            except Exception:  # noqa: BLE001 — a medio copiar o abierto: se vuelve a intentar en 2 s
+                self._leido.pop(nombre, None)
+        self._leido[nombre] = mtime
+        self._contiene.pop(nombre, None)
+        threading.Thread(target=_hilo, daemon=True).start()
+
+    def _comprobar_archivos_nuevos(self):
+        """Lee de nuevo (en un hilo) cada listado descargado de nuevo que tenía que traer códigos."""
+        for nombre, ruta in L.rutas(self._recursos).items():
+            fuera = self._diag["fuera_por_listado"].get(nombre) or []
+            if not fuera:
+                continue
+            try:
+                mtime = os.path.getmtime(ruta)
+            except OSError:
+                continue
+            if mtime >= self._desde and self._leido.get(nombre) != mtime and not abierto_en_excel(ruta):
+                self._leer_en_hilo(nombre, ruta, fuera, mtime)
+
+    def _estado(self):
+        return L.estado_descarga(self._recursos, self._desde, self._diag["fuera_por_listado"], self._contiene)
+
+    def _vigilar(self):
+        if not self.winfo_exists():
+            return
+        self._comprobar_archivos_nuevos()
+        estado = self._estado()
+        texto = "    ".join(f"{'✔' if listo else '○'} {nombre}: {t}" for nombre, listo, t in estado)
+        listos = all(listo for _n, listo, _t in estado)
+        self._lbl_estado.configure(text=L.TEXTO_DESCARGANDO + "\n" + texto, fg=C_SUCCESS if listos else C_WARNING)
+        self.after(2000, self._vigilar)
+
+    # ── Acciones ─────────────────────────────────────────────────────────────────────────────────────
+    def _si(self):
+        self.respuesta = True
+        self._desde = time.time()
+        self._abrir_recursos()
+        self._mostrar_boton(L.TEXTO_DESCARGANDO)
+        self._vigilar()
+
+    def _no(self):
+        self.respuesta = False
+        self._mostrar_boton(L.TEXTO_BOTON)
+
+    def _actualizar(self):
+        if self.respuesta:
+            pendientes = [f"{nombre}: {t}" for nombre, listo, t in self._estado() if not listo]
+            if pendientes and not messagebox.askyesno(
+                    "Listados de SAP",
+                    "Todavía no están listos en RECURSOS:\n\n   " + "\n   ".join(pendientes)
+                    + "\n\n¿Actualizar Catálogo Asignaciones igualmente?", parent=self):
+                return
+        self.resultado = "actualizar"
+        self.destroy()
+
+    def _cancelar(self):
+        self.resultado = "cancelar"
         self.destroy()
