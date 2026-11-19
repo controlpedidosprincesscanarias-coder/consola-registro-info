@@ -34,6 +34,7 @@ from app.rinfo.comun_rinfo import (  # noqa: F401
     AVISO_SIN_UNIDAD,
     _CENTROS_LIST,
     _LogAgrupado,
+    _LogPorMaterial,
     _eliminar_filas_agrupadas,
     _localizar_ruta_listado_dali,
     _localizar_ruta_productos,
@@ -2411,8 +2412,12 @@ class GeneradorDesdeExistente:
 
         # Agrupadores de log: condensan las líneas repetitivas (una por
         # centro, hasta 10 por material) en una única línea resumen.
-        _agr_j_omitida    = _LogAgrupado(self._parent)
-        _agr_absorcion_6c = _LogAgrupado(self._parent)
+        # (19 nov 2026, petición de Víctor: «mucho log amarillo») Estos dos no piden hacer nada: una línea
+        # informativa al final con los materiales, no una línea amarilla por material.
+        _agr_j_omitida    = _LogPorMaterial(
+            self._parent, "sin cambios: su periodo ya lo cubre una tarifa posterior con el mismo precio")
+        _agr_absorcion_6c = _LogPorMaterial(
+            self._parent, "con el periodo heredado igual o dentro del nuevo: se sustituye por el nuevo")
         # (18 nov 2026) Periodo posterior solapado (CASO C): agrupado por material. Su
         # aviso anterior («cierre inválido evitado») salió 9.540 veces en CASA DELFIN
         # (16-11), una línea por fila, y el paso 6c tardó ~64 min.
@@ -2826,8 +2831,7 @@ class GeneradorDesdeExistente:
             _eliminar_filas_agrupadas(ws_h3_act, estado.filas_a_eliminar_6c)
             _log(self._parent,
                  f"  H3: {len(estado.filas_a_eliminar_6c)} fila(s) absorbidas totalmente "
-                 f"ELIMINADAS en paso 6c "
-                 f"(filas: {sorted(estado.filas_a_eliminar_6c)}).", "INFO")
+                 f"ELIMINADAS en paso 6c.", "INFO")
 
         # Las claves PIR absorbidas totalmente representan un cambio real
         # (el período heredado deja de existir; SAP recibirá un período

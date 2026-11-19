@@ -1515,6 +1515,16 @@ Petición de Víctor (con captura de la Acción 4 de B Refreshing): «la ventana
 
 ---
 
+## 81. Crear Registro Info: borrado de filas en una pasada y menos log amarillo (19 nov 2026, v10.2.82) — PR en GitHub
+
+Petición de Víctor (log del RINFO de PRO A PRO, 12:52–12:56): «¿por qué tarda este proceso RINFO tanto? Mucho log amarillo».
+- **Causa de la espera:** el paso 6c borraba 690 filas absorbidas de la Hoja 3, una de cada tres. `_eliminar_filas_agrupadas` agrupaba filas seguidas, pero salteadas seguían siendo 690 `delete_rows()`, y cada uno recorre y mueve todas las celdas de la hoja (~5.400 filas × 27 columnas). Medido en local con su Purchasing: **94 s**. Ahora recoloca todas las celdas de una vez (cada fila sube tantas posiciones como filas borradas tenga encima): **0,2 s**. Resultado idéntico celda por celda, comprobado en local con su Purchasing (690 salteadas y un borrado al azar) y en `tests/test_eliminar_filas.py` con datos inventados. Error en su propio commit.
+- **Log:** «actualización J omitida (mismo precio)» y «absorción TOTAL» salían como aviso, una línea por material (65 en PRO A PRO), sin que hubiera que hacer nada. Ahora `_LogPorMaterial` (`comun_rinfo.py`) escribe una línea informativa al final con el número de materiales y filas y los 15 primeros. La línea «690 fila(s) absorbidas totalmente ELIMINADAS» ya no lista los 690 números de fila. Siguen en amarillo: periodos solapados con precio distinto, inicio retrasado, casos irregulares y categoría de valoración distinta según el centro.
+- **Pruebas:** 308 en verde.
+- **No probado:** generar el RINFO completo con sus archivos (necesita el catálogo y `Productos.xlsx` de RECURSOS y las ventanas de fechas, centros y materiales sin tarifa). Queda por ver en Windows que el RINFO de PRO A PRO sale igual y en segundos.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
 - ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).

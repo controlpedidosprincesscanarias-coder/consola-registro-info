@@ -73,6 +73,7 @@ from app.rinfo.comun_rinfo import (  # noqa: F401  (reexportados: tarifa_app, pr
     URL_SAP,
     _CENTROS_LIST,
     _LogAgrupado,
+    _LogPorMaterial,
     _RE_FORMAS_SOC,
     _RE_INCOMPLETO,
     _RE_PATRON_TARIFA,
