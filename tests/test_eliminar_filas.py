@@ -77,5 +77,32 @@ class EliminarFilas(unittest.TestCase):
         self.assertEqual(ws.max_row, 6000 - 700)
 
 
+class LogPorMaterial(unittest.TestCase):
+    """(19 nov 2026) Los avisos que no piden hacer nada salen en UNA línea informativa con los materiales."""
+
+    def test_una_linea_con_los_materiales(self):
+        from unittest import mock
+        from app.rinfo import comun_rinfo as C
+        lineas = []
+        with mock.patch.object(C, "_log", lambda _p, m, n="INFO": lineas.append((m, n))):
+            agr = C._LogPorMaterial(None, "sin cambios")
+            for mat in ["10100001"] * 10 + ["10100002"] * 10:
+                agr.registrar(clave=("x", mat), fila=1, centro="0110", nivel="WARN", plantilla="{mat}", mat=mat)
+            agr.flush()
+            agr.flush()                                     # sin nada pendiente no escribe otra vez
+        self.assertEqual(lineas, [("  H3: 2 material(es) sin cambios (20 fila(s)): 10100001, 10100002.", "INFO")])
+
+    def test_lista_corta_con_muchos_materiales(self):
+        from unittest import mock
+        from app.rinfo import comun_rinfo as C
+        lineas = []
+        with mock.patch.object(C, "_log", lambda _p, m, n="INFO": lineas.append(m)):
+            agr = C._LogPorMaterial(None, "x")
+            for i in range(20):
+                agr.registrar(mat=str(i))
+            agr.flush()
+        self.assertIn("… y 5 más", lineas[0])
+
+
 if __name__ == "__main__":
     unittest.main()

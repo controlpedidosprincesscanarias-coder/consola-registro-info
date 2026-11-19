@@ -940,6 +940,40 @@ class _LogAgrupado:
             self._filas = []
             self._centros = []
 
+class _LogPorMaterial:
+    """
+    (19 nov 2026, petición de Víctor: «mucho log amarillo») Mismo uso que _LogAgrupado (registrar/flush), pero
+    para casos que no piden hacer nada: en vez de una línea por material, UNA línea al final con cuántos
+    materiales y filas y la lista de materiales (los 15 primeros).
+    """
+    MAX_LISTA = 15
+
+    def __init__(self, parent, texto, nivel="INFO"):
+        self._parent = parent
+        self._texto = texto
+        self._nivel = nivel
+        self._mats: list = []
+        self._filas = 0
+
+    def registrar(self, clave=None, fila=None, centro=None, nivel=None, plantilla=None, mat=None, **_ctx):
+        if mat is not None and mat not in self._mats:
+            self._mats.append(mat)
+        self._filas += 1
+
+    def flush(self):
+        if not self._mats:
+            return
+        lista = ", ".join(str(m) for m in self._mats[:self.MAX_LISTA])
+        if len(self._mats) > self.MAX_LISTA:
+            lista += f" … y {len(self._mats) - self.MAX_LISTA} más"
+        try:
+            _log(self._parent, f"  H3: {len(self._mats)} material(es) {self._texto} "
+                               f"({self._filas} fila(s)): {lista}.", self._nivel)
+        finally:
+            self._mats = []
+            self._filas = 0
+
+
 def _safe_after(widget, fn, delay: int = 0):
     """
     Llama widget.after(delay, fn) solo si el widget todavía existe.
