@@ -758,12 +758,35 @@ def _buscar_proveedor_en_xlsx(nombre_dali: str, ruta_proveedores: str) -> list:
             unicos.append((s, n, c))
     return unicos
 
+def _fecha_purchasing(ruta, wb=None):
+    """(19 nov 2026) Cuándo se descargó un Purchasing de SAP: la fecha de creación que SAP pone al exportar el
+    Excel y, si no la tiene, la de modificación del archivo. Como datetime (o None)."""
+    from datetime import datetime
+    try:
+        creado = wb.properties.created if wb is not None else None
+        if creado:
+            return creado
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        return datetime.fromtimestamp(os.path.getmtime(ruta))
+    except OSError:
+        return None
+
+
 def _buscar_purchasing_compatible(nombre_proveedor: str,
                                   carpeta_tarifas: str) -> dict | None:
+    """El Purchasing Info Records de TARIFAS cuyo proveedor más se parece a `nombre_proveedor`.
+
+    (19 nov 2026, caso real GRUPO DISTRIBUIDOR GARAU) Si hay varios con el mismo parecido (lo normal: el de ayer y
+    el que se acaba de descargar, «Purchasing Info Records (n).xlsx»), gana **el más reciente**. Antes ganaba el
+    primero que devolvía la carpeta: se usó el Purchasing de antes de importar el RINFO anterior, los materiales ya
+    creados en SAP salieron como nuevos y SAP contestó «Ya existe el registro Info de compras…». `fecha` va en el
+    resultado para decirlo en la consola."""
     HOJA_P   = "Info general p.reg.info"
     COL_PROV = 3
 
-    mejor = {"ruta": None, "score": 0, "proveedor_purchasing": None, "archivo": None}
+    mejor = {"ruta": None, "score": 0, "proveedor_purchasing": None, "archivo": None, "fecha": None}
 
     try:
         for entry in os.scandir(carpeta_tarifas):
@@ -777,17 +800,21 @@ def _buscar_purchasing_compatible(nombre_proveedor: str,
                     entry.path, read_only=True, data_only=True)
                 if HOJA_P in wb_p.sheetnames:
                     ws_p = wb_p[HOJA_P]
+                    fecha = _fecha_purchasing(entry.path, wb_p)
                     for i, row in enumerate(ws_p.iter_rows(
                             min_row=2, values_only=True)):
                         if len(row) > COL_PROV and row[COL_PROV]:
                             prov = str(row[COL_PROV]).strip()
                             if prov:
                                 score = _similitud(nombre_proveedor, prov)
-                                if score > mejor["score"]:
+                                mas_reciente = (entry.path != mejor["ruta"] and fecha is not None and
+                                                (mejor["fecha"] is None or fecha > mejor["fecha"]))
+                                if score > mejor["score"] or (score == mejor["score"] and mas_reciente):
                                     mejor["score"]                = score
                                     mejor["ruta"]                 = entry.path
                                     mejor["archivo"]              = entry.name
                                     mejor["proveedor_purchasing"] = prov
+                                    mejor["fecha"]                = fecha
                         if i > 500:
                             break
                 wb_p.close()

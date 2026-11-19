@@ -190,6 +190,8 @@ s.push(...imagen("c_rinfo_tarifa", 12, "Elegir la TARIFA."));
 s.push(...leyenda([[1, "TARIFAS finales disponibles (no salen las [INCOMPLETO] ni los RINFO)."], [2, "**Continuar**: la consola busca el proveedor en Proveedores.xlsx y un Purchasing compatible en TARIFAS."]]));
 s.push(h2("Si el proveedor ya tiene Registros Info en SAP (Purchasing encontrado)"));
 s.push(p("Si en TARIFAS hay un **Purchasing Info Records.xlsx** de ese proveedor (descargado de SAP), la consola lo usa como base: conserva los registros que ya existen, actualiza precios y fechas y añade los materiales nuevos de la tarifa."));
+s.push(...recuadro("importante", "Descarga el Purchasing después de cada importación", ["El Purchasing tiene que estar **descargado después de importar en SAP el RINFO anterior** de ese proveedor. Con uno de antes, los materiales que ese RINFO ya creó salen otra vez como nuevos y SAP contesta **«Ya existe el registro Info de compras…»**.",
+  "Si en TARIFAS hay varios Purchasing del mismo proveedor (por ejemplo, «Purchasing Info Records (2).xlsx»), la consola usa **el más reciente** y dice en la consola cuándo se descargó. Puedes borrar los antiguos."]));
 s.push(...imagen("c_rinfo_purchasing", 12, "Purchasing Info Records encontrado."));
 s.push(...leyenda([[1, "**Proveedor SAP** (nombre y código) encontrado en Proveedores.xlsx."], [2, "El **Purchasing** encontrado y su parecido con el proveedor."],
   [3, "**Continuar usando este Purchasing** (lo normal)."], [4, "**Comenzar desde cero**: un Registro Info nuevo sin tener en cuenta el Purchasing."]]));
