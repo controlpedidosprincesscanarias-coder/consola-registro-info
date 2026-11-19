@@ -99,6 +99,26 @@ class TestRegenerar(Base):
         self.assertEqual(t["30"]["cod_sap"], "3000")
         self.app._publicar_catalogo_web.assert_called()
 
+    def test_cambio_de_nombre_del_proveedor_conserva_codigo_y_precio(self):
+        """19 nov 2026: «B REFRESCOS … ( BEBIDAS … )» → «B REFRESCOS S.L.» en todos sus artículos es el mismo
+        proveedor: no se vacían su código de proveedor ni su precio. Un cambio de proveedor de verdad, sí."""
+        largo, corto = "B REFRESCOS DEMO S.L. ( BEBIDAS DEMO SL )", "B REFRESCOS DEMO S.L."
+        crear_catalogo(self.cat, [
+            {"clave": 78, "descripcion": "COLA", "proveedor": largo, "cod_prov": "101021", "precio": 24.49, "activo": "SI"},
+            {"clave": 79, "descripcion": "NARANJA", "proveedor": largo, "cod_prov": "100023", "precio": 21.21, "activo": "SI"},
+            {"clave": 1941, "descripcion": "SALMON", "proveedor": "AHUMADOS DEMO SA", "precio": 9.5, "activo": "SI"},
+            {"clave": 1943, "descripcion": "TRUCHA", "proveedor": "AHUMADOS DEMO SA", "precio": 12.95, "activo": "SI"},
+        ])
+        crear_articulos_dali(self.dali, [_dali(78, "COLA", corto), _dali(79, "NARANJA", corto),
+                                         _dali(1941, "SALMON", "AHUMADOS DEMO SA"), _dali(1943, "TRUCHA", "PESCADOS DEMO SL")])
+        self.app._regenerar_catalogo_dali_completo()
+        t = self.tabla()
+        self.assertEqual((t["78"]["proveedor"], t["78"]["cod_prov"], t["78"]["precio"]), (corto, "101021", 24.49))
+        self.assertEqual((t["79"]["cod_prov"], t["79"]["precio"]), ("100023", 21.21))
+        self.assertIsNone(t["1943"]["precio"], "cambio de proveedor de verdad: el precio del anterior se vacía")
+        self.assertEqual(t["1941"]["precio"], 9.5)
+        self.assertTrue(any("Proveedor renombrado en DALI" in m for _n, m in self.app.logs))
+
     def test_con_listado_lo_pasa_una_vez_y_lo_renombra(self):
         crear_catalogo(self.cat, [{"clave": 10, "descripcion": "MANZANA", "cod_sap": "1000"}])
         crear_listado(C.ruta_listado(self.proyecto),

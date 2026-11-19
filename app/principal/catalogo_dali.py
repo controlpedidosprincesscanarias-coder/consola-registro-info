@@ -42,6 +42,7 @@ from app.comun.sap_helpers import (
 # (Hasta nov 2026, en tarifa_app.py.)
 # Desde v10.2.50 la URL está en app/comun/catalogo_web.py (la usa también el envío de cambios a la web).
 from app.comun.catalogo_web import DALI_APP_API_BASE  # noqa: E402
+from app.comun import renombres_proveedor  # noqa: E402
 
 
 class CatalogoDali:
@@ -724,6 +725,16 @@ class CatalogoDali:
         def _normalizar(v):
             return str(v).strip().upper() if v not in (None, "") else ""
 
+        # (19 nov 2026, decisión de Víctor) Cambios de nombre del proveedor en DALI: todos sus artículos pasan a un
+        # nombre nuevo. Es el mismo proveedor: se conservan su código de proveedor y su precio (y la web lo renombra).
+        _renombres = renombres_proveedor.detectar(
+            {c: p for c, (_cp, p) in _datos_previos.items()},
+            {c: tabla_dali[c]["proveedor"] for c in _codigos_ordenados})
+        for _r in _renombres:
+            self.log_consola(
+                f"  ↻ Proveedor renombrado en DALI: «{_r['antes']}» → «{_r['despues']}» ({_r['articulos']} artículo(s)): "
+                "es el mismo proveedor, se conservan sus códigos de proveedor y precios.", "INFO")
+
         for clave in _codigos_ordenados:
             d = tabla_dali[clave]
             s = tabla_sap.get(clave, {})
@@ -734,7 +745,8 @@ class CatalogoDali:
             if clave in _datos_previos:
                 cod_prov_prev, prov_asig_prev = _datos_previos[clave]
                 precio_prev = _precios_previos.get(clave)
-                if _normalizar(prov_asig_prev) == _normalizar(prov_asig_nuevo):
+                if (_normalizar(prov_asig_prev) == _normalizar(prov_asig_nuevo)
+                        or renombres_proveedor.es_renombre(_renombres, prov_asig_prev, prov_asig_nuevo)):
                     # Proveedor Asignado sin cambios -> conservar Código
                     # Proveedor y Precio € (ambos dependen del proveedor)
                     cod_prov = cod_prov_prev

@@ -477,8 +477,11 @@ class ClienteCatalogo:
             q["desde"] = desde
         return self._peticion("GET", "/admin/catalogo/cambios?" + urlencode(q))
 
-    def lote(self, origen, filas, simular, proveedor_tarifa=None, archivo=None, sincronizado_desde=None):
+    def lote(self, origen, filas, simular, proveedor_tarifa=None, archivo=None, sincronizado_desde=None,
+             renombres_proveedor=None):
         cuerpo = {"origen": origen, "simular": bool(simular), "filas": filas}
+        if renombres_proveedor:                   # (19 nov 2026) solo accion2; web v1.20.72 o posterior
+            cuerpo["renombres_proveedor"] = [{"antes": r["antes"], "despues": r["despues"]} for r in renombres_proveedor]
         if proveedor_tarifa:
             cuerpo["proveedor_tarifa"] = proveedor_tarifa
         if archivo:
@@ -530,14 +533,16 @@ def comprobar_acceso(cliente, email, password):
 
 
 # ── Enviar un grupo entero (simular o aplicar), por lotes ─────────────────────────────────────────────
-def enviar_grupo(cliente, grupo, por_proveedor, simular, archivo=None, sincronizado_desde=None):
-    """Envía las filas de un grupo. Devuelve el resumen sumado y las listas de cambios, irregulares y avisos."""
+def enviar_grupo(cliente, grupo, por_proveedor, simular, archivo=None, sincronizado_desde=None, renombres=None):
+    """Envía las filas de un grupo. Devuelve el resumen sumado y las listas de cambios, irregulares y avisos.
+    `renombres`: cambios de nombre de proveedor (renombres_proveedor.detectar), solo para accion2."""
     total = {"recibidas": 0, "nuevos": 0, "cambiados": 0, "sin_cambios": 0, "irregulares": 0, "editados_en_web": 0}
     cambios, irregulares, avisos = [], [], []
     for proveedor, filas in por_proveedor.items():
         for lote in en_lotes(filas):
             r = cliente.lote(grupo, lote, simular, proveedor_tarifa=proveedor if grupo == "accion4" else None,
-                             archivo=archivo, sincronizado_desde=sincronizado_desde)
+                             archivo=archivo, sincronizado_desde=sincronizado_desde,
+                             renombres_proveedor=renombres if grupo == "accion2" else None)
             for k in total:
                 total[k] += int((r.get("resumen") or {}).get(k) or 0)
             cambios.extend(r.get("cambios") or [])

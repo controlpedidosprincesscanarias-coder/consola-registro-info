@@ -134,6 +134,22 @@ class TestPublicar(unittest.TestCase):
             self.app._publicar_catalogo_web_una_vez("Acción 4", None)
         self.assertEqual(len(self._lotes(True)), antes, "ya coinciden: no se envía nada")
 
+    def test_cambio_de_nombre_del_proveedor_se_manda_a_la_web_y_no_se_repite(self):
+        """19 nov 2026: todos los artículos de «PROV A» pasan a «PROV A S.L.» (nombre nuevo): el lote de datos DALI
+        lleva renombres_proveedor; después la copia de la web ya tiene el nombre nuevo y no se vuelve a enviar."""
+        _excel(self.ruta, [{"Código DALI": 1, "Descripción - DALI": "Tomate", "Activo": "SI",
+                            "Proveedor Asignado - DALI": "PROV A S.L.", "Precio €": 1.0, "Código SAP": "S1"}])
+        with mock.patch.object(V, "pedir_confirmacion", lambda *a: (True, False)):
+            self.app._publicar_catalogo_web_una_vez("Acción 1", None)
+        lotes = [l for l in self._lotes(False) if l["origen"] == "accion2"]
+        self.assertEqual(lotes[0]["renombres_proveedor"], [{"antes": "PROV A", "despues": "PROV A S.L."}])
+        self.assertTrue(any("Proveedor renombrado en DALI" in m for _n, m in self.app.logs))
+        self.assertEqual(W.Cache(self.cache).cargar().articulos[1]["proveedor"], "PROV A S.L.")
+        antes = len(self._lotes(True))
+        with mock.patch.object(V, "pedir_confirmacion", lambda *a: self.fail("no debía preguntar")):
+            self.app._publicar_catalogo_web_una_vez("Acción 1", None)
+        self.assertEqual(len(self._lotes(True)), antes)
+
     def test_ahora_no_no_envia_nada(self):
         with mock.patch.object(V, "pedir_confirmacion", lambda *a: (False, False)):
             self.app._publicar_catalogo_web_una_vez("Acción 2", None)

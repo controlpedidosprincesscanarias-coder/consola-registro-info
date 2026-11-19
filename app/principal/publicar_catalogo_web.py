@@ -24,6 +24,7 @@ from contextlib import nullcontext
 from app.comun import catalogo_local
 from app.comun import catalogo_web as W
 from app.comun import estado_web
+from app.comun import renombres_proveedor
 from app.comun.credenciales import borrar_credenciales_dali
 from app.comun.tarifa_constants import C_ERROR, C_MUTED, C_SUCCESS
 from app.comun.tarifa_core import FOLDER_RECURSOS, guardar_config
@@ -286,12 +287,22 @@ class PublicarCatalogoWeb:
                 log("  └ La web ya coincide con el catálogo local: no hay nada que enviar.", "OK")
                 return
 
+            # (19 nov 2026, decisión de Víctor) Cambios de nombre del proveedor en DALI: la web lo renombra en vez de
+            # dar de alta otro y vaciar sus precios.
+            renombres = renombres_proveedor.detectar(
+                {cod: art.get("proveedor") for cod, art in cache.articulos.items()},
+                {cod: art.get("proveedor") for cod, art in local.items()})
+            for r_ in renombres:
+                log(f"  ↻ Proveedor renombrado en DALI: «{r_['antes']}» → «{r_['despues']}» ({r_['articulos']} artículo(s)): "
+                    "se renombra en la web, sin crear otro ni vaciar precios.", "INFO")
+
             simulaciones = {}
             for grupo in W.GRUPOS:
                 filas = W.filas_para_enviar(dif, grupo, incluir_editados=True)
                 if filas:
                     simulaciones[grupo] = W.enviar_grupo(cliente, grupo, filas, simular=True, archivo=archivo,
-                                                         sincronizado_desde=cache.publicado_hasta)
+                                                         sincronizado_desde=cache.publicado_hasta,
+                                                         renombres=renombres)
 
             aplicar, _ = self._ejecutar_en_hilo_principal_y_esperar(
                 lambda: ventana_publicar_catalogo.pedir_confirmacion(self, dif, simulaciones, motivo))
@@ -302,19 +313,24 @@ class PublicarCatalogoWeb:
                 return
 
             rechazados = {}                           # código de proveedor que la web no acepta: {dali: irregular}
+            sin_renombrar = set()                     # cambios de nombre que la web no pudo hacer (nombre ya cogido)
             for grupo in W.GRUPOS:                    # en orden: altas (accion2), SAP (accion3), precios (accion4)
                 filas = W.filas_para_enviar(dif, grupo, incluir_editados)
                 if not filas:
                     continue
                 r = W.enviar_grupo(cliente, grupo, filas, simular=False, archivo=archivo,
-                                   sincronizado_desde=cache.publicado_hasta)
+                                   sincronizado_desde=cache.publicado_hasta, renombres=renombres)
                 res = r["resumen"]
                 log(f"  {W.NOMBRE_GRUPO[grupo]}: {res['nuevos']} alta(s), {res['cambiados']} cambiado(s), "
                     f"{res['irregulares']} sin aplicar.", "OK" if not res["irregulares"] else "WARN")
+                for aviso in list(dict.fromkeys(r.get("avisos") or []))[:20]:   # (19 nov 2026) lo que dice la web
+                    log(f"    · {aviso}", "INFO")
                 nuevos = {d["codigo_dali"] for d in dif["accion2"] if d["nuevo"]}
                 for irr in r["irregulares"]:
                     if irr.get("tipo") == "no_existe" and irr.get("codigo_dali") in nuevos:
                         continue
+                    if irr.get("tipo") == "renombre_proveedor_duplicado":
+                        sin_renombrar.add(renombres_proveedor.normal(irr.get("antes")))
                     if irr.get("tipo") == "codigo_proveedor_distinto" and irr.get("antes"):
                         rechazados[irr.get("codigo_dali")] = irr        # se arregla abajo, en el catálogo local
                         continue
@@ -322,6 +338,9 @@ class PublicarCatalogoWeb:
                         "— corrígelo para que la web y el catálogo local coincidan.", "WARN")
             if rechazados:
                 local = self._quedarse_codigo_de_la_web(ruta_local, rechazados, local)
+            renombrados = [x for x in renombres if renombres_proveedor.normal(x["antes"]) not in sin_renombrar]
+            if renombrados:                           # la web los ha renombrado: la copia local de la web, igual
+                renombres_proveedor.aplicar_a(cache.articulos, renombrados)
 
             W.actualizar_protegidos(cache, dif, incluir_editados)
             cache.sincronizar(cliente)                # trae lo recién aplicado
