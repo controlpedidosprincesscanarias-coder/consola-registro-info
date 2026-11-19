@@ -819,23 +819,28 @@ def _eliminar_filas_agrupadas(ws: "openpyxl.worksheet.worksheet.Worksheet",
     tardase varios minutos en el paso "eliminación física (coherencia con
     Hoja2)". Agrupando en rangos contiguos el número de desplazamientos se
     reduce al mínimo imprescindible, sin cambiar el resultado final.
+
+    (19 nov 2026) Agrupar no bastaba cuando las filas están salteadas (caso real: 690 filas de la Hoja 3, una
+    de cada tres, en un Purchasing de PRO A PRO): seguían siendo 690 llamadas a delete_rows(), y cada una
+    recorre y mueve todas las celdas de la hoja (94 s). Ahora se recolocan todas las celdas en UNA pasada:
+    cada fila que se queda sube tantas posiciones como filas borradas tenga por encima. El resultado es el
+    mismo que con delete_rows() (que tampoco toca alturas de fila, celdas combinadas ni fórmulas); lo
+    comprueba tests/test_eliminar_filas.py.
     """
     if not filas:
         return
-    filas_ordenadas = sorted(set(filas))
-    rangos = []
-    inicio = anterior = filas_ordenadas[0]
-    for f in filas_ordenadas[1:]:
-        if f == anterior + 1:
-            anterior = f
+    from bisect import bisect_left
+    borrar = sorted(set(filas))
+    a_borrar = set(borrar)
+    nuevas = {}
+    for (fila, col), celda in sorted(ws._cells.items()):
+        if fila in a_borrar:
             continue
-        rangos.append((inicio, anterior))
-        inicio = anterior = f
-    rangos.append((inicio, anterior))
-
-    # Rangos en orden descendente para no desplazar los que faltan por borrar.
-    for inicio_r, fin_r in sorted(rangos, reverse=True):
-        ws.delete_rows(inicio_r, fin_r - inicio_r + 1)
+        nueva_fila = fila - bisect_left(borrar, fila)
+        celda.row = nueva_fila
+        nuevas[(nueva_fila, col)] = celda
+    ws._cells = nuevas
+    ws._current_row = ws.max_row if nuevas else 0
 
 def _log(app_o_consola, mensaje: str, nivel: str = "INFO"):
     """
