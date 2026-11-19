@@ -17,7 +17,6 @@ descargar los listados (ver su docstring).
 import os
 import sys
 import threading
-import time
 import tkinter as tk
 from tkinter import messagebox, ttk
 
@@ -31,7 +30,7 @@ from app.comun.tarifa_core import cargar_icono_ventana
 
 
 class VentanaListadosSap(tk.Toplevel):
-    def __init__(self, parent, codigos_fuera, carpeta_recursos, ahora=None):
+    def __init__(self, parent, codigos_fuera, carpeta_recursos, fechas_antes=None):
         super().__init__(parent)
         self.title("Faltan los listados de SAP actualizados")
         self.configure(bg=C_MID)
@@ -40,7 +39,9 @@ class VentanaListadosSap(tk.Toplevel):
         self.resultado = "despues"
         self._codigos = list(codigos_fuera)
         self._recursos = carpeta_recursos
-        self._desde = time.time() if ahora is None else ahora
+        # (v10.2.78) Fechas de los listados al salir el aviso: «descargado de nuevo» = su fecha ha cambiado. Antes se
+        # comparaba con la hora del PC, y en la unidad G: la fecha del archivo la pone el reloj del servidor.
+        self._desde = L.fechas_listados(carpeta_recursos) if fechas_antes is None else fechas_antes
         self._imagenes = []
         self._construir()
         self.protocol("WM_DELETE_WINDOW", self._mas_tarde)

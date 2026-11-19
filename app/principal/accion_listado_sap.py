@@ -581,7 +581,7 @@ class AccionListadoSap:
 
         self.after(0, _mostrar_resultado)
 
-    def _avisar_listados_sap(self, codigos_sap, desde=None):
+    def _avisar_listados_sap(self, codigos_sap):
         """(13 nov 2026, petición de Víctor) Tras guardar códigos SAP (Acción 8 o códigos SAP faltantes de la
         Acción 4): si alguno no está en Productos.xlsx, avisa de que faltan los listados de SAP actualizados, guía la
         descarga (app/ui/ventana_listados_sap.py) y, cuando están en RECURSOS, lanza sola la Acción 3. Si se deja para
@@ -603,7 +603,7 @@ class AccionListadoSap:
         fuera = listados_sap.codigos_sin_datos(codigos_sap, tabla)
         if not fuera:
             return None
-        ven = VentanaListadosSap(self, fuera, recursos, ahora=desde)
+        ven = VentanaListadosSap(self, fuera, recursos)
         self.wait_window(ven)
         if ven.resultado == "actualizar":
             self.log_consola("Listados de SAP actualizados en RECURSOS: se lanza la Acción 3 para completar los "
