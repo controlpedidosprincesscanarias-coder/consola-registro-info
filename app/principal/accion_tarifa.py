@@ -1336,12 +1336,10 @@ class AccionesTarifa:
                                 self.after(0, lambda: self._barra.completado(
                                     "Reinscripción SAP completada"))
                                 _barra_finalizada["v"] = True
-                                messagebox.showinfo(
-                                    "Tarifa completada",
-                                    f"✔  Todos los códigos SAP completados "
-                                    f"y sin duplicados.\n\n"
-                                    f"Archivo renombrado a:\n{_nuevo}\n\n"
-                                    f"\n✔  TARIFA PREPARADA PARA CREAR O MODIFICAR REGISTRO INFO SAP.")
+                                # (19 nov 2026, petición de Víctor) Sin ventana: va al log (y el envío a la web
+                                # tiene su propia ventana).
+                                self.log_consola("  ✔ Todos los códigos SAP completados y sin duplicados.", "OK")
+                                self.log_consola("  ✔ TARIFA PREPARADA PARA CREAR O MODIFICAR REGISTRO INFO SAP.", "OK")
                             else:
                                 # Aún quedan duplicados o códigos sin completar:
                                 # el catálogo NO se toca todavía (no está lista),
@@ -1451,8 +1449,14 @@ class AccionesTarifa:
                 self.after(0, lambda: self._barra.reset(
                     "Revisar duplicados/pendientes"))
                 _barra_finalizada["v"] = True
-            _fn_msg = messagebox.showwarning if _hay_inc else messagebox.showinfo
-            self.after(0, lambda t=_titulo, m=_msg_fin, fn=_fn_msg: fn(t, m))
+            # (19 nov 2026, petición de Víctor) Si todo ha ido bien no sale ventana: el resumen va al log y lo que
+            # cambia en la web sale en «Cambios para Catálogo Asignaciones». Solo se avisa si hay algo que revisar.
+            if _hay_inc or "⚠" in _msg_fin:
+                self.after(0, lambda t=_titulo, m=_msg_fin: messagebox.showwarning(t, m))
+            else:
+                for _linea in _msg_fin.split("\n"):
+                    if _linea.strip():
+                        self.log_consola(f"  {_linea.strip()}", "OK")
 
             # ── Avisar sobre SAP con código pero sin desc/unidad ─
             if _sap_sin_desc:
