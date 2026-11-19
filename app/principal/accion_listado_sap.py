@@ -511,6 +511,10 @@ class AccionListadoSap:
                                sp=sin_productos, sd=sin_dali,
                                ssf=sin_subfam, si=sin_igic):
             hay_warn = sp or sd or ssf or si
+            # (19 nov 2026, petición de Víctor) Si todo ha ido bien no sale ventana: lo que cambia se ve en
+            # «Cambios para Catálogo Asignaciones» y el resumen queda en el log. Solo se avisa de lo que hay que revisar.
+            if not hay_warn:
+                return
             lineas = [
                 "\u2714  Actualizaci\u00f3n SAP completada correctamente",
                 "",
@@ -531,11 +535,7 @@ class AccionListadoSap:
                     "Revise el log de consola para ver el detalle.",
                 ]
             lineas += ["", f"\U0001f4c1  {ruta_destino}"]
-            titulo = "SAP \u2014 Actualizaci\u00f3n completada" + (" con advertencias" if hay_warn else "")
-            if hay_warn:
-                messagebox.showwarning(titulo, "\n".join(lineas))
-            else:
-                messagebox.showinfo(titulo, "\n".join(lineas))
+            messagebox.showwarning("SAP \u2014 Actualizaci\u00f3n completada con advertencias", "\n".join(lineas))
 
         try:
             self._regenerar_catalogo_dali_completo(tabla_sap=tabla_sap)
