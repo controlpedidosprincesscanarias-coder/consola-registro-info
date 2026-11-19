@@ -1493,6 +1493,18 @@ Petición de Víctor (con capturas de la Acción 1): «eliminar los avisos obsol
 
 ---
 
+## 79. Cambio de nombre del proveedor en DALI y el aviso del DALI 21905 (19 nov 2026, v10.2.78) — PR en GitHub
+
+Con los logs de la Acción 1 del 19 nov. Víctor elige la opción A («reconocer el cambio de nombre») y arregla él esta vez los precios de B Refreshing.
+- **Lo que pasó:** DALI cambió «B REFRESHING COMPANY S.L. ( BEBIDAS REFRESCANTES CANARIAS SL )» a «B REFRESHING COMPANY S.L.». Al regenerar el catálogo se comparaba solo el nombre: se vaciaron el código de proveedor y el precio de sus 12 artículos y la web dio de alta un proveedor nuevo (y vació también el precio).
+- **Ahora:** `app/comun/renombres_proveedor.py` lo reconoce como cambio de nombre cuando todos los artículos de un proveedor pasan a un mismo nombre nuevo y no queda ninguno con el antiguo. Al regenerar se conservan código y precio («↻ Proveedor renombrado en DALI…» en la consola); al enviar, el lote de la Acción 2 lleva `renombres_proveedor` y la web (v1.20.72) renombra el proveedor (mismo id). Después se pone el nombre nuevo en la copia local de la web (`aplicar_a`), porque sus artículos no cambian y no volverían en «cambios»: sin esto se reenviarían siempre. La ventana de envío enseña el aviso de la web.
+- Un cambio de proveedor de verdad (DALI 1943, AHUMADOS → OASISFISH: AHUMADOS sigue con otros artículos) se trata como siempre.
+- **DALI 21905 («COMODIN»), en su propio commit:** la web tenía 243528 y no cambia un código ya guardado; el Excel tenía «COMODIN» y se reenviaba en cada envío, así que el aviso no se iba aunque estuviera corregido en la web. Ahora el código de la web baja al Excel (`_quedarse_codigo_de_la_web`) y se avisa una vez.
+- **Pruebas:** `tests/test_renombres_proveedor.py` (6), regeneración (cambio de nombre frente a cambio real), envío con `renombres_proveedor` sin repetirse y el caso del 21905. 301 en verde.
+- **No probado:** en Windows con datos reales y la web v1.20.72 desplegada. **Antes de la próxima Acción 1:** fusionar en Catálogo Asignaciones los dos proveedores de B Refreshing que se crearon el 19 nov.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
 - ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).

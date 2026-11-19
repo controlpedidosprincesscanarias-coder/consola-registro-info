@@ -43,6 +43,7 @@ class WebFalsa:
         self.estado_lote = estado_lote
         self.peticiones = []
         self.fallos_login = 0             # (18 nov 2026) cuántos inicios de sesión fallan por falta de red
+        self.irregulares = {}             # (19 nov 2026) {origen: [irregulares]} que devuelve el lote
 
     def __call__(self, req, timeout=None):
         url = urlparse(req.full_url)
@@ -68,6 +69,7 @@ class WebFalsa:
                                              io.BytesIO(b'{"error":"Sin permiso"}'))
             n = len(cuerpo["filas"])
             return _Resp(json.dumps({"ok": True, "simulado": cuerpo["simular"],
+                                     "irregulares": self.irregulares.get(cuerpo["origen"], []),
                                      "resumen": {"recibidas": n, "cambiados": n},
                                      "cambios": [{"codigo_dali": f["codigo_dali"]} for f in cuerpo["filas"]]}).encode())
         raise AssertionError(url.path)

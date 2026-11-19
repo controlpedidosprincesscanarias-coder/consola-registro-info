@@ -122,7 +122,10 @@ def pedir_confirmacion(parent, diferencias, simulaciones, motivo):
     txt.configure(yscrollcommand=barra.set)
     barra.pack(side="right", fill="y")
     txt.pack(side="left", fill="both", expand=True)
-    lineas = [f"⚠ DALI {irr.get('codigo_dali')} · {irr.get('detalle', irr.get('tipo'))}" for _g, irr in irregulares]
+    # (19 nov 2026) Avisos de la web en la simulación (p. ej., un proveedor que solo cambia de nombre en DALI).
+    avisos = list(dict.fromkeys(a for sim in simulaciones.values() for a in (sim.get("avisos") or [])))
+    lineas = [f"↻ {a}" for a in avisos]
+    lineas += [f"⚠ DALI {irr.get('codigo_dali')} · {irr.get('detalle', irr.get('tipo'))}" for _g, irr in irregulares]
     lineas += lineas_detalle(diferencias)
     if len(lineas) > MAX_LINEAS:
         lineas = lineas[:MAX_LINEAS] + [f"… y {len(lineas) - MAX_LINEAS} línea(s) más (el detalle completo queda en la consola)."]
