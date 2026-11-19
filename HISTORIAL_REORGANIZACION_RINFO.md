@@ -1446,11 +1446,24 @@ Petición de Víctor (13 nov 2026, «Próximos pasos»): que al pulsar la Acció
 
 ---
 
+## 75. La Acción 1 también con ARTICULOS.htm (19 nov 2026, v10.2.76) — PR en GitHub
+
+Petición de Víctor: «cuando se pulsa la Acción 1, actualmente la aplicación busca los Excel ARTICULOS1 y 2 para trabajar; necesito que también se pueda realizar la misma operación con ARTICULOS.htm».
+- **Qué es ARTICULOS.htm:** el listado de artículos de DALI exportado como informe ActiveReports (53 MB, 1.214 páginas). Cada celda es un `<span>` colocado por posición: una fila por `top` dentro de su página y una columna por `left`. Trae en un solo archivo las 9 columnas de ARTICULOS1 + ARTICULOS2, en el mismo orden, y al final «Total Líneas: N».
+- **Lector** `app/acciones/articulos_htm.py` (sin tkinter): saca las filas, comprueba que haya 9 columnas (si no, explica cómo descargarlo) y el «Total Líneas», y las pasa con la forma que tenían los `.xls` al leerlos. `procesar_datos_dali` acepta `ruta_htm` y el resto de la Acción 1 (duplicados, cruce, saneamiento, Excel, validación, códigos faltantes, final en la web) no cambia.
+- **Hallazgo al probarlo con la descarga real:** no todas las páginas llevan la marca «page-break-after». Separando por ella, dos páginas se juntaban y la primera fila de una pisaba la de la otra (se perdían 2 artículos). Las páginas se separan por su recuadro (`<div style="position:relative`), que llevan todas.
+- **Qué descarga usar** (decisión de Víctor): con `ARTICULOS1/2.xls` y `ARTICULOS.htm` a la vez, la más reciente (a igual fecha, los `.xls`); la consola dice cuál. **Después se borran las tres** (decisión de Víctor: igual que los `.xls`), también si la validación falla, para no usar por error una descarga vieja.
+- **Comprobado con los datos reales del 19 nov (solo lectura):** con el `.htm` y con los `.xls` sale lo mismo en los 30.246 artículos (mismos códigos y orden, unidad, familia, subfamilia, naturaleza, IGIC, proveedor y activo; validación de diccionarios igual). Solo cambian **146 descripciones**, que con el `.htm` salen sin el espacio que DALI mete al pasar a Excel donde partía la línea («PIÑA-PLATANO- MANZANA» → «PIÑA-PLATANO-MANZANA»). La primera vez que se use el `.htm`, esas 146 descripciones se corregirán en el catálogo y en Catálogo Asignaciones.
+- **Pruebas:** 8 nuevas en `tests/test_articulos_htm.py` (informe inventado con cortes de línea, celdas vacías, página sin «page-break-after» y «Total Líneas»). En total, 292 en verde.
+- **No probado:** la Acción 1 completa con la app abierta en Windows (generar `ARTICULOS_DALI.xlsx`, borrar las descargas y el final en la web). **Manual:** conviene añadir `ARTICULOS.htm` en el capítulo de la Acción 1 al regenerarlo.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
 - ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).
 - ~~Lo cambiado en la web baja solo al Excel y la Consola nunca lo pisa~~ hecho (sección 67): gana la última modificación.
-- **PENDIENTE: la Acción 1 también con `ARTICULOS.htm`** (petición de Víctor, 19 nov 2026): «cuando se pulsa la Acción 1, actualmente la aplicación busca los Excel ARTICULOS1 y 2 para trabajar; necesito que también se pueda realizar la misma operación con ARTICULOS.htm». Es la exportación de DALI en informe ActiveReports (53 MB): cada artículo, las mismas 9 columnas por posición (`left`) en la página. En su propia rama y PR.
+- ~~**La Acción 1 también con `ARTICULOS.htm`**~~ hecho (sección 75, v10.2.76). Pendiente: probarla en Windows con la app y añadirla al manual.
 - **PENDIENTE (petición de Víctor, 13 nov 2026): auditar la sincronización con la web, unir las Acciones 1 y 2 y guiar la Acción 3.** ~~Auditoría, nuevo final de la Acción 1 y quitar la Acción 2~~ hechos (sección 66); ~~guiar la Acción 3~~ hecho (sección 74); queda el Excel cambiando solo lo necesario.
   - Petición: «auditar que todos los pasos se están sincronizando directamente con la web. Me gustaría que al terminar la acción 1, después de limpiar los Excel 1 y 2 y crear el limpio que se guarda en recursos, esta información ya se vuelque directamente en la web, ya que todas las columnas se integran luego en la acción dos al Excel "catálogo completo" y a la web; de esta manera podríamos eliminar creo el paso 2. Antes de subirlo a la web, se le pregunta al usuario si desea revisar el Excel limpio antes del volcado final en la web, dos botones sí - no; si dice que sí, se abre el Excel para revisión del usuario; una vez que el usuario cierre y guarde los cambios en Excel, en la misma ventana anterior se debe abrir un nuevo botón que indique subir datos a la web o actualizar catálogo asignaciones; este botón deberá estar oculto hasta que el usuario no indique sí o no a la primera pregunta».
   - ~~**Auditoría:**~~ hecho (sección 66).
