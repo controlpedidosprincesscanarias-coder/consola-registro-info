@@ -32,14 +32,16 @@ class Logica(unittest.TestCase):
 
     def test_estado_de_los_archivos(self):
         with tempfile.TemporaryDirectory() as rec:
-            antes = time.time() - 100
             ruta = os.path.join(rec, L.PRODUCTOS)
             open(ruta, "w").close()
-            os.utime(ruta, (antes - 50, antes - 50))                  # el de siempre, sin descargar de nuevo
+            os.utime(ruta, (1_700_000_000, 1_700_000_000))             # el de siempre
+            antes = L.fechas_listados(rec)                              # al salir el aviso
             e = L.estado_archivos(rec, antes)
             self.assertEqual(e, {L.PRODUCTOS: (True, False), L.LISTAS: (False, False)})
             self.assertEqual(L.sin_actualizar(e), [L.PRODUCTOS, L.LISTAS])
-            os.utime(ruta, None)                                       # descargado de nuevo
+            # (v10.2.78) Descargado de nuevo aunque su fecha sea «anterior» a la hora del PC (reloj del servidor de
+            # la unidad G: atrasado): cuenta que ha cambiado, no la hora del PC
+            os.utime(ruta, (1_700_000_100, 1_700_000_100))
             open(os.path.join(rec, L.LISTAS), "w").close()
             self.assertEqual(L.sin_actualizar(L.estado_archivos(rec, antes)), [])
 
@@ -70,7 +72,7 @@ class Ventana(unittest.TestCase):
 
     def _ventana(self):
         from app.ui.ventana_listados_sap import VentanaListadosSap
-        return VentanaListadosSap(self.root, ["10104082"], self.tmp.name, ahora=time.time() - 5)
+        return VentanaListadosSap(self.root, ["10104082"], self.tmp.name)
 
     def test_mas_tarde_avisa_de_la_web_parcial(self):
         v = self._ventana()

@@ -58,17 +58,12 @@ def codigos_sin_datos(codigos_sap, tabla_productos):
     return fuera
 
 
-def estado_archivos(carpeta_recursos, desde):
-    """Para cada listado: (existe, actualizado) — actualizado = modificado después de `desde` (timestamp), es decir,
-    descargado de nuevo desde que salió el aviso."""
-    estado = {}
-    for nombre, ruta in rutas(carpeta_recursos).items():
-        try:
-            mtime = os.path.getmtime(ruta)
-            estado[nombre] = (True, mtime >= desde)
-        except OSError:
-            estado[nombre] = (False, False)
-    return estado
+def estado_archivos(carpeta_recursos, fechas_antes):
+    """Para cada listado: (existe, actualizado) — actualizado = descargado de nuevo desde que salió el aviso.
+    fechas_antes: fechas_listados() de cuando salió el aviso. (v10.2.78) Se compara con la fecha que tenía el propio
+    archivo, no con la hora del PC (descargado_de_nuevo), igual que antes de la Acción 3."""
+    return {nombre: (ahora is not None, descargado_de_nuevo(fechas_antes.get(nombre), ahora))
+            for nombre, ahora in fechas_listados(carpeta_recursos).items()}
 
 
 def sin_actualizar(estado):
@@ -243,9 +238,7 @@ def estado_descarga(carpeta_recursos, fechas_antes, fuera_por_listado, contiene)
     Devuelve [(nombre, listo, texto)]: listo si se ha descargado de nuevo y, si tenía que traer códigos, ya los tiene
     (no basta con que cambie su fecha)."""
     salida = []
-    for nombre, ahora in fechas_listados(carpeta_recursos).items():
-        existe = ahora is not None
-        actualizado = descargado_de_nuevo(fechas_antes.get(nombre), ahora)
+    for nombre, (existe, actualizado) in estado_archivos(carpeta_recursos, fechas_antes).items():
         fuera = fuera_por_listado.get(nombre) or []
         if not existe:
             salida.append((nombre, False, "no está en RECURSOS"))
