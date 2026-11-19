@@ -232,7 +232,7 @@ class InterfazApp:
 
         self._boton_accion(
             frm_acc, "3", "Actualizar listado materiales SAP", "🔄",
-            self._actualizar_listado_sap, strip_color="#1A7A9B"
+            self._accion_3_guiada, strip_color="#1A7A9B"   # v10.2.74: antes comprueba los listados de SAP
         ).pack(fill="x", pady=(0, 2))
 
         self._btn_procesar = self._boton_accion(

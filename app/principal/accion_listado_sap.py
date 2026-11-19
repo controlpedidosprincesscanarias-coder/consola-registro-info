@@ -14,6 +14,7 @@ import os
 from tkinter import messagebox
 from datetime import datetime
 import threading
+import time
 from app.comun.tarifa_constants import (
     TABLA_SUBFAMILIA_GRUPO_COMPRAS, TABLA_IGIC_GRUPO_COMPRAS,
 )
@@ -612,9 +613,81 @@ class AccionListadoSap:
             self.log_consola("  ⚠  " + listados_sap.AVISO_PARCIAL, "WARN")
         return ven.resultado
 
-    def _actualizar_listado_sap(self):
+    def _accion_3_guiada(self):
+        """(v10.2.74, petición de Víctor, 13 nov 2026) Botón 3. Antes de la Acción 3 de siempre, en un hilo: trae lo
+        cambiado en la web (lo que hacía la Acción 3 al empezar) y comprueba si hace falta descargar de nuevo
+        Productos.xlsx y Listas de productos.xlsx (listados_sap.diagnostico: artículos con código SAP y sin sus datos
+        SAP, si esos códigos están en los listados de RECURSOS y si los listados tienen más de 7 días). Después,
+        en el hilo principal, la ventana VentanaAntesAccion3 (_mostrar_antes_accion3)."""
+        from app.comun import catalogo_local, listados_sap as L
+        carpeta = self._carpeta_proyecto.get().strip()
+        if not carpeta:
+            messagebox.showwarning("Sin proyecto", "Seleccione primero la carpeta del Proyecto.")
+            return
+        recursos = os.path.join(carpeta, FOLDER_RECURSOS)
+        ruta_catalogo = os.path.join(recursos, catalogo_local.NOMBRE_CATALOGO)
+        if not os.path.isfile(ruta_catalogo):
+            self._actualizar_listado_sap()          # sus avisos de siempre (falta el catálogo o un listado)
+            return
+        if getattr(self, "_comprobando_accion3", False):
+            return
+        self._comprobando_accion3 = True
+        self._barra.indeterminate("Comprobando los listados de SAP...")
+
+        def _comprobar():
+            diag = fechas = None
+            try:
+                self._traer_cambios_web("la Acción 3")
+                self.log_consola("Acción 3: comprobando si hace falta descargar de nuevo los listados de SAP...",
+                                 "INFO")
+                fechas = L.fechas_listados(recursos)
+                rutas = L.rutas(recursos)
+                tabla_prod = tabla_cat = None
+                if fechas[L.PRODUCTOS] is not None:
+                    tabla_prod, _n = leer_productos_xlsx(rutas[L.PRODUCTOS])
+                if fechas[L.LISTAS] is not None:
+                    from app.comun.sap_helpers import leer_listas_productos
+                    tabla_cat = leer_listas_productos(rutas[L.LISTAS])[0]
+                diag = L.diagnostico(catalogo_local.leer_catalogo(ruta_catalogo), tabla_prod, tabla_cat, fechas,
+                                     time.time())
+            except Exception as e:  # noqa: BLE001 — sin comprobación, la Acción 3 de siempre (con su pregunta)
+                self.log_consola(f"  ⚠  No se ha podido comprobar los listados de SAP ({e}): se sigue con la "
+                                 "Acción 3 de siempre.", "WARN")
+                diag = None
+            finally:
+                self._comprobando_accion3 = False
+            self.after(0, lambda: self._mostrar_antes_accion3(diag, fechas, recursos))
+
+        threading.Thread(target=_comprobar, daemon=True).start()
+
+    def _mostrar_antes_accion3(self, diag, fechas, recursos):
+        """Hilo principal: la ventana «Acción 3 — Listados de SAP» y, con «Actualizar Catálogo Asignaciones», la
+        Acción 3 de siempre (sin su pregunta de confirmación, que ya es esta ventana, ni volver a traer la web)."""
+        from app.comun import listados_sap as L
+        from app.ui.ventana_listados_sap import VentanaAntesAccion3
+        self._barra.reset()
+        if diag is None:
+            self._actualizar_listado_sap(traer_web=False)
+            return
+        lineas = L.lineas_diagnostico(diag, fechas, time.time())
+        nivel = {"ok": "OK", "aviso": "WARN", "error": "WARN", "info": "INFO"}
+        self.log_consola_batch([("  " + t, nivel[tipo]) for t, tipo in lineas if t])
+        ven = VentanaAntesAccion3(self, diag, lineas, recursos)
+        self.wait_window(ven)
+        if ven.resultado != "actualizar":
+            self.log_consola("Acción 3 cancelada por el usuario.", "WARN")
+            return
+        if ven.respuesta is True:
+            self.log_consola("Listados de SAP descargados de nuevo en RECURSOS: se actualiza el catálogo.", "INFO")
+        self._actualizar_listado_sap(confirmar=False, traer_web=False)
+
+    def _actualizar_listado_sap(self, confirmar=True, traer_web=True):
         """
         PUNTO 3 — Actualizar listado materiales SAP.
+
+        (v10.2.74) Desde el botón 3 se llega por _accion_3_guiada, que ya ha preguntado y traído la web:
+        confirmar=False quita la pregunta «Confirmar actualización SAP» y traer_web=False no vuelve a traer lo
+        cambiado en la web. Desde el aviso de listados (Acción 8 / Acción 4) se sigue llamando sin argumentos.
 
         Origen 1 : RECURSOS/Productos.xlsx           (fecha = última modificación del archivo)
         Origen 2 : RECURSOS/ARTICULOS_DALI.xlsx       (fecha = celda B3, texto "ACTUALIZADO …")
@@ -721,7 +794,7 @@ class AccionListadoSap:
             return
 
         # ── 3. Confirmación al usuario ────────────────────────────────
-        if not messagebox.askyesno(
+        if confirmar and not messagebox.askyesno(
                 "Confirmar actualización SAP",
                 "Se han localizado los archivos de origen:\n\n"
                 f"   📄 Productos.xlsx\n"
@@ -755,7 +828,9 @@ class AccionListadoSap:
         def proceso():
             self.consola.separador("INICIO ACTUALIZACIÓN SAP")
             # (13 nov 2026) Primero lo cambiado en la web (p. ej. un código SAP corregido allí), para completarlo
-            self._traer_cambios_web("la Acción 3")
+            # (v10.2.74: desde el botón 3 ya lo ha traído _accion_3_guiada)
+            if traer_web:
+                self._traer_cambios_web("la Acción 3")
             self.log_consola("Iniciando actualización listado materiales SAP...", "INFO")
             self.after(0, lambda: self._barra.indeterminate("Leyendo Productos.xlsx..."))
 
