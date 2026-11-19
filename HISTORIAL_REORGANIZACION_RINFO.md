@@ -1541,6 +1541,23 @@ Petición de Víctor: «revisar los manuales del Organizador, chat y consola». 
 
 ---
 
+## 83. RINFO: con varios Purchasing del mismo proveedor, el más reciente (19 nov 2026, v10.2.84) — PR en GitHub
+
+Víctor mandó el log de SAP de la importación del RINFO de GRUPO DISTRIBUIDOR GARAU, con el RINFO, la tarifa y el Purchasing.
+- **El log:**
+  - 4 errores «Ya existe el registro Info de compras 5300008094» a 8097;
+  - 3.909 avisos «compruebe las unidades de medida y el factor de conversión» (SAP lo dice en cada registro que modifica: no es un problema);
+  - 100 avisos de 5300002268 «marcado para borrar» (material sin tarifa, dado de baja: lo esperado);
+  - «se solapa con el registro de condición…» en cada condición.
+- **Causa:** el RINFO es una copia del Purchasing con el que se generó y guarda su fecha: el del **18/11 a las 07:51**, de antes de importar el RINFO de ese día. El Purchasing adjunto (19/11, 13:15) ya tiene los cuatro registros creados el 18/11, que el RINFO volvió a dar como nuevos. `_buscar_purchasing_compatible` se quedaba con el **primero que devolvía la carpeta** cuando varios Purchasing tenían el mismo parecido.
+- **Arreglo** (commit propio): a igual parecido, gana el más reciente (fecha de exportación de SAP o, si no, la del archivo), y la consola dice «descargado el …». Prueba nueva `tests/test_purchasing_reciente.py` (falla sin el arreglo).
+- **Comprobado con los archivos de Víctor** (en local, no van al repositorio): las 2.450 condiciones que creó la importación ya existían en SAP con el mismo periodo y precio. No ha cambiado ningún precio.
+- **Manual:** recuadro «Descarga el Purchasing después de cada importación» en el capítulo 7; regenerado.
+- **Pruebas:** 311 en verde.
+- **No probado:** en Windows con varios Purchasing en G:.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
 - ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).
