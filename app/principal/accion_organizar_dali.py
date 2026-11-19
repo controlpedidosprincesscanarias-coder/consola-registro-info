@@ -47,6 +47,9 @@ class AccionOrganizarDali:
         recursos_path = os.path.join(carpeta, "RECURSOS")
         file1  = os.path.join(recursos_path, "ARTICULOS1.xls")
         file2  = os.path.join(recursos_path, "ARTICULOS2.xls")
+        # (v10.2.76, petición de Víctor, 19 nov 2026) o ARTICULOS.htm, con las 9 columnas en un solo archivo
+        from app.acciones import articulos_htm
+        ruta_htm = os.path.join(recursos_path, articulos_htm.NOMBRE_HTM)
         output = os.path.join(recursos_path, "ARTICULOS_DALI.xlsx")
 
         def proceso():
@@ -58,7 +61,9 @@ class AccionOrganizarDali:
                 if not os.path.isdir(recursos_path):
                     raise Exception(f"Carpeta RECURSOS no encontrada en:\n{carpeta}")
 
-                faltan_xls = not os.path.exists(file1) or not os.path.exists(file2)
+                # (v10.2.76) ARTICULOS1/2.xls o ARTICULOS.htm: con los dos, el más reciente (decisión de Víctor)
+                _origen, _texto_origen = articulos_htm.elegir_origen(file1, file2, ruta_htm)
+                faltan_xls = _origen is None
 
                 if faltan_xls:
                     # ── Comprobar si existe ARTICULOS_DALI.xlsx como alternativa ──
@@ -79,6 +84,7 @@ class AccionOrganizarDali:
                             _faltantes.append("ARTICULOS1.xls")
                         if not os.path.exists(file2):
                             _faltantes.append("ARTICULOS2.xls")
+                        _faltantes.append(f"(o, en su lugar, {articulos_htm.NOMBRE_HTM})")
                         _msg_falta = "\n".join(f"   \u2022 {f}" for f in _faltantes)
 
                         _respuesta = [None]
@@ -134,6 +140,7 @@ class AccionOrganizarDali:
                             _faltantes.append("ARTICULOS1.xls")
                         if not os.path.exists(file2):
                             _faltantes.append("ARTICULOS2.xls")
+                        _faltantes.append(f"(o, en su lugar, {articulos_htm.NOMBRE_HTM})")
                         _msg_falta = "\n".join(f"   \u2022 {f}" for f in _faltantes)
                         self.after(0, lambda mf=_msg_falta: messagebox.showerror(
                             "Archivos ARTICULOS no encontrados",
@@ -160,6 +167,8 @@ class AccionOrganizarDali:
                             f"Guarde los archivos descargados en la carpeta:\n"
                             f"   \ud83d\udcc1  RECURSOS/\n"
                             f"con los nombres exactos  ARTICULOS1.xls  y  ARTICULOS2.xls.\n\n"
+                            f"Tambi\u00e9n vale  ARTICULOS.htm : el listado de DALI en informe\n"
+                            f"con las 9 columnas en un solo archivo.\n\n"
                             f"A continuaci\u00f3n vuelva a ejecutar la Acci\u00f3n 1."
                         ))
                         self.log_consola("Proceso cancelado: faltan ARTICULOS1/2.xls y no hay fichero previo.", "ERROR")
@@ -172,8 +181,10 @@ class AccionOrganizarDali:
                 #    y saneamiento — extraído a acciones/organizar_dali.py.
                 #    Ver ese módulo para el detalle línea a línea (idéntico
                 #    al que había aquí, solo con self.log_consola -> log).
+                self.log_consola(_texto_origen, "INFO")
                 _resultado = organizar_dali_datos.procesar_datos_dali(
-                    file1, file2, self.log_consola)
+                    file1, file2, self.log_consola,
+                    ruta_htm=ruta_htm if _origen == articulos_htm.HTM else None)
 
                 df_final          = _resultado["df_final"]
                 df1               = _resultado["df1"]
@@ -217,7 +228,7 @@ class AccionOrganizarDali:
                 self.log_consola(f"  └ {n_filas} artículos transferidos", "OK")
 
                 _eliminados_ok = organizar_dali_datos.eliminar_archivos_origen(
-                    file1, file2, self.log_consola, motivo="limpieza")
+                    file1, file2, self.log_consola, motivo="limpieza", ruta_htm=ruta_htm)
 
                 # ═══════════════════════════════════════════════════════════════
                 #  VALIDACIÓN DE COLUMNAS E (SUBFAMILIA) y G (IGIC)
@@ -236,7 +247,7 @@ class AccionOrganizarDali:
 
                         # Eliminar ARTICULOS1/2 (proceso incorrecto)
                         organizar_dali_datos.eliminar_archivos_origen(
-                            file1, file2, self.log_consola, motivo="match fallido")
+                            file1, file2, self.log_consola, motivo="match fallido", ruta_htm=ruta_htm)
 
                         self.after(0, lambda cs=_cols_str: messagebox.showerror(
                             "Acción 1 — Proceso NO correcto: match con diccionarios fallido",
@@ -244,7 +255,7 @@ class AccionOrganizarDali:
                             "Motivo: Las siguientes columnas del archivo generado\n"
                             "no contienen valores reconocidos por los diccionarios SAP:\n\n"
                             f"{cs}\n\n"
-                            "Esto indica que ARTICULOS1.xls fue descargado con un\n"
+                            "Esto indica que ARTICULOS1.xls (o ARTICULOS.htm) fue descargado con un\n"
                             "orden o selección de campos incorrectos desde DALI.\n\n"
                             "────────────────────────────────────────────────\n"
                             "📥  Vuelva a descargar desde DALI (opción 131)\n"
@@ -266,7 +277,7 @@ class AccionOrganizarDali:
                             "Guarde los archivos en RECURSOS/ con los nombres\n"
                             "exactos  ARTICULOS1.xls  y  ARTICULOS2.xls\n"
                             "y vuelva a ejecutar la Acción 1.\n\n"
-                            "⚠   Los archivos ARTICULOS1 y ARTICULOS2 han sido\n"
+                            "⚠   Los archivos ARTICULOS1, ARTICULOS2 y ARTICULOS.htm han sido\n"
                             "   eliminados de RECURSOS/ para forzar una nueva\n"
                             "   descarga correcta desde DALI."
                         ))

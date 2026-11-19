@@ -98,7 +98,23 @@ def _procesar_duplicados_origen(df_sel, nombre_archivo, cols_comparar, log, inci
     return df_dedup
 
 
-def procesar_datos_dali(file1, file2, log):
+def _leer_origen_htm(ruta_htm, log):
+    """(v10.2.76) ARTICULOS.htm → (df1, df2) con la misma forma que la lectura de ARTICULOS1/2.xls
+    (articulos_htm.tablas_como_xls), para que el resto de procesar_datos_dali no cambie."""
+    from app.acciones import articulos_htm
+    log(f"Leyendo {articulos_htm.NOMBRE_HTM}...", "INFO")
+    filas, total = articulos_htm.leer_articulos_htm(ruta_htm)
+    if total is None:
+        log(f"  └ {len(filas)} artículos leídos (el informe no trae «Total Líneas» para comprobarlo)", "WARN")
+    elif total != len(filas):
+        log(f"  └ ⚠ {len(filas)} artículos leídos, pero el informe dice «Total Líneas: {total}»", "WARN")
+    else:
+        log(f"  └ {len(filas)} artículos leídos (coincide con «Total Líneas» del informe)", "OK")
+    filas1, filas2 = articulos_htm.tablas_como_xls(filas)
+    return pd.DataFrame(filas1, dtype=str), pd.DataFrame(filas2, dtype=str)
+
+
+def procesar_datos_dali(file1, file2, log, ruta_htm=None):
     """
     Lee ARTICULOS1.xls y ARTICULOS2.xls, deduplica códigos de origen,
     cruza por CODIGO y sanea el resultado.
@@ -109,6 +125,9 @@ def procesar_datos_dali(file1, file2, log):
         Rutas a ARTICULOS1.xls y ARTICULOS2.xls.
     log : callable(mensaje: str, nivel: str = "INFO")
         Función de log — en tarifa_app.py, pasar self.log_consola.
+    ruta_htm : str, opcional (v10.2.76)
+        Si se da, se lee ARTICULOS.htm (las 9 columnas en un solo archivo) en lugar de los dos .xls; file1 y file2
+        no se usan. Todo lo demás es igual.
 
     Devuelve
     --------
@@ -128,15 +147,19 @@ def procesar_datos_dali(file1, file2, log):
         errores_sin_igic       : nº de filas sin coincidencia en
                                   ARTICULOS2 (IGIC vacío).
     """
-    log("Leyendo ARTICULOS1.xls...", "INFO")
-    df1 = pd.read_excel(file1, engine="xlrd", dtype=str, header=None)
-    log("Leyendo ARTICULOS2.xls...", "INFO")
-    df2 = pd.read_excel(file2, engine="xlrd", dtype=str, header=None)
+    if ruta_htm:
+        df1, df2 = _leer_origen_htm(ruta_htm, log)
+    else:
+        log("Leyendo ARTICULOS1.xls...", "INFO")
+        df1 = pd.read_excel(file1, engine="xlrd", dtype=str, header=None)
+        log("Leyendo ARTICULOS2.xls...", "INFO")
+        df2 = pd.read_excel(file2, engine="xlrd", dtype=str, header=None)
 
     df1.columns = df1.columns.astype(str)
     df2.columns = df2.columns.astype(str)
 
-    log(f"  └ ARTICULOS1: {len(df1)} filas  |  ARTICULOS2: {len(df2)} filas", "INFO")
+    if not ruta_htm:
+        log(f"  └ ARTICULOS1: {len(df1)} filas  |  ARTICULOS2: {len(df2)} filas", "INFO")
 
     # ── Renombrar columna 0 de ambos a CODIGO ────────────────────────
     col0_df1 = df1.columns[0]
@@ -384,15 +407,17 @@ def generar_excel_dali(df_final, output_cols, output_path, log, progreso=None):
     wb.save(output_path)
 
 
-def eliminar_archivos_origen(file1, file2, log, motivo="limpieza"):
+def eliminar_archivos_origen(file1, file2, log, motivo="limpieza", ruta_htm=None):
     """
     Elimina ARTICULOS1.xls / ARTICULOS2.xls tras usarlos. `motivo` cambia
     el texto del log ("limpieza" tras éxito, "match fallido" si la
     validación de diccionarios SAP falla).
+    (v10.2.76, decisión de Víctor) También ARTICULOS.htm (`ruta_htm`), se haya usado o no: así la próxima Acción 1
+    no usa por error una descarga vieja.
     """
     import os
     eliminados_ok = []
-    for fx in (file1, file2):
+    for fx in (file1, file2) + ((ruta_htm,) if ruta_htm else ()):
         try:
             if os.path.exists(fx):
                 os.remove(fx)
