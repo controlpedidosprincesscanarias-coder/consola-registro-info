@@ -349,9 +349,12 @@ class VentanaSeleccionTarifa(tk.Toplevel):
 
         if purchasing:
             score_txt = str(purchasing["score"]) + "%"
+            # (19 nov 2026) Con la fecha de descarga: si se importó otro RINFO después, hay que descargarlo de nuevo
+            fecha = purchasing.get("fecha")
+            fecha_txt = f", descargado el {fecha.strftime('%d/%m/%Y %H:%M')}" if fecha else ""
             _log(self._parent,
                  f"Purchasing encontrado: {purchasing['archivo']} "
-                 f"(score {score_txt}) — preguntando al usuario cómo continuar.", "OK")
+                 f"(score {score_txt}{fecha_txt}) — preguntando al usuario cómo continuar.", "OK")
             self.withdraw()
             VentanaPurchasingEncontrado(
                 self,
