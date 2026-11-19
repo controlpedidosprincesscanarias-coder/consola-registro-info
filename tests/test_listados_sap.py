@@ -39,7 +39,7 @@ class Logica(unittest.TestCase):
             e = L.estado_archivos(rec, antes)
             self.assertEqual(e, {L.PRODUCTOS: (True, False), L.LISTAS: (False, False)})
             self.assertEqual(L.sin_actualizar(e), [L.PRODUCTOS, L.LISTAS])
-            # (v10.2.78) Descargado de nuevo aunque su fecha sea «anterior» a la hora del PC (reloj del servidor de
+            # (v10.2.76) Descargado de nuevo aunque su fecha sea «anterior» a la hora del PC (reloj del servidor de
             # la unidad G: atrasado): cuenta que ha cambiado, no la hora del PC
             os.utime(ruta, (1_700_000_100, 1_700_000_100))
             open(os.path.join(rec, L.LISTAS), "w").close()

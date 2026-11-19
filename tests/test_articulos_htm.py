@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Pruebas de la Acción 1 con ARTICULOS.htm (v10.2.76): app/acciones/articulos_htm.py y su uso en
+"""Pruebas de la Acción 1 con ARTICULOS.htm (v10.2.74): app/acciones/articulos_htm.py y su uso en
 app/acciones/organizar_dali.py. Datos inventados con la forma del informe real de DALI.
 
 Central Compras Princess Canarias · La idea y el desarrollo de la aplicación, incluidas sus pruebas,
