@@ -108,7 +108,7 @@ import tarifa_app  # noqa: E402
 # El inicio de sesión de Catálogo Asignaciones (sin red) se fotografía aparte (c_login); aquí se entra sin él.
 tarifa_app.App._iniciar_sesion_consola = lambda self: (self.deiconify(), self._tras_iniciar_sesion())
 # La versión que se enseña es la del .exe que llevará este manual (en el código fuente, APP_VERSION es la antigua).
-tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.72")
+tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.84")
 _crear_catalogo_demo()
 
 
@@ -283,7 +283,8 @@ def pasos(app):
     from app.comun.tarifa_core import listar_xls
     from app.ui import ventana_login, ventana_publicar_catalogo
     from app.ui.ventana_asignar_sap import VentanaAsignarSap
-    from app.ui.ventana_listados_sap import VentanaListadosSap
+    from app.ui.ventana_listados_sap import VentanaListadosSap, VentanaAntesAccion3
+    from app.comun import listados_sap as _L                 # (19 nov 2026) ventana antes de la Acción 3
     from app.comun import asignar_sap
     from app.comun import estado_web                          # (18 nov 2026) aviso sin conexión
     from app.ui.ventana_sin_conexion import VentanaSinConexion
@@ -320,6 +321,7 @@ def pasos(app):
         ("c_asignar_sap", lambda: VentanaAsignarSap(app, asignar_sap.pendientes(CATALOGO), PRODUCTOS_DEMO, lambda n, r: None),
          marcas_asignar_sap),
         ("c_listados_sap", lambda: VentanaListadosSap(app, ["10509099"], RECURSOS), marcas_listados_sap),
+        ("c_antes_accion3", lambda: _antes_accion3(app, VentanaAntesAccion3, _L), marcas_antes_accion3),
         ("c_volcado_dali", lambda: _abrir_volcado_dali(app), marcas_volcado_dali),
         ("c_sin_conexion", lambda: VentanaSinConexion(app, "traer lo cambiado en Catálogo Asignaciones",
                                                       estado_web.clasificar(TimeoutError("timed out"))),
@@ -420,6 +422,31 @@ def marcas_volcado_dali(v):
         (caja_de(v, [v._btn_si, v._btn_no]), 2, "r"),
         (v._btn_actualizar, 3, "t"),
         (v._btn_cerrar, 4, "t"),
+    ]
+
+
+def _antes_accion3(app, Ventana, L):
+    """(v 10.2.84) «Acción 3 — Listados de SAP», con un diagnóstico inventado: Productos.xlsx de hace 9 días y dos
+    códigos SAP que los listados de RECURSOS no tienen."""
+    import time as _t
+    ahora = _t.time()
+    fechas = {L.PRODUCTOS: ahora - 9 * 86400, L.LISTAS: ahora - 3600}
+    fuera = ["10509098", "10509099"]
+    diag = {"estado": L.FALTAN, "pendientes": 2, "fuera": fuera,
+            "fuera_por_listado": {L.PRODUCTOS: fuera, L.LISTAS: fuera[1:]},
+            "antiguos": [L.PRODUCTOS], "no_estan": [], "preguntar": True}
+    return Ventana(app, diag, L.lineas_diagnostico(diag, fechas, ahora), RECURSOS, leer=lambda *a: [])
+
+
+def marcas_antes_accion3(v):
+    B = buscar
+    return [
+        (B(v, "Productos.xlsx: descargado"), 1, "r"),
+        (B(v, "código(s) SAP no están"), 2, "r"),
+        (B(v, "Sí, abrir RECURSOS", "Button"), 3, "b"),
+        (B(v, "No", "Button"), 4, "b"),
+        (B(v, "1.  En SAP"), 5, "r"),
+        (B(v, "Cancelar", "Button"), 6, "l"),
     ]
 
 

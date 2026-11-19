@@ -1525,6 +1525,22 @@ Petición de Víctor (log del RINFO de PRO A PRO, 12:52–12:56): «¿por qué t
 
 ---
 
+## 82. Manual al día con lo del 19 nov (19 nov 2026, manual de la v10.2.84) — PR en GitHub
+
+Petición de Víctor: «revisar los manuales del Organizador, chat y consola». El manual se había regenerado por última vez con lo del 18 nov (sección 73); le faltaba lo de las secciones 74 a 81.
+- **Acción 1:** también con `ARTICULOS.htm`. Recuadro con el «Total Líneas» del informe y qué pasa si están las dos descargas: se usa la más reciente y se borran las tres.
+- **Acción 3:** la ventana «Acción 3 — Listados de SAP», con captura nueva `c_antes_accion3` (datos inventados: Productos.xlsx de hace 9 días y dos códigos que no están) y su leyenda.
+- **Capítulo 8:**
+  - el código de proveedor que la web no acepta se queda el de la web, también en el catálogo;
+  - si el proveedor lo puso un presupuesto de Activo Operacional, manda el presupuesto;
+  - recuadro «Si DALI solo cambia el nombre del proveedor» (proveedor inventado);
+  - recuadro «Sin ventanas de "completado"».
+- **Capítulo 7:** los avisos del RINFO que no piden hacer nada salen en una línea normal.
+- **Capturas:** todas rehechas con la versión v 10.2.84 (`capturas.py`, valor por defecto). Manual, `manual_indice.json` y PDF copiados a `docs/` y `assets/`.
+- **Pruebas:** 308 en verde. Revisado el PDF página a página (35 páginas).
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
 - ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).
