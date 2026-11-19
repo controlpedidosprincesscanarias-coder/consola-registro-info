@@ -291,7 +291,8 @@ class AccionOrganizarDali:
 
                 if errores:
                     self.log_consola(
-                        f"  └ {errores} códigos sin coincidencia en ARTICULOS2", "WARN")
+                        f"  └ {errores} códigos sin IGIC, proveedor ni activo"
+                        + ("" if _origen == articulos_htm.HTM else " (sin coincidencia en ARTICULOS2)"), "WARN")
 
                 self.log_consola(f"Ruta: {output}", "INFO")
                 self.consola.separador("FIN ORGANIZACIÓN DALI")

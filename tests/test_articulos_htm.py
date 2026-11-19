@@ -135,6 +135,9 @@ class AccionUno(unittest.TestCase):
         self.assertEqual(r["ultimo_cod_art1"], 49)
         self.assertEqual(r["errores_sin_igic"], 0)
         self.assertTrue(any("coincide con «Total Líneas»" in m for m, _ in mensajes))
+        # (19 nov 2026) Con el .htm, el log habla de ARTICULOS.htm, no de ARTICULOS1 ni ARTICULOS2
+        self.assertTrue(any("ARTICULOS.htm: sin códigos duplicados" in m for m, _ in mensajes))
+        self.assertFalse(any("ARTICULOS1" in m or "ARTICULOS2" in m for m, _ in mensajes))
 
     def test_avisa_si_no_cuadra_el_total(self):
         from app.acciones import organizar_dali

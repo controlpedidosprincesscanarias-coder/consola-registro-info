@@ -1505,6 +1505,16 @@ Con los logs de la Acción 1 del 19 nov. Víctor elige la opción A («reconocer
 
 ---
 
+## 80. Sin la ventana «Reinscripción completada» y el log de la Acción 1 con ARTICULOS.htm (19 nov 2026, v10.2.80) — PR en GitHub
+
+Petición de Víctor (con captura de la Acción 4 de B Refreshing): «la ventana blanca informativa pienso sobra», y la PR que quedó pendiente de la sección 79 para el texto del log.
+- **Acción 4, al completar la tarifa** (`accion_tarifa.py`): «Reinscripción completada ✔» y «Tarifa completada» salían encima de «Cambios para Catálogo Asignaciones». Si todo va bien, ahora no sale ventana: los códigos aplicados, el nombre del archivo y «TARIFA PREPARADA…» van al log. Si hay SAP o DALI duplicados, SAP sin descripción o un error al quitar [INCOMPLETO], sigue el aviso («Completado con advertencias»).
+- **Acción 1 con `ARTICULOS.htm`:** el log decía «ARTICULOS1/ARTICULOS2: sin códigos duplicados» y «0 sin coincidencia en ARTICULOS2». Ahora dice «ARTICULOS.htm…» y «sin IGIC, proveedor ni activo». Con los `.xls`, igual que antes.
+- **Pruebas:** la de `procesar_datos_dali` con el `.htm` comprueba que el log no habla de ARTICULOS1/2. 301 en verde.
+- **No probado:** en Windows.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
 - ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).

@@ -186,13 +186,13 @@ def procesar_datos_dali(file1, file2, log, ruta_htm=None):
     # ── Detección y resolución de códigos duplicados en origen ───────
     incidencias_dup = []
     df1_sel = _procesar_duplicados_origen(
-        df1_sel, "ARTICULOS1",
+        df1_sel, "ARTICULOS.htm" if ruta_htm else "ARTICULOS1",   # (19 nov 2026) con el .htm, su nombre
         [c for c in ["DESCRIPCION", "UNIDAD", "FAMILIA",
                      "SUBFAMILIA", "NATURALEZA"] if c in df1_sel.columns],
         log, incidencias_dup)
 
     df2_sel = _procesar_duplicados_origen(
-        df2_sel, "ARTICULOS2",
+        df2_sel, "ARTICULOS.htm (IGIC, proveedor y activo)" if ruta_htm else "ARTICULOS2",
         [c for c in ["IGIC", "PROVEEDOR", "ACTIVO"] if c in df2_sel.columns],
         log, incidencias_dup)
 
@@ -273,7 +273,8 @@ def procesar_datos_dali(file1, file2, log, ruta_htm=None):
     errores_sin_igic = int(df_final["IGIC"].eq("").sum())
     log(
         f"  └ {len(df_final)} filas cruzadas  |  "
-        f"{errores_sin_igic} sin coincidencia en ARTICULOS2", "INFO")
+        f"{errores_sin_igic} sin IGIC, proveedor ni activo"
+        + ("" if ruta_htm else " (sin coincidencia en ARTICULOS2)"), "INFO")
 
     return {
         "df_final": df_final,
