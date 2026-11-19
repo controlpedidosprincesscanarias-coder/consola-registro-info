@@ -228,14 +228,24 @@ def lineas_diagnostico(diag, fechas, ahora, dias=DIAS_ANTIGUEDAD):
     return lineas
 
 
-def estado_descarga(carpeta_recursos, desde, fuera_por_listado, contiene):
+def descargado_de_nuevo(fecha_antes, fecha_ahora):
+    """El listado ha cambiado desde que se contestó «Sí»: su fecha no es la que tenía entonces (o antes no estaba).
+    Se compara con la fecha del propio archivo, no con la hora del PC: en la unidad de red (G:) la fecha la pone el
+    reloj del servidor, que puede ir unos segundos por delante o por detrás."""
+    return fecha_ahora is not None and fecha_ahora != fecha_antes
+
+
+def estado_descarga(carpeta_recursos, fechas_antes, fuera_por_listado, contiene):
     """Para la línea de estado mientras se descargan los listados (cada 2 s).
+    fechas_antes: fechas_listados() de cuando se contestó «Sí».
     fuera_por_listado: {nombre: códigos que ese listado tiene que traer} (de diagnostico).
     contiene: {nombre: códigos de esos que el archivo nuevo todavía NO tiene, o ausente si aún no se ha leído}.
     Devuelve [(nombre, listo, texto)]: listo si se ha descargado de nuevo y, si tenía que traer códigos, ya los tiene
     (no basta con que cambie su fecha)."""
     salida = []
-    for nombre, (existe, actualizado) in estado_archivos(carpeta_recursos, desde).items():
+    for nombre, ahora in fechas_listados(carpeta_recursos).items():
+        existe = ahora is not None
+        actualizado = descargado_de_nuevo(fechas_antes.get(nombre), ahora)
         fuera = fuera_por_listado.get(nombre) or []
         if not existe:
             salida.append((nombre, False, "no está en RECURSOS"))

@@ -214,7 +214,7 @@ class VentanaAntesAccion3(VentanaListadosSap):
         self.respuesta = None               # None hasta contestar; True = «Sí»; False = «No»
         self._diag = diag
         self._recursos = carpeta_recursos
-        self._desde = None                  # cuándo se contestó «Sí» (para «descargado de nuevo»)
+        self._desde = None                  # {listado: su fecha al contestar «Sí»} (para «descargado de nuevo»)
         self._imagenes = []
         self._contiene = {}                 # {listado: códigos que el archivo nuevo aún no tiene}
         self._leido = {}                    # {listado: fecha del archivo ya leído o leyéndose}
@@ -308,7 +308,8 @@ class VentanaAntesAccion3(VentanaListadosSap):
                 mtime = os.path.getmtime(ruta)
             except OSError:
                 continue
-            if mtime >= self._desde and self._leido.get(nombre) != mtime and not abierto_en_excel(ruta):
+            if L.descargado_de_nuevo(self._desde.get(nombre), mtime) and self._leido.get(nombre) != mtime \
+                    and not abierto_en_excel(ruta):
                 self._leer_en_hilo(nombre, ruta, fuera, mtime)
 
     def _estado(self):
@@ -327,7 +328,8 @@ class VentanaAntesAccion3(VentanaListadosSap):
     # ── Acciones ─────────────────────────────────────────────────────────────────────────────────────
     def _si(self):
         self.respuesta = True
-        self._desde = time.time()
+        self._desde = L.fechas_listados(self._recursos)     # fechas de los listados al contestar
+
         self._abrir_recursos()
         self._mostrar_boton(L.TEXTO_DESCARGANDO)
         self._vigilar()

@@ -189,9 +189,12 @@ class LogicaAccion3(unittest.TestCase):
 
     def test_estado_descarga_pide_que_el_archivo_tenga_los_codigos(self):
         with tempfile.TemporaryDirectory() as rec:
-            antes = time.time() - 100
-            for n in (L.PRODUCTOS, L.LISTAS):
-                open(os.path.join(rec, n), "w").close()
+            ruta_prod = os.path.join(rec, L.PRODUCTOS)
+            open(ruta_prod, "w").close()
+            os.utime(ruta_prod, (AHORA, AHORA))
+            sin_cambios = L.fechas_listados(rec)                       # al contestar «Sí»: Productos, sin Listas
+            antes = {L.PRODUCTOS: AHORA - 100, L.LISTAS: None}           # el de antes, con otra fecha
+            open(os.path.join(rec, L.LISTAS), "w").close()
             fuera = {L.PRODUCTOS: ["10100009"], L.LISTAS: []}
             e = {n: (listo, t) for n, listo, t in L.estado_descarga(rec, antes, fuera, {})}
             self.assertEqual(e[L.PRODUCTOS], (False, "descargado de nuevo, comprobando…"))
@@ -200,8 +203,12 @@ class LogicaAccion3(unittest.TestCase):
             self.assertFalse(e[L.PRODUCTOS])                                         # cambió la fecha, pero no lo tiene
             e = dict((n, listo) for n, listo, _ in L.estado_descarga(rec, antes, fuera, {L.PRODUCTOS: []}))
             self.assertTrue(e[L.PRODUCTOS])
-            e = dict((n, t) for n, _l, t in L.estado_descarga(rec, time.time() + 100, fuera, {}))
-            self.assertEqual(e[L.PRODUCTOS], "sin descargar de nuevo")
+            e = dict((n, t) for n, _l, t in L.estado_descarga(rec, sin_cambios, fuera, {}))
+            self.assertEqual(e[L.PRODUCTOS], "sin descargar de nuevo")             # misma fecha que al contestar
+            self.assertEqual(e[L.LISTAS], "descargado de nuevo")                   # antes no estaba
+            # La hora del PC no cuenta: un archivo con fecha «anterior» (reloj del servidor atrasado) también vale
+            self.assertTrue(L.descargado_de_nuevo(AHORA, AHORA - 30))
+            self.assertFalse(L.descargado_de_nuevo(AHORA, None))
 
     def test_codigos_que_faltan_en_lee_los_excel(self):
         import openpyxl
