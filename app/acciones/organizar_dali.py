@@ -99,7 +99,7 @@ def _procesar_duplicados_origen(df_sel, nombre_archivo, cols_comparar, log, inci
 
 
 def _leer_origen_htm(ruta_htm, log):
-    """(v10.2.76) ARTICULOS.htm → (df1, df2) con la misma forma que la lectura de ARTICULOS1/2.xls
+    """(v10.2.74) ARTICULOS.htm → (df1, df2) con la misma forma que la lectura de ARTICULOS1/2.xls
     (articulos_htm.tablas_como_xls), para que el resto de procesar_datos_dali no cambie."""
     from app.acciones import articulos_htm
     log(f"Leyendo {articulos_htm.NOMBRE_HTM}...", "INFO")
@@ -125,7 +125,7 @@ def procesar_datos_dali(file1, file2, log, ruta_htm=None):
         Rutas a ARTICULOS1.xls y ARTICULOS2.xls.
     log : callable(mensaje: str, nivel: str = "INFO")
         Función de log — en tarifa_app.py, pasar self.log_consola.
-    ruta_htm : str, opcional (v10.2.76)
+    ruta_htm : str, opcional (v10.2.74)
         Si se da, se lee ARTICULOS.htm (las 9 columnas en un solo archivo) en lugar de los dos .xls; file1 y file2
         no se usan. Todo lo demás es igual.
 
@@ -412,7 +412,7 @@ def eliminar_archivos_origen(file1, file2, log, motivo="limpieza", ruta_htm=None
     Elimina ARTICULOS1.xls / ARTICULOS2.xls tras usarlos. `motivo` cambia
     el texto del log ("limpieza" tras éxito, "match fallido" si la
     validación de diccionarios SAP falla).
-    (v10.2.76, decisión de Víctor) También ARTICULOS.htm (`ruta_htm`), se haya usado o no: así la próxima Acción 1
+    (v10.2.74, decisión de Víctor) También ARTICULOS.htm (`ruta_htm`), se haya usado o no: así la próxima Acción 1
     no usa por error una descarga vieja.
     """
     import os

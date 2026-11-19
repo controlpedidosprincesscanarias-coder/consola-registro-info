@@ -60,7 +60,7 @@ def codigos_sin_datos(codigos_sap, tabla_productos):
 
 def estado_archivos(carpeta_recursos, fechas_antes):
     """Para cada listado: (existe, actualizado) — actualizado = descargado de nuevo desde que salió el aviso.
-    fechas_antes: fechas_listados() de cuando salió el aviso. (v10.2.78) Se compara con la fecha que tenía el propio
+    fechas_antes: fechas_listados() de cuando salió el aviso. (v10.2.76) Se compara con la fecha que tenía el propio
     archivo, no con la hora del PC (descargado_de_nuevo), igual que antes de la Acción 3."""
     return {nombre: (ahora is not None, descargado_de_nuevo(fechas_antes.get(nombre), ahora))
             for nombre, ahora in fechas_listados(carpeta_recursos).items()}

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-articulos_htm.py — la Acción 1 también con ARTICULOS.htm (v10.2.76, petición de Víctor, 19 nov 2026).
+articulos_htm.py — la Acción 1 también con ARTICULOS.htm (v10.2.74, petición de Víctor, 19 nov 2026).
 
 Central Compras Princess Canarias · La idea y el desarrollo de la aplicación, incluidas sus pruebas,
 son de Víctor Alejandro Martín Andrade (VAMA).

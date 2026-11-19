@@ -47,7 +47,7 @@ class AccionOrganizarDali:
         recursos_path = os.path.join(carpeta, "RECURSOS")
         file1  = os.path.join(recursos_path, "ARTICULOS1.xls")
         file2  = os.path.join(recursos_path, "ARTICULOS2.xls")
-        # (v10.2.76, petición de Víctor, 19 nov 2026) o ARTICULOS.htm, con las 9 columnas en un solo archivo
+        # (v10.2.74, petición de Víctor, 19 nov 2026) o ARTICULOS.htm, con las 9 columnas en un solo archivo
         from app.acciones import articulos_htm
         ruta_htm = os.path.join(recursos_path, articulos_htm.NOMBRE_HTM)
         output = os.path.join(recursos_path, "ARTICULOS_DALI.xlsx")
@@ -61,7 +61,7 @@ class AccionOrganizarDali:
                 if not os.path.isdir(recursos_path):
                     raise Exception(f"Carpeta RECURSOS no encontrada en:\n{carpeta}")
 
-                # (v10.2.76) ARTICULOS1/2.xls o ARTICULOS.htm: con los dos, el más reciente (decisión de Víctor)
+                # (v10.2.74) ARTICULOS1/2.xls o ARTICULOS.htm: con los dos, el más reciente (decisión de Víctor)
                 _origen, _texto_origen = articulos_htm.elegir_origen(file1, file2, ruta_htm)
                 faltan_xls = _origen is None
 

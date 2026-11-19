@@ -1446,7 +1446,7 @@ Petición de Víctor (13 nov 2026, «Próximos pasos»): que al pulsar la Acció
 
 ---
 
-## 75. La Acción 1 también con ARTICULOS.htm (19 nov 2026, v10.2.76) — PR en GitHub
+## 75. La Acción 1 también con ARTICULOS.htm (19 nov 2026, v10.2.74) — PR en GitHub
 
 Petición de Víctor: «cuando se pulsa la Acción 1, actualmente la aplicación busca los Excel ARTICULOS1 y 2 para trabajar; necesito que también se pueda realizar la misma operación con ARTICULOS.htm».
 - **Qué es ARTICULOS.htm:** el listado de artículos de DALI exportado como informe ActiveReports (53 MB, 1.214 páginas). Cada celda es un `<span>` colocado por posición: una fila por `top` dentro de su página y una columna por `left`. Trae en un solo archivo las 9 columnas de ARTICULOS1 + ARTICULOS2, en el mismo orden, y al final «Total Líneas: N».
@@ -1459,7 +1459,7 @@ Petición de Víctor: «cuando se pulsa la Acción 1, actualmente la aplicación
 
 ---
 
-## 76. «Faltan los listados de SAP»: la misma regla de fechas que antes de la Acción 3 (19 nov 2026, v10.2.78) — PR en GitHub
+## 76. «Faltan los listados de SAP»: la misma regla de fechas que antes de la Acción 3 (19 nov 2026, v10.2.76) — PR en GitHub
 
 Petición de Víctor: «arreglar para que todo funcione de la misma manera y evitar problemas futuros» (lo que quedó anotado en la sección 74).
 - La ventana «Faltan los listados de SAP actualizados» (tras guardar códigos SAP en las Acciones 4 y 8) decía «descargado de nuevo» si la fecha del listado era posterior a la **hora del PC** al salir el aviso. En la unidad G: esa fecha la pone el **reloj del servidor**: si va unos segundos atrasado, un listado recién descargado no se marcaba ✔ (y la Consola preguntaba «¿Actualizar igualmente?»); si va adelantado, al revés.
@@ -1470,11 +1470,18 @@ Petición de Víctor: «arreglar para que todo funcione de la misma manera y evi
 
 ---
 
+## 77. Números de versión corregidos en la documentación (19 nov 2026) — PR en GitHub
+
+Petición de Víctor. Las secciones 75 y 76 se escribieron suponiendo una compilación por cambio, pero la compilación del 19 nov a las 09:22 (publicada como **v10.2.74**) ya llevaba la Acción 3 guiada (sección 74) **y** la Acción 1 con ARTICULOS.htm (sección 75). Corregido en README, CLAUDE.md, este historial, comentarios del código y pruebas: ARTICULOS.htm, **v10.2.74** (ponía v10.2.76); la regla de fechas de «Faltan los listados de SAP» (sección 76), **v10.2.76**, la próxima compilación (ponía v10.2.78). Lo mismo en las entradas del historial compartido. Sin cambios de funcionamiento.
+- **Para no repetirlo:** la versión la pone la compilación (la mayor publicada + 2). Si hay varias PR sin compilar, todas salen en la misma versión: antes de escribirla, mirar las Releases y si queda alguna PR fusionada sin compilar.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
 - ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).
 - ~~Lo cambiado en la web baja solo al Excel y la Consola nunca lo pisa~~ hecho (sección 67): gana la última modificación.
-- ~~**La Acción 1 también con `ARTICULOS.htm`**~~ hecho (sección 75, v10.2.76). Pendiente: probarla en Windows con la app y añadirla al manual.
+- ~~**La Acción 1 también con `ARTICULOS.htm`**~~ hecho (sección 75, v10.2.74). Pendiente: probarla en Windows con la app y añadirla al manual.
 - **PENDIENTE (petición de Víctor, 13 nov 2026): auditar la sincronización con la web, unir las Acciones 1 y 2 y guiar la Acción 3.** ~~Auditoría, nuevo final de la Acción 1 y quitar la Acción 2~~ hechos (sección 66); ~~guiar la Acción 3~~ hecho (sección 74); queda el Excel cambiando solo lo necesario.
   - Petición: «auditar que todos los pasos se están sincronizando directamente con la web. Me gustaría que al terminar la acción 1, después de limpiar los Excel 1 y 2 y crear el limpio que se guarda en recursos, esta información ya se vuelque directamente en la web, ya que todas las columnas se integran luego en la acción dos al Excel "catálogo completo" y a la web; de esta manera podríamos eliminar creo el paso 2. Antes de subirlo a la web, se le pregunta al usuario si desea revisar el Excel limpio antes del volcado final en la web, dos botones sí - no; si dice que sí, se abre el Excel para revisión del usuario; una vez que el usuario cierre y guarde los cambios en Excel, en la misma ventana anterior se debe abrir un nuevo botón que indique subir datos a la web o actualizar catálogo asignaciones; este botón deberá estar oculto hasta que el usuario no indique sí o no a la primera pregunta».
   - ~~**Auditoría:**~~ hecho (sección 66).

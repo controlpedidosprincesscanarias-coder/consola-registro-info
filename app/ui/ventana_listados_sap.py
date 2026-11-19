@@ -39,7 +39,7 @@ class VentanaListadosSap(tk.Toplevel):
         self.resultado = "despues"
         self._codigos = list(codigos_fuera)
         self._recursos = carpeta_recursos
-        # (v10.2.78) Fechas de los listados al salir el aviso: «descargado de nuevo» = su fecha ha cambiado. Antes se
+        # (v10.2.76) Fechas de los listados al salir el aviso: «descargado de nuevo» = su fecha ha cambiado. Antes se
         # comparaba con la hora del PC, y en la unidad G: la fecha del archivo la pone el reloj del servidor.
         self._desde = L.fechas_listados(carpeta_recursos) if fechas_antes is None else fechas_antes
         self._imagenes = []
