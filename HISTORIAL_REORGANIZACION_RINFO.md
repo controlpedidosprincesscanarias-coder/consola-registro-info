@@ -1477,6 +1477,22 @@ Petición de Víctor. Las secciones 75 y 76 se escribieron suponiendo una compil
 
 ---
 
+## 78. Fuera las ventanas de resumen que repetían lo que enseña el envío a la web (19 nov 2026, v10.2.78) — PR en GitHub
+
+Petición de Víctor (con capturas de la Acción 1): «eliminar los avisos obsoletos ya que en las nuevas actualizaciones ya tenemos las ventanas con la info a publicar en web… revisar todos los puntos parecidos en la Consola».
+- **Revisadas todas las ventanas** que salen al terminar algo que acaba enviándose a Catálogo Asignaciones. Se quitan las que solo repetían lo que ya enseña «Cambios para Catálogo Asignaciones»; el resumen pasa al log.
+- **Quitadas:**
+  - Acción 1: «Actualización completada» (artículos, fecha y ruta del catálogo; la ruta pasa al log).
+  - Al regenerar el catálogo: «Caso irregular — Proveedor Asignado cambió». Cada cambio ya sale en el envío («Proveedor asignado: … → …» y el aviso de la web de que vacía el precio), en el log y en el `.txt` de RECURSOS.
+  - Acción 3: «SAP — Actualización completada» cuando no hay advertencias.
+  - Códigos SAP faltantes (Acción 4): «Guardado correctamente» cuando no hay DALI que no estén en el catálogo.
+  - Acción 8: la ventana de códigos guardados cuando no hay nada que revisar.
+- **Se quedan** (avisan de algo que hay que revisar y no sale en el envío): Acción 3 con códigos sin coincidencia o mapeos que faltan, «Categoría valoración ambigua», DALI no encontrados, códigos que no están en `Productos.xlsx` (antes de la guía de los listados), «Proveedor Asignado no coincide» y «Códigos proveedor completados» de la tarifa (Acción 4), el resumen final de la tarifa, el paso del LISTADO antiguo y todos los errores.
+- **Pruebas:** la de la Acción 8 comprueba ahora que, con todo guardado y sin avisos, no sale ventana. 292 en verde (con el Python 3.12 del sistema, que tiene tkinter, y `xvfb-run`).
+- **No probado:** en Windows con la app abierta. **Manual:** no enseña ninguna de las ventanas quitadas; no hace falta regenerarlo.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
 - ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).

@@ -425,9 +425,12 @@ class VentanaAsignarSap(tk.Toplevel):
             msg += (f"\n\n⚠  {len(fuera_sap)} código(s) no están en Productos.xlsx: se han guardado y se envían a "
                     "Catálogo Asignaciones, pero faltan sus datos SAP. A continuación se explica cómo descargar de "
                     "SAP los listados actualizados.")
-        if r.get("completando"):
-            msg += "\n\nLos datos SAP de los que sí están en Productos.xlsx se están completando ahora (como en la Acción 3)."
-        messagebox.showinfo("Asignar SAP pendientes", msg, parent=self)
+        # (19 nov 2026, petición de Víctor) Si todo ha ido bien no sale ventana: el resumen va al log y lo que cambia en
+        # la web sale en «Cambios para Catálogo Asignaciones». Solo se avisa de lo que hay que revisar.
+        self._log(f"  ✔ {len(r['escritos'])} código(s) SAP guardados en el catálogo"
+                  + (f"; quitado el código repetido a {len(r['limpiados'])} DALI" if r["limpiados"] else "") + ".", "OK")
+        if r["no_encontrados"] or fuera_sap:
+            messagebox.showwarning("Asignar SAP pendientes", msg, parent=self)
         if fuera_sap and self._listados_fn:
             self._listados_fn(fuera_sap)          # «Faltan los listados de SAP actualizados» (13 nov 2026)
             if self.winfo_exists():

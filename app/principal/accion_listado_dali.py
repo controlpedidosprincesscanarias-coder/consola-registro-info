@@ -90,14 +90,9 @@ class AccionListadoDali:
                 self.consola.separador("FIN ACTUALIZACIÓN DALI")
                 self.after(0, lambda: self._barra.completado(
                     f"DALI actualizado — {n_filas} artículos ✔"))
-                self.after(0, lambda n=n_filas: messagebox.showinfo(
-                    "Actualizacion completada",
-                    f"✔  Artículos DALI actualizados en el catálogo\n\n"
-                    f"   Artículos DALI : {n}\n"
-                    f"   {texto_fecha}\n\n"
-                    f"\U0001f4c1  {ruta_catalogo}\n\n"
-                    "Los cambios se envían ahora a Catálogo Asignaciones:\n"
-                    "verás el resumen antes de aplicarlos."))
+                # (19 nov 2026, petición de Víctor) Sin ventana «Actualización completada»: lo que cambia sale en la
+                # ventana «Cambios para Catálogo Asignaciones», que se abre a continuación, y el resumen en el log.
+                self.log_consola(f"  └ {ruta_catalogo}", "INFO")
 
             except PermissionError:
                 self.log_consola("ERROR: catalogo-dali-completo.xlsx está abierto en Excel.", "ERROR")

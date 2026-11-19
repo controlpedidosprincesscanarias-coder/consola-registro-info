@@ -793,13 +793,16 @@ class VentanaSAPFaltantes(tk.Toplevel):
                 def _fin_ok(e=escritos, nf=no_encontrados,
                             et=_escritos_tarifa):
                     from tkinter import messagebox
-                    msg = f"✔  {e} código(s) SAP guardados en el catálogo."
-                    if et:
-                        msg += f"\n✔  {et} código(s) escritos también en la tarifa."
+                    # (19 nov 2026, petición de Víctor) El resumen va al log; lo que cambia en la web sale en
+                    # «Cambios para Catálogo Asignaciones». Solo hay ventana si algo no se ha podido guardar.
+                    self._log(f"  ✔ {e} código(s) SAP guardados en el catálogo"
+                              + (f"; {et} escritos también en la tarifa" if et else "") + ".", "OK")
                     if nf:
-                        msg += f"\n\n⚠  {len(nf)} código(s) DALI no encontrados en el catálogo:\n"
-                        msg += ", ".join(str(d) for d in nf)
-                    messagebox.showinfo("Guardado correctamente", msg)
+                        messagebox.showwarning(
+                            "Códigos SAP guardados con avisos",
+                            f"✔  {e} código(s) SAP guardados en el catálogo.\n\n"
+                            f"⚠  {len(nf)} código(s) DALI no encontrados en el catálogo:\n"
+                            + ", ".join(str(d) for d in nf))
                     self.destroy()
 
                 try:

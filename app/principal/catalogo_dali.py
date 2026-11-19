@@ -825,32 +825,9 @@ class CatalogoDali:
                     f"      … y {len(_cambios_proveedor_asignado) - 30} más "
                     f"(omitidos del log, ver {os.path.basename(_ruta_txt_cambios)})", "WARN")
 
-            def _avisar_cambios_proveedor_asignado(cambios=_cambios_proveedor_asignado,
-                                                    nombre_txt=os.path.basename(_ruta_txt_cambios)):
-                lineas = [
-                    "⚠  CASO IRREGULAR — Proveedor Asignado cambió",
-                    "",
-                    f"Los siguientes {len(cambios)} código(s) DALI han cambiado de",
-                    "\"Proveedor Asignado - DALI\" respecto al catálogo anterior.",
-                    "Normalmente ambas bases de datos de proveedores deberían",
-                    "coincidir exactamente -- revise estos códigos, puede tratarse",
-                    "de un desfase puntual entre listados:",
-                    "",
-                ]
-                for _clave_c, _prov_ant, _prov_new, _cod_vaciado, _precio_vaciado in cambios[:20]:
-                    lineas.append(
-                        f"   • DALI {_clave_c}: «{_prov_ant or '(vacío)'}» → "
-                        f"«{_prov_new or '(vacío)'}»")
-                if len(cambios) > 20:
-                    lineas.append(f"   … y {len(cambios) - 20} más (ver log de consola).")
-                lineas += [
-                    "",
-                    "Su Código Proveedor y su Precio € se han vaciado en catalogo-dali-completo.xlsx.",
-                    f"Detalle completo en RECURSOS/{nombre_txt}",
-                ]
-                messagebox.showwarning(
-                    "Caso irregular — Proveedor Asignado cambió", "\n".join(lineas))
-            self.after(0, _avisar_cambios_proveedor_asignado)
+            # (19 nov 2026, petición de Víctor) Sin ventana «Caso irregular — Proveedor Asignado cambió»: cada cambio
+            # sale en la ventana «Cambios para Catálogo Asignaciones» («Proveedor asignado: … → …» y el aviso de que
+            # la web vacía su precio), y el detalle en el log y en el .txt de RECURSOS.
 
         _n_filas = _fila - 5
         self.log_consola(f"  └ catalogo-dali-completo.xlsx regenerado: {_n_filas} fila(s), "
