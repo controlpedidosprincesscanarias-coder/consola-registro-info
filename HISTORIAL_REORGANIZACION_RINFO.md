@@ -1615,6 +1615,15 @@ Petición de Víctor: después de añadir en Catálogo Asignaciones (v1.20.74) l
 
 ---
 
+## 88. Manual al día con la v10.2.90 (20 nov 2026) — PR en GitHub
+
+Petición de Víctor: «actualizar los manuales de consola y catálogo asignaciones con todo lo actualizado hoy».
+- **Texto** (`docs/manuales_fuente/manual_usuario.js`): recuadro «Columna "Conversión DALI - SAP" (equivalencias)» en el apartado del catálogo (qué es, que se carga en Catálogo Asignaciones con «Solo EQUIVALENCIAS» y que la consola la conserva al regenerar sin enviarla); el aviso de reactivar a mano en SAP, también cuando solo están borrados algunos centros. Lo demás de hoy (numeración 1–6, sin ventanas que solo informan) ya estaba en el de la v10.2.88.
+- **Capturas** rehechas con datos inventados y la versión v 10.2.90 (`capturas.py`, `VERSION` por defecto). 27 capturas.
+- **Regenerados** `docs/Manual_Usuario_ConsolaRegistroInfo.docx` / `.pdf` y, dentro del `.exe`, `assets/` (PDF y `manual_indice.json`, 32 apartados): hace falta compilar para que «Manual de usuario» y «Consultar el manual» los lleven.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
 - ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).

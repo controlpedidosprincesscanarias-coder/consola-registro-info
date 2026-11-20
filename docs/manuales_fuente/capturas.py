@@ -108,7 +108,7 @@ import tarifa_app  # noqa: E402
 # El inicio de sesión de Catálogo Asignaciones (sin red) se fotografía aparte (c_login); aquí se entra sin él.
 tarifa_app.App._iniciar_sesion_consola = lambda self: (self.deiconify(), self._tras_iniciar_sesion())
 # La versión que se enseña es la del .exe que llevará este manual (en el código fuente, APP_VERSION es la antigua).
-tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.88")
+tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.90")
 _crear_catalogo_demo()
 
 
