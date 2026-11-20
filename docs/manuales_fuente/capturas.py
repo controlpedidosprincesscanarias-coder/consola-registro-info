@@ -108,7 +108,7 @@ import tarifa_app  # noqa: E402
 # El inicio de sesión de Catálogo Asignaciones (sin red) se fotografía aparte (c_login); aquí se entra sin él.
 tarifa_app.App._iniciar_sesion_consola = lambda self: (self.deiconify(), self._tras_iniciar_sesion())
 # La versión que se enseña es la del .exe que llevará este manual (en el código fuente, APP_VERSION es la antigua).
-tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.84")
+tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.86")
 _crear_catalogo_demo()
 
 
@@ -480,7 +480,7 @@ def marcas_principal(v):
         (B(v, "Crear estructura PROYECTO"), 3, "ir"),
         (B(v, "Localizar").master.master if B(v, "Localizar") else None, 4, "tr"),
         (prog, 5, "r"),
-        (caja_de(v, [B(v, "Organizar artículos DALI").master, B(v, "Asignar SAP pendientes").master]), 6, "tr"),
+        (caja_de(v, [B(v, "Organizar artículos DALI").master, B(v, "Generar Listado Tarifa").master]), 6, "tr"),
         (B(v, "Consultar el manual").master, 7, "tr"),
         (v.consola, 8, "ir"),
         (caja_de(v, [B(v, "guardar log"), B(v, "limpiar")]), 9, "b"),
