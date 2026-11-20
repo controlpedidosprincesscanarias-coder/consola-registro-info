@@ -3067,6 +3067,19 @@ class GeneradorDesdeExistente:
                     if _val_centro:
                         self._materiales_centros_borrado.setdefault(
                             clave, []).append(str(_val_centro).strip())
+                    # (20 nov 2026, caso real OASISFISH: H1 AJ = 0 | H2 AN = 50)
+                    # Lo que SAP tiene borrado es precisamente este segmento por
+                    # centro (ver arriba): aunque la cabecera (H1 AJ) no venga
+                    # marcada, el material necesita la misma reactivación a mano.
+                    # Antes solo se avisaba por H1 AJ, y el log prometía un aviso
+                    # que no salía (ni el aviso en la consola ni la ventana).
+                    if clave not in self._materiales_registro_a_renumerar:
+                        _fila_h1 = (getattr(self, "_fila_h1_por_codigo", None) or {}).get(clave)
+                        self._materiales_registro_a_renumerar[clave] = (
+                            ws.cell(row=_fila_h1, column=1).value if _fila_h1 else None)
+                        _val_f = ws.cell(row=_fila_h1, column=6).value if _fila_h1 else None
+                        self._materiales_registro_a_renumerar_desc[clave] = \
+                            str(_val_f).strip() if _val_f else ""
                     n_an_limpiados_h2 += 1
 
         if n_aj_limpiados_h1 or n_an_limpiados_h2:
