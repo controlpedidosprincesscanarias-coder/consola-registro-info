@@ -119,6 +119,33 @@ class TestRegenerar(Base):
         self.assertEqual(t["1941"]["precio"], 9.5)
         self.assertTrue(any("Proveedor renombrado en DALI" in m for _n, m in self.app.logs))
 
+    def test_conserva_la_equivalencia_por_codigo_dali(self):
+        """20 nov 2026 (petición de Víctor): la columna «Conversión DALI - SAP» se carga en la web y la Consola la
+        conserva al regenerar, por código DALI, aunque cambie el proveedor. Vale también el título con el que
+        venía en su Excel («COVERSION DALI - SAP»)."""
+        crear_catalogo(self.cat, [
+            {"clave": 10, "descripcion": "MANZANA", "proveedor": "PROV A", "precio": 1.2, "conversion": 1000},
+            {"clave": 20, "descripcion": "PERA", "proveedor": "PROV A", "conversion": "NO"},
+            {"clave": 30, "descripcion": "UVA", "proveedor": "PROV A", "conversion": 0.7},
+        ])
+        wb = openpyxl.load_workbook(self.cat)
+        ws = wb.active
+        for c in ws[4]:
+            if c.value == "Conversión DALI - SAP":
+                c.value = "COVERSION DALI - SAP"
+        wb.save(self.cat)
+        # DALI quita el 20, intercala el 15 y cambia el proveedor del 30
+        crear_articulos_dali(self.dali, [_dali(10, "MANZANA"), _dali(15, "KIWI"), _dali(30, "UVA", "PROV B")])
+        self.app._regenerar_catalogo_dali_completo()
+        t = self.tabla()
+        self.assertEqual(t["10"]["conversion"], 1000)
+        self.assertIsNone(t["15"]["conversion"])
+        self.assertEqual(t["30"]["conversion"], 0.7)
+        self.assertIsNone(t["30"]["precio"], "el precio sí se vacía al cambiar de proveedor")
+        cab = [c.value for c in openpyxl.load_workbook(self.cat, read_only=True).active[4]]
+        self.assertEqual(cab[-1], "Conversión DALI - SAP")
+        self.assertTrue(any("3 con equivalencia" in m for _n, m in self.app.logs))
+
     def test_con_listado_lo_pasa_una_vez_y_lo_renombra(self):
         crear_catalogo(self.cat, [{"clave": 10, "descripcion": "MANZANA", "cod_sap": "1000"}])
         crear_listado(C.ruta_listado(self.proyecto),
