@@ -142,7 +142,11 @@ class TestRegenerar(Base):
         self.assertIsNone(t["15"]["conversion"])
         self.assertEqual(t["30"]["conversion"], 0.7)
         self.assertIsNone(t["30"]["precio"], "el precio sí se vacía al cambiar de proveedor")
-        cab = [c.value for c in openpyxl.load_workbook(self.cat, read_only=True).active[4]]
+        wb = openpyxl.load_workbook(self.cat, read_only=True)
+        try:
+            cab = [c.value for c in wb.active[4]]
+        finally:
+            wb.close()   # en Windows, un libro read_only sin cerrar deja el archivo bloqueado (falló la compilación)
         self.assertEqual(cab[-1], "Conversión DALI - SAP")
         self.assertTrue(any("3 con equivalencia" in m for _n, m in self.app.logs))
 
