@@ -1,7 +1,7 @@
 // Manual de usuario de la Consola Registro Info SAP (TARIFA Finder).
 // La idea y el desarrollo de la aplicación, incluidas sus pruebas, son de Víctor Alejandro Martín Andrade,
 // para el Departamento de Central de Compras de Princess Hotels en Canarias.
-const V = process.env.VERSION || "v 10.2.88";
+const V = process.env.VERSION || "v 10.2.90";
 const L = require("./lib.js");
 const { p, vineta, pasos, h1, h2, imagen, leyenda, recuadro, tabla, flujo, portada, indice, generar } = L;
 const fecha = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
@@ -101,6 +101,8 @@ s.push(...recuadro("importante", "Archivos abiertos en Excel", ["Cierra en Excel
 // ── 5 ──────────────────────────────────────────────────────────────────────
 s.push(h1("5. El catálogo DALI / SAP (Acciones 1, 2 y 5)"));
 s.push(p("El **catálogo completo** (**RECURSOS/catalogo-dali-completo.xlsx**) relaciona cada código DALI con su material SAP (descripción, unidad, IGIC, grupo de compras…), su proveedor, su código de proveedor y su precio. Es la base de la TARIFA y del Registro Info, así que conviene tenerlo al día. Todo se empareja siempre **por código DALI**."));
+s.push(...recuadro("nota", "Columna «Conversión DALI - SAP» (equivalencias)", ["La última columna del catálogo es la **equivalencia** entre la unidad de DALI y la de SAP (por ejemplo 1, 1000 o 0,7; algunos artículos llevan «NO»). Se carga en **Catálogo Asignaciones** con «Importar Excel» → «Solo EQUIVALENCIAS» y sale en el catálogo que se exporta de la web.",
+  "La consola **no la cambia ni la envía** a la web: cuando regenera el catálogo (final de la Acción 1 y Acción 2) la **conserva** de cada artículo, aunque cambie su proveedor. Si tu catálogo de RECURSOS no la tiene, pégala una vez al final (desde el catálogo exportado de la web); después se mantiene sola."]));
 s.push(...recuadro("nota", "Adiós al LISTADO CODIGOS DALI - SAP", ["Hasta noviembre de 2026 había además un **LISTADO CODIGOS DALI - SAP.xlsx** con casi los mismos datos. Ya no se usa: todo está en el catálogo.",
   "La primera vez que se abre la versión nueva, la consola pasa al catálogo los datos SAP del LISTADO, deja un informe con las diferencias que hubiera (**RECURSOS/paso_listado_a_catalogo_….txt**) y le cambia el nombre a «LISTADO CODIGOS DALI - SAP (antiguo, ya no se usa).xlsx». No se borra: puedes guardarlo como copia."]));
 s.push(h2("Acción 1 — Organizar artículos DALI"));
@@ -211,7 +213,7 @@ s.push(h2("Avisos durante la generación"));
 s.push(p("Con un Purchasing existente, puede preguntarte qué hacer con materiales que ya están en SAP pero **no vienen en la tarifa nueva**:"));
 s.push(...imagen("c_rinfo_sin_tarifa", 13, "Materiales sin tarifa activa."));
 s.push(...leyenda([[1, "Materiales del Purchasing que no están en la tarifa, con su fin de validez. Marca los que quieras **dar de baja**."], [2, "**MANTENER**: no cambia nada."], [3, "**DAR BAJA**: los marca para borrar en SAP."]]));
-s.push(p("Y si algún material sigue en la tarifa pero su Registro Info está **marcado para borrar** en SAP, te avisa de que hay que reactivarlo a mano en SAP, con los centros afectados:"));
+s.push(p("Y si algún material sigue en la tarifa pero su Registro Info está **marcado para borrar** en SAP (el registro entero o solo algunos de sus centros), te avisa en la consola y en esta ventana de que hay que reactivarlo a mano en SAP, con los centros afectados. Hasta que lo hagas, sus precios no estarán disponibles en SAP aunque el RINFO se cargue sin errores:"));
 s.push(...imagen("c_rinfo_reactivar", 13, "Materiales a reactivar manualmente en SAP."));
 s.push(...leyenda([[1, "Material, Registro Info y centros afectados."], [2, "Los pasos en SAP («Marcar reg.info de compra para borrar»), con una captura de referencia."]]));
 s.push(p("Antes de terminar, si algún material va a quedar **sin unidad de medida** en el catálogo, la consola avisa: «⚠ N material(es) sin unidad de medida… SAP rechazará su registro info», con sus códigos, y lo repite en el **RESUMEN VALIDACIÓN SAP** como «SIN UNIDAD DE MEDIDA». Suele ser un código SAP recién asignado cuyo material aún no está en Productos.xlsx: descarga de nuevo los dos listados de SAP a RECURSOS, pasa la Acción 2 y genera el RINFO otra vez."));
