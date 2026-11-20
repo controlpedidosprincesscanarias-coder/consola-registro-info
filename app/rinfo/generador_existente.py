@@ -4309,7 +4309,7 @@ class GeneradorDesdeExistente:
         if _sin_um:
             _log(self._parent,
                  f"  ⚠ SIN UNIDAD DE MEDIDA: {len(_sin_um)} material(es) nuevo(s) — SAP rechazará su registro info: "
-                 f"{', '.join(_sin_um)}. Pasa la Acción 3 y vuelve a crear el Registro Info antes de cargarlo.",
+                 f"{', '.join(_sin_um)}. Pasa la Acción 2 y vuelve a crear el Registro Info antes de cargarlo.",
                  "WARN")
 
         n_cat = sum([

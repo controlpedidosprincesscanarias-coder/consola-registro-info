@@ -363,7 +363,7 @@ class EngancheAccion3(unittest.TestCase):
                 V.return_value.resultado = "actualizar"
                 V.return_value.respuesta = True
                 self._lanzar(app)
-            app._traer_cambios_web.assert_called_once_with("la Acción 3")
+            app._traer_cambios_web.assert_called_once_with("la Acción 2")
             diag = V.call_args[0][1]
             self.assertEqual((diag["estado"], diag["fuera"], diag["pendientes"]), (L.FALTAN, ["10100009"], 2))
             self.assertTrue(diag["preguntar"])

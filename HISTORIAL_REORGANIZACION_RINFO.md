@@ -1558,6 +1558,19 @@ Víctor mandó el log de SAP de la importación del RINFO de GRUPO DISTRIBUIDOR 
 
 ---
 
+## 84. Acciones numeradas del 1 al 6 (20 nov 2026, v10.2.86) — PR en GitHub
+
+Petición de Víctor (con captura del panel de acciones): «Opción 3 pasa a la 2, 4 a 3, 5 desaparece (no se usa), 6 a 4 (sombreado y solo se puede utilizar si existen tarifas [INCOMPLETO] en la carpeta TARIFAS), 8 a 5, 7 a 6».
+- **Panel** (`interfaz.py`): botones 1 a 6. Fuera el 5 y `_abrir_resultado`; `_habilitar_btn_resultado`, que se llamaba al empezar y al terminar una TARIFA, ahora refresca la Acción 4.
+- **Acción 4 sombreada sin tarifas [INCOMPLETO]:** `app/comun/incompletos.py` (sin tkinter) con el criterio que tenía la antigua Acción 6 (`listar`, `hay`), que ahora usa también la ventana de la Acción 4. Se comprueba al cambiar de proyecto o de TARIFA, al terminar una y cada 10 s.
+- **Textos visibles renumerados** (consola, títulos de ventanas, avisos), solo en los literales que no son comentarios ni docstrings, con un script que recorre el código con `ast`. Revisados a mano los escritos con escapes (`Acci\xf3n`) y el que remitía a la Acción 5 para abrir la tarifa (ahora, a la Acción 4). No cambian los métodos ni los nombres internos `accion2/3/4` del envío a la web.
+- **Corregido** (commit propio): «genérelo con la Acción 8» y «Ejecuta la Acción 2» mandaban a acciones equivocadas; el catálogo lo genera la Acción 1.
+- **Manual** renumerado (tabla de acciones, títulos de los capítulos 5 y 6, nota de la renumeración, botón 4 sombreado), con todas las capturas rehechas (v 10.2.86); docs/ y assets/. README y CLAUDE.md (con la equivalencia antigua → nueva).
+- **Pruebas:** 318 en verde (nueva `tests/test_renumeracion_acciones.py`; actualizadas las que citaban el número antiguo).
+- **No probado:** en Windows, sobre todo el paso del botón 4 de sombreado a activo al aparecer una tarifa [INCOMPLETO] en G:.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
 - ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).

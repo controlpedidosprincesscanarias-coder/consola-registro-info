@@ -440,7 +440,7 @@ def comprobar_listas_productos(tabla_categoria, tabla_productos, minimo=0.5):
         return (f"Listas de productos.xlsx no casa con Productos.xlsx: solo {casan} de {len(tabla_categoria)} "
                 f"códigos están en Productos.xlsx (ejemplo de código leído: «{ejemplo}»). Puede que se haya "
                 "exportado con otras columnas. No se ha cambiado nada: descárgalo de nuevo desde «Lista de "
-                "productos» con las columnas «Producto» y «Categoría valoración» y repite la Acción 3.")
+                "productos» con las columnas «Producto» y «Categoría valoración» y repite la Acción 2.")
     return None
 
 
@@ -448,7 +448,7 @@ def comprobar_listas_productos(tabla_categoria, tabla_productos, minimo=0.5):
 # Registro de Víctor: la Acción 4 renombraba la tarifa completa (quitando [INCOMPLETO]) con el archivo todavía
 # abierto en Excel desde la Acción 6; al volver a guardar en Excel, reaparecía el «[INCOMPLETO]». Excel deja junto
 # al archivo abierto un «~$<nombre>» (con nombres largos, sin los dos primeros caracteres).
-ABIERTO_EN_EXCEL = ("está abierto en Excel: guárdalo y ciérralo, y vuelve a pasar la Acción 4 "
+ABIERTO_EN_EXCEL = ("está abierto en Excel: guárdalo y ciérralo, y vuelve a pasar la Acción 3 "
                     "(se queda como [INCOMPLETO] hasta entonces)")
 
 

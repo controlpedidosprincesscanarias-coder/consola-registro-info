@@ -15,6 +15,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
 import threading
+from app.comun import incompletos
 from app.comun.sap_helpers import comprobar_cerrado_en_excel
 from app.comun.tarifa_core import (
     TARIFA_NAME,
@@ -30,7 +31,7 @@ class AccionesTarifa:
     # ── ACCIÓN 6 — Crear nuevo Registro Info SAP ──────────────
     def _crear_registro_sap(self):
         """
-        Acción 6 — Muestra todos los archivos [INCOMPLETO] de la carpeta TARIFAS/
+        Acción 4 (antes 6) — Muestra todos los archivos [INCOMPLETO] de la carpeta TARIFAS/
         (excluyendo los que empiecen por RINFO) y abre el seleccionado en Excel
         para edición manual.
         """
@@ -45,28 +46,8 @@ class AccionesTarifa:
                                    f"No se encontró la carpeta TARIFAS/ en:\n{carpeta}")
             return
 
-        # ── Buscar archivos [INCOMPLETO] (excluyendo RINFO) ──────────────
-        import re as _re6
-        _pat = _re6.compile(r'.+\[\d{2}-\d{2}-\d{4}\].*\.xlsx$', _re6.IGNORECASE)
-        archivos_inc = []
-        try:
-            for entry in sorted(os.scandir(carpeta_tarifas), key=lambda e: e.name.lower()):
-                nombre = entry.name
-                nu = nombre.upper()
-                if (not entry.is_file()
-                        or not _pat.match(nombre)
-                        or nu.startswith("RINFO")
-                        or "[INCOMPLETO]" not in nu):
-                    continue
-                ts = entry.stat().st_mtime
-                fecha = datetime.fromtimestamp(ts).strftime("%d-%m-%Y %H:%M")
-                archivos_inc.append({
-                    "nombre": nombre,
-                    "ruta":   entry.path,
-                    "fecha":  fecha,
-                })
-        except PermissionError:
-            pass
+        # ── Buscar archivos [INCOMPLETO] (excluyendo RINFO): app/comun/incompletos.py ──────────────
+        archivos_inc = incompletos.listar(carpeta_tarifas)
 
         if not archivos_inc:
             messagebox.showinfo(
@@ -93,7 +74,7 @@ class AccionesTarifa:
         INFO_BDR   = "#E8C84B"
 
         top = tk.Toplevel(self)
-        top.title("Acción 6 — Archivos incompletos para edición manual")
+        top.title("Acción 4 — Archivos incompletos para edición manual")
         top.configure(bg=HDR_BG)
         top.resizable(True, True)
         top.minsize(700, 460)
@@ -135,7 +116,7 @@ class AccionesTarifa:
                      "2.  Revise el archivo: elimine líneas duplicadas e introduzca\n"
                      "     los códigos SAP que estén pendientes.\n"
                      "3.  Guarde y cierre el archivo en Excel.\n"
-                     "4.  Ejecute de nuevo  Acción 4  para comprobación y validación final."
+                     "4.  Ejecute de nuevo  Acción 3  para comprobación y validación final."
                  ),
                  bg=INFO_BG, fg=INFO_FG,
                  font=("Segoe UI", 8),
@@ -156,7 +137,7 @@ class AccionesTarifa:
             idx = _iids.index(sel[0])
             ruta = archivos[idx]["ruta"]
             self.log_consola(
-                f"Acción 6 — Abriendo en Excel: {os.path.basename(ruta)}", "INFO")
+                f"Acción 4 — Abriendo en Excel: {os.path.basename(ruta)}", "INFO")
             try:
                 abrir_con_su_programa(ruta)
             except Exception as _e:
@@ -166,7 +147,7 @@ class AccionesTarifa:
                 return
             # (13 nov 2026) Lo siguiente se hace en Excel: se suelta el modo modal y se cierra esta ventana, para que
             # Excel quede delante a la primera (antes había que pulsar dos veces).
-            self.log_consola("   └ Edítalo en Excel, guárdalo y ciérralo; después, Acción 4.", "INFO")
+            self.log_consola("   └ Edítalo en Excel, guárdalo y ciérralo; después, Acción 3.", "INFO")
             try:
                 top.grab_release()
             except tk.TclError:
@@ -301,7 +282,7 @@ class AccionesTarifa:
 
         if _archivos_inc:
             self.log_consola(
-                f"Acción 4: {len(_archivos_inc)} archivo(s) [INCOMPLETO] disponibles "
+                f"Acción 3: {len(_archivos_inc)} archivo(s) [INCOMPLETO] disponibles "
                 f"para procesar.", "INFO")
             _ruta_sel = self._elegir_inc_para_procesar(_archivos_inc)
             if _ruta_sel:
@@ -336,7 +317,7 @@ class AccionesTarifa:
         sel = {"ruta": None}
 
         top = tk.Toplevel(self)
-        top.title("Acción 4 — Seleccionar tarifa a procesar")
+        top.title("Acción 3 — Seleccionar tarifa a procesar")
         top.configure(bg=HDR_BG)
         top.resizable(True, True)
         top.minsize(620, 380)
@@ -483,7 +464,7 @@ class AccionesTarifa:
 
         def proceso():
             # (13 nov 2026) Antes de leer el catálogo, lo cambiado en la web (SAP, precio, código de proveedor)
-            self._traer_cambios_web("generar la TARIFA (Acción 4)")
+            self._traer_cambios_web("generar la TARIFA (Acción 3)")
             try:
                 from app.tarifas.transformar_tarifa import transformar
             except ImportError:
@@ -592,11 +573,8 @@ class AccionesTarifa:
                         "\n\nLas celdas afectadas están resaltadas en ROJO en el archivo.\n"
                         "Mientras existan duplicados, el Registro Info no se podrá\n"
                         "tramitar correctamente.\n\n"
-                        "Puede revisar y corregir el archivo:\n"
-                        "  →  Ahora:       cierre esta ventana y pulse  Acción 5\n"
-                        "                  para abrirlo directamente.\n"
-                        "  →  Más tarde:   abra el archivo desde  Acción 6  en cualquier\n"
-                        "                  momento para retomar la corrección.\n\n"
+                        "Puede revisar y corregir el archivo cuando quiera con la\n"
+                        "Acción 4  (Actualizar manualmente archivos [INCOMPLETOS]).\n\n"
                         "Una vez eliminadas todas las duplicidades, renombre el\n"
                         "archivo suprimiendo  [INCOMPLETO]  del nombre para que\n"
                         "quede preparada como  TARIFA PREPARADA PARA CREAR O MODIFICAR REGISTRO INFO SAP."
@@ -616,9 +594,9 @@ class AccionesTarifa:
                         "  📥  1. Descargue el listado actualizado desde SAP:\n"
                         "          https://my405727.s4hana.cloud.sap/ui#Shell-home\n"
                         "          Guárdelo en la carpeta  RECURSOS/\n\n"
-                        "  ⚙️   2. Ejecute  Acción 3  (Actualizar listado materiales SAP)\n"
+                        "  ⚙️   2. Ejecute  Acción 2  (Actualizar listado materiales SAP)\n"
                         "          para incorporar los nuevos datos al catálogo.\n\n"
-                        "  🔄  3. Ejecute de nuevo  Acción 4  (Procesar y generar TARIFA)\n"
+                        "  🔄  3. Ejecute de nuevo  Acción 3  (Procesar y generar TARIFA)\n"
                         "          para que las descripciones queden completas.\n\n"
                         "El archivo permanecerá como [INCOMPLETO] hasta que se\n"
                         "resuelva esta incidencia."
@@ -771,8 +749,8 @@ class AccionesTarifa:
                                     f"Se abri\xf3 el archivo:\n{rl}\n\n"
                                     "Cuando hayas a\xf1adido los c\xf3digos SAP:\n"
                                     "  1. Actualiza el archivo Productos en RECURSOS.\n"
-                                    "  2. Ejecuta de nuevo Acci\xf3n 3 (Actualizar materiales SAP).\n"
-                                    "  3. Ejecuta de nuevo Acci\xf3n 4 (Procesar y generar TARIFA).")
+                                    "  2. Ejecuta de nuevo Acci\xf3n 2 (Actualizar materiales SAP).\n"
+                                    "  3. Ejecuta de nuevo Acci\xf3n 3 (Procesar y generar TARIFA).")
                             # resp is None → ignorar
                         self.after(200, _mostrar_dialogo_sap)
                     else:
@@ -783,7 +761,7 @@ class AccionesTarifa:
                                 "C\xf3digos SAP faltantes",
                                 f"{len(falt)} c\xf3digo(s) DALI no tienen SAP asignado.\n\n"
                                 "No se encontr\xf3 RECURSOS/catalogo-dali-completo.xlsx.\n"
-                                "Ejecuta la Acci\xf3n 2 (o desc\xe1rgalo de Cat\xe1logo Asignaciones) y vuelve a intentarlo.")
+                                "Ejecuta la Acci\xf3n 1 (o desc\xe1rgalo de Cat\xe1logo Asignaciones) y vuelve a intentarlo.")
                         self.after(200, _avisar_sin_listado)
 
 
@@ -822,7 +800,7 @@ class AccionesTarifa:
         MUTED_FG  = "#555577"
 
         top = tk.Toplevel(self)
-        top.title("Acción 4 — Productos SAP sin descripción/unidad")
+        top.title("Acción 3 — Productos SAP sin descripción/unidad")
         top.configure(bg=HDR_BG)
         top.resizable(False, False)
         top.grab_set()
@@ -910,8 +888,8 @@ class AccionesTarifa:
                  font=("Segoe UI", 9, "bold"), anchor="w").pack(anchor="w")
 
         for paso, txt in [
-            ("1.", "Ejecute  Acción 3  — Actualizar listado materiales SAP"),
-            ("2.", "Ejecute  Acción 4  — Procesar y generar TARIFA"),
+            ("1.", "Ejecute  Acción 2  — Actualizar listado materiales SAP"),
+            ("2.", "Ejecute  Acción 3  — Procesar y generar TARIFA"),
         ]:
             frm_paso = tk.Frame(frm_body, bg=BODY_BG)
             frm_paso.pack(anchor="w", padx=(10, 0), pady=1)
@@ -1396,7 +1374,7 @@ class AccionesTarifa:
                         for _, d, s in _sap_sin_desc[:10])
                     + (" ..." if len(_sap_sin_desc) > 10 else "")
                     + "\n\nLa columna D no ha podido actualizarse para estos artículos.\n"
-                    "Ejecute la Acción 3 para completar la descripción y la unidad SAP en el catálogo y de nuevo la Acción 4.\n"
+                    "Ejecute la Acción 2 para completar la descripción y la unidad SAP en el catálogo y de nuevo la Acción 3.\n"
                 )
             if not _hay_inc:
                 # Sin faltantes, sin duplicados y sin desc vacías → renombrar eliminando INC y [INCOMPLETO]

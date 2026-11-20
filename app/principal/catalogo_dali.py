@@ -81,7 +81,7 @@ class CatalogoDali:
         tk.Label(
             frm,
             text="Se usan para descargar el catálogo actualizado y para\n"
-                 "enviar a la web los cambios de las Acciones 2, 3 y 4.\n"
+                 "enviar a la web los cambios de las Acciones 1, 2 y 3.\n"
                  "La contraseña se guarda\n"
                  "cifrada: solo tu usuario de Windows, en este equipo,\n"
                  "puede leerla. No se envía a ningún otro sitio.",
@@ -662,7 +662,7 @@ class CatalogoDali:
 
         # ── 3. Datos SAP por código DALI (v10.2.50: del catálogo, no del LISTADO) ──
         if tabla_sap is not None:
-            self.log_consola(f"  └ {len(tabla_sap)} artículo(s) con datos SAP de la Acción 3", "OK")
+            self.log_consola(f"  └ {len(tabla_sap)} artículo(s) con datos SAP de la Acción 2", "OK")
         elif os.path.isfile(ruta_catalogo):
             tabla_sap = catalogo_local.leer_tabla_sap(ruta_catalogo)
             self.log_consola(f"  └ Datos SAP de {len(tabla_sap)} artículo(s) leídos del catálogo", "OK")
@@ -675,7 +675,7 @@ class CatalogoDali:
         else:
             tabla_sap = {}
             self.log_consola("  ⚠  Sin catálogo anterior: el catálogo nuevo saldrá sin datos SAP "
-                             "(se rellenan con la Acción 3).", "WARN")
+                             "(se rellenan con la Acción 2).", "WARN")
 
         # ── 4. Construir el catálogo ─────────────────────────────────
         wb_out = openpyxl.Workbook()
@@ -916,7 +916,7 @@ class CatalogoDali:
         finally:
             self._catalogo_lock.release()
         # Etapa 6 (v10.2.50): enviar a Catálogo Asignaciones el precio y el código de proveedor cambiados.
-        self._publicar_catalogo_web("completar la tarifa (Acción 4)", os.path.basename(str(ruta_tarifa or "")) or None)
+        self._publicar_catalogo_web("completar la tarifa (Acción 3)", os.path.basename(str(ruta_tarifa or "")) or None)
         return resultado
 
     def _actualizar_codigo_proveedor_catalogo_impl(self, ruta_tarifa):
@@ -956,7 +956,7 @@ class CatalogoDali:
             if not os.path.isfile(ruta_catalogo):
                 self.log_consola(
                     "  ℹ catalogo-dali-completo.xlsx no existe todavía "
-                    "(genérelo con la Acción 8) — catálogo no actualizado.",
+                    "(genérelo con la Acción 1) — catálogo no actualizado.",
                     "INFO")
                 return
 

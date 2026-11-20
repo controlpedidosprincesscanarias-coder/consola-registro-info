@@ -435,8 +435,8 @@ def _cruzar_con_listado_dali_sap(ws, ruta_xls, ultima, log_fn=None) -> list:
                  "       2. «Ir», botón ⌄ de exportar (el último de la derecha) → «Exportar como…» → Excel (*.xlsx).",
                  "WARN")
             _log(log_fn,
-                 "       3. Guardar los dos archivos en RECURSOS/, pulsar la Acción 3 y volver a ejecutar la"
-                 " Acción 4.", "WARN")
+                 "       3. Guardar los dos archivos en RECURSOS/, pulsar la Acción 2 y volver a ejecutar la"
+                 " Acción 3.", "WARN")
     else:
         _log(log_fn, "  └ Mapa vacío — revisa los mensajes [DIAG] anteriores.", "WARN")
 
@@ -624,10 +624,10 @@ def _finalizar_y_guardar(wb, ws, ultima, ruta_xls, nombre_base,
              "  ⚠ Archivo marcado como [INCOMPLETO]: faltan códigos SAP o hay duplicados.",
              "WARN")
         _log(log_fn,
-             "    Completa los códigos SAP (ventana que se abre) o corrígelo a mano con la Acción 6,",
+             "    Completa los códigos SAP (ventana que se abre) o corrígelo a mano con la Acción 4,",
              "WARN")
         _log(log_fn,
-             "    y vuelve a pasar la Acción 4: si queda completo, quita [INCOMPLETO] del nombre.",
+             "    y vuelve a pasar la Acción 3: si queda completo, quita [INCOMPLETO] del nombre.",
              "WARN")
     wb.save(ruta_salida)
     _log(log_fn, f"✔ Completado: {ruta_salida}", "OK")

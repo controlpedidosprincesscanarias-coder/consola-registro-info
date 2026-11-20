@@ -45,7 +45,7 @@ class AccionAsignarSap:
         self._barra.indeterminate("Leyendo el catálogo...")
 
         def _cargar():
-            self._traer_cambios_web("la Acción 8")   # (13 nov 2026) los SAP puestos en la web ya no salen pendientes
+            self._traer_cambios_web("la Acción 5")   # (13 nov 2026) los SAP puestos en la web ya no salen pendientes
             try:
                 lista = asignar_sap.pendientes(ruta_cat)
                 ruta_prod = os.path.join(carpeta, FOLDER_RECURSOS, "Productos.xlsx")
@@ -109,7 +109,7 @@ class AccionAsignarSap:
         if fuera:
             self.log_consola(
                 f"  ⚠ {len(fuera)} código(s) no están en Productos.xlsx (guardados igualmente): descarga de nuevo "
-                "Productos.xlsx y Listas de productos.xlsx en RECURSOS y pulsa la Acción 3.", "WARN")
+                "Productos.xlsx y Listas de productos.xlsx en RECURSOS y pulsa la Acción 2.", "WARN")
         completando = False
         if escritos or limpiados:
             completando = self._completar_datos_sap_tras_asignar(list(escritos) + list(limpiados))
@@ -132,7 +132,7 @@ class AccionAsignarSap:
 
         def _cruce():
             try:
-                self.log_consola("Completando los datos SAP de los códigos asignados (cruce de la Acción 3)...",
+                self.log_consola("Completando los datos SAP de los códigos asignados (cruce de la Acción 2)...",
                                  "INFO")
                 tabla_productos, filas_prod = self._leer_productos_sap(rutas["Productos.xlsx"])
                 if tabla_productos is None:
@@ -146,7 +146,7 @@ class AccionAsignarSap:
                     catalogo_local.ruta_catalogo(carpeta), tabla_productos, tabla_dali, tabla_categoria,
                     conflictos_cat, filas_prod, dt.strftime("%d/%m/%Y"), dt.strftime("%H:%M"))
             except Exception as e:  # noqa: BLE001 — en un hilo: que nunca se pierda en silencio
-                self.log_consola(f"  ⚠  No se pudieron completar los datos SAP: {e}. Pulse la Acción 3.", "WARN")
+                self.log_consola(f"  ⚠  No se pudieron completar los datos SAP: {e}. Pulse la Acción 2.", "WARN")
                 self._tras_cambiar_sap_en_catalogo(cambiados)
         threading.Thread(target=_cruce, daemon=True, name="AsignarSapCruce").start()
         return True
