@@ -429,7 +429,12 @@ class VentanaAsignarSap(tk.Toplevel):
         # la web sale en «Cambios para Catálogo Asignaciones». Solo se avisa de lo que hay que revisar.
         self._log(f"  ✔ {len(r['escritos'])} código(s) SAP guardados en el catálogo"
                   + (f"; quitado el código repetido a {len(r['limpiados'])} DALI" if r["limpiados"] else "") + ".", "OK")
-        if r["no_encontrados"] or fuera_sap:
+        # (20 nov 2026) Los códigos que no están en Productos.xlsx ya los explica la guía de descarga, que se abre
+        # justo después: el aviso solo sale si además hay DALI que ya no están en el catálogo.
+        if fuera_sap:
+            self._log(f"  ⚠  {len(fuera_sap)} código(s) no están en Productos.xlsx: se han guardado, pero faltan sus "
+                      "datos SAP hasta descargar de nuevo los listados.", "WARN")
+        if r["no_encontrados"]:
             messagebox.showwarning("Asignar SAP pendientes", msg, parent=self)
         if fuera_sap and self._listados_fn:
             self._listados_fn(fuera_sap)          # «Faltan los listados de SAP actualizados» (13 nov 2026)

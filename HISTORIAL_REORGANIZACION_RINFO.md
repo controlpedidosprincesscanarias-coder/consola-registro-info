@@ -1571,6 +1571,29 @@ Petición de Víctor (con captura del panel de acciones): «Opción 3 pasa a la 
 
 ---
 
+## 85. Fuera las ventanas que solo informan (20 nov 2026, v10.2.88) — PR en GitHub
+
+Petición de Víctor (con captura de «Categoría valoración ambigua — revisar origen»): «revisar todos los mensajes ya obsoletos y eliminarlos».
+- **Inventario:** las ~55 ventanas `messagebox` de la app. Criterio: se quedan las que piden decidir, las de errores que impiden seguir y las de lo que hay que corregir antes de seguir; las que solo informan pasan a la consola.
+- **Quitadas** (su contenido ya estaba en la consola o se ha añadido):
+  - «Actualización SAP completada con advertencias» (Acción 2): una línea `WARN` con el resumen;
+  - «Categoría valoración ambigua — revisar origen» (Acción 2);
+  - «Incidencias detectadas en datos de origen» (Acción 1): línea `WARN` con la ruta del detalle;
+  - «Procesado correctamente» al generar la TARIFA (con advertencias sigue el aviso);
+  - «Tarifa completada» tras los SAP faltantes;
+  - «Caso irregular — Proveedor Asignado no coincide» y «Códigos proveedor completados desde el catálogo» (al completar la tarifa);
+  - «Catálogo único» (paso del LISTADO, de una sola vez);
+  - «Sin cambios» (SAP faltantes sin códigos);
+  - «Catálogo Asignaciones sin actualizar» (cerrar el final de la Acción 1 sin actualizar);
+  - «Web parcialmente actualizada» («Más tarde» en la guía de los listados de SAP);
+  - el aviso de «Asignar SAP pendientes» por códigos que no están en `Productos.xlsx`, que repetía lo que explica la guía de descarga, abierta justo después (sigue el aviso de DALI que ya no están en el catálogo).
+- **Se quedan:** «Sin proyecto», «Sin selección», archivo abierto en Excel, errores al guardar, duplicados SAP/DALI que resolver, tarifa con advertencias, proveedor no localizado en Proveedores.xlsx (afecta al RINFO), «Todos los códigos DALI activos tienen código SAP» (respuesta al pulsar el botón), «En construcción», «Carpetas creadas» y «Log guardado» (respuestas a una acción del usuario).
+- **Manual:** recuadro «Sin ventanas que solo informan», regenerado (docs/ y assets/). README y CLAUDE.md (regla general).
+- **Pruebas:** 316 en verde; tres pruebas que esperaban esas ventanas comprueban ahora que no salen.
+- **No probado:** en Windows.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
 - ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).

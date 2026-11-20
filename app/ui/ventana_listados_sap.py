@@ -186,7 +186,7 @@ class VentanaListadosSap(tk.Toplevel):
         self.destroy()
 
     def _mas_tarde(self):
-        messagebox.showwarning("Web parcialmente actualizada", L.AVISO_PARCIAL, parent=self)
+        # (20 nov 2026, petición de Víctor) Sin ventana: la consola ya avisa de que la web queda parcialmente actualizada
         self.resultado = "despues"
         self.destroy()
 

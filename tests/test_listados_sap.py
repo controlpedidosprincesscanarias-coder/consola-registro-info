@@ -74,12 +74,14 @@ class Ventana(unittest.TestCase):
         from app.ui.ventana_listados_sap import VentanaListadosSap
         return VentanaListadosSap(self.root, ["10104082"], self.tmp.name)
 
-    def test_mas_tarde_avisa_de_la_web_parcial(self):
+    def test_mas_tarde_sin_ventana(self):
+        # (20 nov 2026) «Más tarde» ya no abre la ventana «Web parcialmente actualizada»: lo dice la consola
+        # (accion_listado_sap._avisar_listados_sap pone listados_sap.AVISO_PARCIAL en el log).
         v = self._ventana()
         self.assertEqual(len(v._imagenes), 4)                       # las cuatro imágenes de la guía
         with mock.patch("app.ui.ventana_listados_sap.messagebox.showwarning") as aviso:
             v._mas_tarde()
-        self.assertIn("PARCIALMENTE", aviso.call_args[0][1])
+        aviso.assert_not_called()
         self.assertEqual(v.resultado, "despues")
 
     def test_ya_estan_sin_descargar_pregunta(self):

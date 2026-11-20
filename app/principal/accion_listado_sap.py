@@ -510,32 +510,15 @@ class AccionListadoSap:
         def _mostrar_resultado(ap=act_productos, ad=act_dali,
                                sp=sin_productos, sd=sin_dali,
                                ssf=sin_subfam, si=sin_igic):
-            hay_warn = sp or sd or ssf or si
-            # (19 nov 2026, petición de Víctor) Si todo ha ido bien no sale ventana: lo que cambia se ve en
-            # «Cambios para Catálogo Asignaciones» y el resumen queda en el log. Solo se avisa de lo que hay que revisar.
-            if not hay_warn:
-                return
-            lineas = [
-                "\u2714  Actualizaci\u00f3n SAP completada correctamente",
-                "",
-                f"   Art\u00edculos SAP actualizados  : {ap}",
-                f"   Art\u00edculos DALI actualizados : {ad}",
-            ]
-            if sp:
-                lineas.append(f"   \u26a0 C\u00f3digos SAP sin coincidencia  : {sp}")
-            if sd:
-                lineas.append(f"   \u26a0 C\u00f3digos DALI sin coincidencia : {sd}")
-            if ssf:
-                lineas.append(f"   \u26a0 Subfamilia(s) sin mapeo       : {ssf}")
-            if si:
-                lineas.append(f"   \u26a0 IGIC(s) sin mapeo            : {si}")
-            if hay_warn:
-                lineas += [
-                    "",
-                    "Revise el log de consola para ver el detalle.",
-                ]
-            lineas += ["", f"\U0001f4c1  {ruta_destino}"]
-            messagebox.showwarning("SAP \u2014 Actualizaci\u00f3n completada con advertencias", "\n".join(lineas))
+            # (20 nov 2026, petición de Víctor) Sin ventana «Actualización completada con advertencias»: el resumen
+            # va a la consola, con el detalle que ya estaba en ella.
+            avisos = [t for n, t in ((sp, "código(s) SAP sin coincidencia"), (sd, "código(s) DALI sin coincidencia"),
+                                     (ssf, "subfamilia(s) sin mapeo"), (si, "IGIC(s) sin mapeo")) if n]
+            if avisos:
+                cuenta = {"código(s) SAP sin coincidencia": sp, "código(s) DALI sin coincidencia": sd,
+                          "subfamilia(s) sin mapeo": ssf, "IGIC(s) sin mapeo": si}
+                self.log_consola("  ⚠  Acción 2 terminada con avisos: "
+                                 + ", ".join(f"{cuenta[t]} {t}" for t in avisos) + " (detalle más arriba).", "WARN")
 
         try:
             self._regenerar_catalogo_dali_completo(tabla_sap=tabla_sap)
@@ -558,26 +541,8 @@ class AccionListadoSap:
                 "Error al guardar el catálogo", f"No se pudo guardar el catálogo:\n\n{err}"))
             return
 
-        if conflictos_categoria:
-            def _mostrar_conflictos_categoria(conf=conflictos_categoria):
-                lineas = [
-                    "\u26a0  Se han encontrado códigos SAP con Categoría",
-                    "   valoración distinta según el centro en",
-                    "   \"Listas de productos.xlsx\".",
-                    "",
-                    "   Se ha usado el valor más frecuente en cada caso,",
-                    "   asumiendo que el resto son errores. Revise y",
-                    "   corrija estos códigos en el origen si procede:",
-                    "",
-                ]
-                for clave, valores in conf[:20]:
-                    detalle = ", ".join(f"{v}×{n}" for v, n in valores.items())
-                    lineas.append(f"   • {clave}:  {detalle}")
-                if len(conf) > 20:
-                    lineas.append(f"   … y {len(conf) - 20} código(s) más (ver log de consola).")
-                messagebox.showwarning(
-                    "Categoría valoración ambigua — revisar origen", "\n".join(lineas))
-            self.after(0, _mostrar_conflictos_categoria)
+        # (20 nov 2026, petición de Víctor: quitar los avisos obsoletos) sin la ventana «Categoría valoración ambigua»: los códigos y el valor elegido ya están en
+        # la consola (se toma el más frecuente).
 
         self.after(0, _mostrar_resultado)
 
