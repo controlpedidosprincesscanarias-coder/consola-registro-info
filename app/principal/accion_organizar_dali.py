@@ -201,15 +201,10 @@ class AccionOrganizarDali:
                     _incidencias_dup, recursos_path, self.log_consola)
 
                 if _ruta_log_incidencias:
-                    self.after(0, lambda ruta=_ruta_log_incidencias, n=len(_incidencias_dup): messagebox.showwarning(
-                        "Incidencias detectadas en datos de origen",
-                        f"⚠  Se han detectado {n} código(s) duplicado(s) con datos "
-                        f"DISTINTOS entre repeticiones en ARTICULOS1/ARTICULOS2.\n\n"
-                        f"Se ha conservado la 1ª aparición de cada uno para generar "
-                        f"ARTICULOS_DALI.xlsx, pero debería revisar y corregir el "
-                        f"dato correcto en DALI.\n\n"
-                        f"Detalle guardado en:\n{ruta}"
-                    ))
+                    # (20 nov 2026, petición de Víctor) Sin ventana: aviso en la consola con dónde está el detalle.
+                    self.log_consola(f"  ⚠  {len(_incidencias_dup)} código(s) duplicado(s) con datos DISTINTOS en la "
+                                     f"descarga de DALI: se ha conservado la 1.ª aparición; revísalos en DALI. Detalle: "
+                                     f"{_ruta_log_incidencias}", "WARN")
 
                 # ── Generar Excel + limpieza + validaciones (Tanda 2) ──────────
                 #    Extraído a acciones/organizar_dali.py: construcción del

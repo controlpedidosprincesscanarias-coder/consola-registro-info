@@ -889,16 +889,7 @@ class CatalogoDali:
             self.log_consola("  └ Los datos SAP del LISTADO y del catálogo coincidían.", "OK")
         self.log_consola(f"  └ LISTADO renombrado a «{os.path.basename(r['renombrado_a'])}» (no se borra).", "OK")
 
-        def _avisar():
-            texto = ("Desde esta versión la Consola ya no usa «LISTADO CODIGOS DALI - SAP.xlsx»: todo está en "
-                     "RECURSOS/catalogo-dali-completo.xlsx.\n\n")
-            if r["diferencias"]:
-                texto += (f"{r['articulos_cambiados']} artículo(s) tenían datos SAP distintos en los dos archivos; "
-                          f"se ha dejado lo del LISTADO. Revisa el detalle en:\nRECURSOS/"
-                          f"{os.path.basename(r['informe'])}\n\n")
-            texto += f"El LISTADO se ha renombrado a «{os.path.basename(r['renombrado_a'])}» (no se ha borrado)."
-            messagebox.showinfo("Catálogo único", texto)
-        self.after(0, _avisar)
+        # (20 nov 2026, petición de Víctor: quitar los avisos obsoletos) Ya no sale la ventana «Catálogo único»: todo está en la consola.
         if r["diferencias"]:
             self._publicar_catalogo_web("pasar el LISTADO al catálogo")
         return r
@@ -1180,25 +1171,7 @@ class CatalogoDali:
                             f"      … y {len(_completados_desde_catalogo) - 30} más "
                             f"(omitidos del log)", "OK")
 
-                    def _avisar_completados_desde_catalogo(
-                            completados=_completados_desde_catalogo):
-                        lineas = [
-                            f"✔  {len(completados)} código(s) proveedor completados",
-                            "",
-                            "Estos artículos venían sin Código Proveedor en la tarifa,",
-                            "pero el catálogo DALI completo ya tenía uno guardado de",
-                            "antes -- se ha recuperado y escrito también en la tarifa,",
-                            "para que el Registro Info quede más completo:",
-                            "",
-                        ]
-                        for _clave_c, _cod_c in completados[:20]:
-                            lineas.append(f"   • DALI {_clave_c} → «{_cod_c}»")
-                        if len(completados) > 20:
-                            lineas.append(f"   … y {len(completados) - 20} más (ver log de consola).")
-                        messagebox.showinfo(
-                            "Códigos proveedor completados desde el catálogo",
-                            "\n".join(lineas))
-                    self.after(0, _avisar_completados_desde_catalogo)
+                    # (20 nov 2026, petición de Víctor: quitar los avisos obsoletos) sin ventana: los códigos completados ya están en la consola.
                 except Exception as _e_completar:
                     self.log_consola(
                         f"  ⚠  No se pudieron escribir los códigos proveedor "
@@ -1218,26 +1191,7 @@ class CatalogoDali:
                     self.log_consola(
                         f"      … y {len(_omitidas_proveedor) - 30} más (omitidos del log)", "WARN")
 
-                def _avisar_proveedor_no_coincide(nombre=_nombre_prov_tarifa,
-                                                   omitidas=_omitidas_proveedor):
-                    lineas = [
-                        f"⚠  CASO IRREGULAR — Proveedor Asignado no coincide",
-                        "",
-                        f"Esta tarifa es de «{nombre}», pero en ARTICULOS_DALI.xlsx los",
-                        f"siguientes {len(omitidas)} código(s) DALI tienen asignado un",
-                        "proveedor distinto. Normalmente ambas bases de datos de",
-                        "proveedores deberían coincidir exactamente -- revise estos",
-                        "códigos, puede tratarse de un desfase puntual entre listados:",
-                        "",
-                    ]
-                    for _clave_om, _prov_om in omitidas[:20]:
-                        lineas.append(f"   • DALI {_clave_om}: proveedor real = «{_prov_om or '(vacío)'}»")
-                    if len(omitidas) > 20:
-                        lineas.append(f"   … y {len(omitidas) - 20} más (ver log de consola).")
-                    lineas += ["", "No se ha modificado su fila en catalogo-dali-completo.xlsx."]
-                    messagebox.showwarning(
-                        "Caso irregular — Proveedor Asignado no coincide", "\n".join(lineas))
-                self.after(0, _avisar_proveedor_no_coincide)
+                # (20 nov 2026, petición de Víctor: quitar los avisos obsoletos) sin ventana: el CASO IRREGULAR ya está en la consola.
 
         except Exception as e_cat:
             self.log_consola(

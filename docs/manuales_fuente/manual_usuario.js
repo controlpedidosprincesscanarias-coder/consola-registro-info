@@ -1,7 +1,7 @@
 // Manual de usuario de la Consola Registro Info SAP (TARIFA Finder).
 // La idea y el desarrollo de la aplicación, incluidas sus pruebas, son de Víctor Alejandro Martín Andrade,
 // para el Departamento de Central de Compras de Princess Hotels en Canarias.
-const V = process.env.VERSION || "v 10.2.86";
+const V = process.env.VERSION || "v 10.2.88";
 const L = require("./lib.js");
 const { p, vineta, pasos, h1, h2, imagen, leyenda, recuadro, tabla, flujo, portada, indice, generar } = L;
 const fecha = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
@@ -247,7 +247,7 @@ s.push(...recuadro("nota", "Si cambias el proveedor asignado", ["Cuando un artí
   "Si el proveedor asignado lo puso un **presupuesto de Activo Operacional**, manda el presupuesto: la consola no lo vuelve al de DALI ni vacía su precio."]));
 s.push(...recuadro("nota", "Si DALI solo cambia el nombre del proveedor", ["Cuando **todos** los artículos de un proveedor pasan en DALI a un nombre nuevo que no tenía ningún artículo (por ejemplo, «SUMINISTROS DEMO S.L. ( DEMO CANARIAS )» → «SUMINISTROS DEMO S.L.»), la consola entiende que es **el mismo proveedor con otro nombre**: conserva sus códigos de proveedor y sus precios, y en la web se cambia el nombre del proveedor sin perder nada.",
   "Si en la web ya existen los dos nombres, no toca esos artículos y te pide **fusionar los proveedores** en Catálogo Asignaciones."]));
-s.push(...recuadro("consejo", "Sin ventanas de «completado»", ["Al terminar una acción que envía cambios a la web ya no sale una ventana de resumen («Actualización completada», «Tarifa completada», «Reinscripción completada»): el resumen queda en la ventana de la consola y lo que va a cambiar se ve en «Cambios para Catálogo Asignaciones». Solo sale una ventana cuando hay algo que revisar (duplicados, códigos pendientes, DALI no encontrados…)."]));
+s.push(...recuadro("consejo", "Sin ventanas que solo informan", ["Al terminar una acción ya no sale una ventana que solo repite lo que dice la consola: «Actualización completada», «Procesado correctamente», «Tarifa completada», «Reinscripción completada», «Categoría valoración ambigua», «Caso irregular», códigos duplicados en la descarga de DALI… Ese resumen queda en la ventana de la consola (en naranja lo que conviene revisar), y lo que va a cambiar en la web se ve en «Cambios para Catálogo Asignaciones».", "Solo sale una ventana cuando hay que decidir algo o algo impide seguir: un archivo abierto en Excel, códigos duplicados que resolver, una tarifa que queda [INCOMPLETO]…"]));
 s.push(h2("Si no se puede acceder a Catálogo Asignaciones"));
 s.push(p("Debajo de la versión, en la cabecera, un punto dice cómo está la conexión con la web: **verde**, conectado; **rojo**, «sin conexión desde las HH:MM». La primera vez que falla al traer o al enviar cambios, sale este aviso:"));
 s.push(...imagen("c_sin_conexion", 12, "No se ha podido acceder a Catálogo Asignaciones."));

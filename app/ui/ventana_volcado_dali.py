@@ -128,7 +128,7 @@ class VentanaVolcadoDali(tk.Toplevel):
         self.destroy()
 
     def _cerrar_sin_actualizar(self):
-        messagebox.showwarning("Catálogo Asignaciones sin actualizar", V.AVISO_MAS_TARDE, parent=self)
+        # (20 nov 2026, petición de Víctor) Sin ventana: la consola dice que queda sin actualizar
         self.resultado = "despues"
         self.destroy()
 

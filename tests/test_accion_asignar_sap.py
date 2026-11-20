@@ -172,7 +172,7 @@ class TestVentana(unittest.TestCase):
         v._asignados = {2: 2000, 3: 9999}
         with mock.patch("app.ui.ventana_asignar_sap.messagebox.showwarning") as info:
             v._tras_guardar({2: 2000, 3: 9999}, r, None, False)
-        self.assertIn("A continuación se explica cómo descargar", info.call_args[0][1])
+        info.assert_not_called()                 # (20 nov 2026) la guía ya lo explica: sin aviso previo
         self.assertEqual(avisos, [["9999"]])
 
     def test_copiar_para_pegar_en_sap(self):

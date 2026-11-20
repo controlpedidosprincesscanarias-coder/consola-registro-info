@@ -626,8 +626,8 @@ class VentanaSAPFaltantes(tk.Toplevel):
                     return
 
         if not nuevos:
-            from tkinter import messagebox
-            messagebox.showinfo("Sin cambios", "No se introdujo ningún código SAP.")
+            # (20 nov 2026, petición de Víctor) Sin ventana «Sin cambios»: queda en la consola
+            self._log("  ℹ No se introdujo ningún código SAP.", "INFO")
             self.destroy()
             return
 

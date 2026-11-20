@@ -170,7 +170,7 @@ class TestVentana(unittest.TestCase):
     def test_cerrar_sin_actualizar(self):
         with mock.patch("app.ui.ventana_volcado_dali.messagebox.showwarning") as aviso:
             self.ven._btn_cerrar.invoke()
-        aviso.assert_called_once()
+        aviso.assert_not_called()            # (20 nov 2026) sin ventana: lo dice la consola
         self.assertEqual(self.ven.resultado, "despues")
 
 

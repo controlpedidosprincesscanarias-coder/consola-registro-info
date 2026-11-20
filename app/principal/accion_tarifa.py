@@ -602,9 +602,14 @@ class AccionesTarifa:
                         "resuelva esta incidencia."
                     )
 
-                _titulo_ok = "Completado con advertencias ⚠" if _hay_warn else "Procesado correctamente"
-                _fn_msg    = messagebox.showwarning if _hay_warn else messagebox.showinfo
-                self.after(0, lambda m=_msg_ok, t=_titulo_ok, fn=_fn_msg: fn(t, m))
+                # (20 nov 2026, petición de Víctor) Si todo ha ido bien no sale «Procesado correctamente»: el
+                # resumen va a la consola. Con advertencias (duplicados, sin descripción…) sigue el aviso.
+                if _hay_warn:
+                    self.after(0, lambda m=_msg_ok: messagebox.showwarning("Completado con advertencias ⚠", m))
+                else:
+                    for _linea in _msg_ok.split("\n"):
+                        if _linea.strip():
+                            self.log_consola(f"  {_linea.strip()}", "OK")
 
                 # ── SAP faltantes → preguntar al usuario ─────
                 if _falt_sap:
@@ -717,12 +722,9 @@ class AccionesTarifa:
                                                 # dentro de Acción 4) no lo hacía.
                                                 if self._catalogo_reciente_o_confirmar():
                                                     self._actualizar_codigo_proveedor_catalogo(_ruta_nueva)
-                                                messagebox.showinfo(
-                                                    "Tarifa completada",
-                                                    f"✔  Todos los códigos SAP han sido cumplimentados"
-                                                    f" y no existen duplicados.\n\n"
-                                                    f"El archivo ha sido renombrado a:\n{_nuevo}\n\n"
-                                                    f"\n✔  TARIFA PREPARADA PARA CREAR O MODIFICAR REGISTRO INFO SAP.")
+                                                # (20 nov 2026) Sin ventana «Tarifa completada»: a la consola
+                                                self.log_consola("  ✔ Todos los códigos SAP completados y sin duplicados.", "OK")
+                                                self.log_consola("  ✔ TARIFA PREPARADA PARA CREAR O MODIFICAR REGISTRO INFO SAP.", "OK")
                                         except Exception as _e_ren:
                                             self.log_consola(
                                                 f"  ✘ Error al renombrar: {_e_ren}", "WARN")
