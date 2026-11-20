@@ -128,7 +128,9 @@ class VentanaSeleccionXLS(tk.Toplevel):
             self.consola.log(f"Archivo renombrado: {nombre} \u2192 TARIFA.xls", "OK")
             self.seleccionado = destino
             self.destroy()
-            self.master.after(100, self.master._buscar)
+            # (20 nov 2026) La nueva búsqueda la lanza quien abrió la ventana
+            # (interfaz._abrir_seleccion, al ver `seleccionado`). Lanzarla
+            # también aquí la hacía dos veces a la vez (log duplicado).
 
         except Exception as e:
             self.consola.log(f"Error al renombrar: {e}", "ERROR")
