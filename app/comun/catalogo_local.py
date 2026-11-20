@@ -343,7 +343,7 @@ def migrar_listado(carpeta_proyecto, ahora=None):
             f.write(f"Hecho el {ahora.strftime('%d/%m/%Y, %H:%M:%S')}\n\n")
             f.write("Desde esta versión la Consola usa solo catalogo-dali-completo.xlsx. Estas son las diferencias de\n"
                     "datos SAP que había entre los dos archivos. Se ha dejado en el catálogo lo que decía el LISTADO,\n"
-                    "igual que hacían hasta ahora las Acciones 2 y 3. Revísalas por si alguna es un error.\n\n")
+                    "igual que hacían hasta ahora las Acciones 1 y 2. Revísalas por si alguna es un error.\n\n")
             f.write(f"{'Código DALI':<12} | {'Campo':<18} | {'LISTADO (queda)':<40} | Catálogo (antes)\n")
             f.write("-" * 110 + "\n")
             for dali, campo, v_lst, v_cat in diferencias:

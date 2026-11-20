@@ -111,6 +111,8 @@ class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap,
             self.log_consola("No hay carpeta de proyecto configurada. Seleccione o cree una.", "WARN")
         # (v10.2.50) Si el proyecto todavía tiene «LISTADO CODIGOS DALI - SAP.xlsx», se pasa una vez al catálogo.
         threading.Thread(target=self._pasar_listado_al_catalogo, daemon=True, name="PasarListado").start()
+        # (v10.2.86) La Acción 4 solo se activa si hay tarifas [INCOMPLETO]: se comprueba ahora y cada 10 s
+        self.after(500, self._vigilar_incompletos)
 
     # ── HEADER ────────────────────────────────────────────────────────────
     def _build_header(self):

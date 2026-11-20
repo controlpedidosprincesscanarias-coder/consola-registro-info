@@ -1134,7 +1134,7 @@ def _materiales_sin_unidad(codigos, diccionario):
 # catálogo no tenía su unidad; SAP rechazó el registro con «Introduzca UM de pedido».) El catálogo es la fuente de
 # los datos SAP de la tarifa: si falta la unidad, se avisa antes de cargar en SAP.
 AVISO_SIN_UNIDAD = ("⚠  {n} material(es) sin unidad de medida en catalogo-dali-completo.xlsx: SAP rechazará su "
-                    "registro info («Introduzca UM de pedido»): {lista}. Pasa la Acción 3 (con Productos.xlsx y "
+                    "registro info («Introduzca UM de pedido»): {lista}. Pasa la Acción 2 (con Productos.xlsx y "
                     "Listas de productos.xlsx actualizados en RECURSOS) y vuelve a crear el Registro Info.")
 
 # ─────────────────────────────────────────────────────────────────────────────

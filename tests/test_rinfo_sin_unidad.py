@@ -39,7 +39,7 @@ class TestMaterialesSinUnidad(unittest.TestCase):
     def test_texto_del_aviso(self):
         texto = R.AVISO_SIN_UNIDAD.format(n=1, lista="10104121")
         self.assertIn("10104121", texto)
-        self.assertIn("Acción 3", texto)
+        self.assertIn("Acción 2", texto)   # (v10.2.86) antes Acción 3
 
 
 @unittest.skipUnless(HAY_RINFO, "necesita tkinter")

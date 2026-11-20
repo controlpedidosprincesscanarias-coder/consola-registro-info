@@ -548,7 +548,7 @@ class AccionListadoSap:
                 "❌  No se pudo guardar:\n\n"
                 "   RECURSOS/catalogo-dali-completo.xlsx\n\n"
                 "El archivo está abierto en Excel.\n\n"
-                "📋  Ciérrelo y vuelva a ejecutar la Acción 3."))
+                "📋  Ciérrelo y vuelva a ejecutar la Acción 2."))
             return
         except Exception as _e_cat:
             self.log_consola(
@@ -606,7 +606,7 @@ class AccionListadoSap:
         ven = VentanaListadosSap(self, fuera, recursos)
         self.wait_window(ven)
         if ven.resultado == "actualizar":
-            self.log_consola("Listados de SAP actualizados en RECURSOS: se lanza la Acción 3 para completar los "
+            self.log_consola("Listados de SAP actualizados en RECURSOS: se lanza la Acción 2 para completar los "
                              "datos SAP.", "INFO")
             self.after(300, self._actualizar_listado_sap)
         else:
@@ -637,8 +637,8 @@ class AccionListadoSap:
         def _comprobar():
             diag = fechas = None
             try:
-                self._traer_cambios_web("la Acción 3")
-                self.log_consola("Acción 3: comprobando si hace falta descargar de nuevo los listados de SAP...",
+                self._traer_cambios_web("la Acción 2")
+                self.log_consola("Acción 2: comprobando si hace falta descargar de nuevo los listados de SAP...",
                                  "INFO")
                 fechas = L.fechas_listados(recursos)
                 rutas = L.rutas(recursos)
@@ -652,7 +652,7 @@ class AccionListadoSap:
                                      time.time())
             except Exception as e:  # noqa: BLE001 — sin comprobación, la Acción 3 de siempre (con su pregunta)
                 self.log_consola(f"  ⚠  No se ha podido comprobar los listados de SAP ({e}): se sigue con la "
-                                 "Acción 3 de siempre.", "WARN")
+                                 "Acción 2 de siempre.", "WARN")
                 diag = None
             finally:
                 self._comprobando_accion3 = False
@@ -675,7 +675,7 @@ class AccionListadoSap:
         ven = VentanaAntesAccion3(self, diag, lineas, recursos)
         self.wait_window(ven)
         if ven.resultado != "actualizar":
-            self.log_consola("Acción 3 cancelada por el usuario.", "WARN")
+            self.log_consola("Acción 2 cancelada por el usuario.", "WARN")
             return
         if ven.respuesta is True:
             self.log_consola("Listados de SAP descargados de nuevo en RECURSOS: se actualiza el catálogo.", "INFO")
@@ -830,7 +830,7 @@ class AccionListadoSap:
             # (13 nov 2026) Primero lo cambiado en la web (p. ej. un código SAP corregido allí), para completarlo
             # (v10.2.74: desde el botón 3 ya lo ha traído _accion_3_guiada)
             if traer_web:
-                self._traer_cambios_web("la Acción 3")
+                self._traer_cambios_web("la Acción 2")
             self.log_consola("Iniciando actualización listado materiales SAP...", "INFO")
             self.after(0, lambda: self._barra.indeterminate("Leyendo Productos.xlsx..."))
 

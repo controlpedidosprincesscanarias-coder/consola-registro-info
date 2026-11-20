@@ -75,13 +75,13 @@ class VentanaListadosSap(tk.Toplevel):
                              "Los códigos ya se envían a Catálogo Asignaciones, pero para que toda la información "
                              "quede registrada (descripción, unidad,\ngrupos y categoría de valoración) hay que "
                              "descargar de SAP estos dos listados, guardarlos en RECURSOS y actualizar con la "
-                             "Acción 3."),
+                             "Acción 2."),
                  font=FONT_LABEL, fg=C_TEXT_LIGHT, bg=C_MID, justify="left").pack(anchor="w", padx=14, pady=(8, 4))
 
         # Botones (antes que la guía, para que siempre se vean)
         abajo = tk.Frame(self, bg=C_MID, pady=10)
         abajo.pack(fill="x", padx=14, side="bottom")
-        self._btn_ya = tk.Button(abajo, text="✔  Ya están en RECURSOS: actualizar ahora (Acción 3)", font=FONT_BOLD,
+        self._btn_ya = tk.Button(abajo, text="✔  Ya están en RECURSOS: actualizar ahora (Acción 2)", font=FONT_BOLD,
                                  fg=C_DARK, bg=C_ACCENT, activebackground=C_ACCENT2, relief="flat", cursor="hand2",
                                  command=self._ya_estan)
         self._btn_ya.pack(side="left", ipadx=10, ipady=4)
@@ -93,7 +93,7 @@ class VentanaListadosSap(tk.Toplevel):
         self._lbl_estado = tk.Label(self, text="", font=FONT_LABEL, fg=C_MUTED, bg=C_MID, justify="left")
         self._lbl_estado.pack(fill="x", padx=14, side="bottom")
 
-        self._construir_guia("   Después pulsa «Ya están en RECURSOS»: la Consola lanza sola la Acción 3 y completa "
+        self._construir_guia("   Después pulsa «Ya están en RECURSOS»: la Consola lanza sola la Acción 2 y completa "
                              "los datos SAP en el catálogo y en la web.")
 
     def _construir_guia(self, texto_final):
@@ -180,7 +180,7 @@ class VentanaListadosSap(tk.Toplevel):
         if faltan and not messagebox.askyesno(
                 "Listados de SAP",
                 "No veo descargados de nuevo en RECURSOS:\n\n   " + "\n   ".join(faltan)
-                + "\n\n¿Actualizar igualmente con la Acción 3?", parent=self):
+                + "\n\n¿Actualizar igualmente con la Acción 2?", parent=self):
             return
         self.resultado = "actualizar"
         self.destroy()
@@ -207,7 +207,7 @@ class VentanaAntesAccion3(VentanaListadosSap):
 
     def __init__(self, parent, diag, lineas, carpeta_recursos, leer=None):
         tk.Toplevel.__init__(self, parent)
-        self.title("Acción 3 — Listados de SAP")
+        self.title("Acción 2 — Listados de SAP")
         self.configure(bg=C_MID)
         self.transient(parent)
         cargar_icono_ventana(self)
@@ -243,7 +243,7 @@ class VentanaAntesAccion3(VentanaListadosSap):
     def _construir_accion3(self, lineas):
         hdr = tk.Frame(self, bg=C_DARK, pady=10)
         hdr.pack(fill="x")
-        tk.Label(hdr, text="🔄  Acción 3 — Listados de SAP", font=FONT_TITLE, fg=C_ACCENT, bg=C_DARK).pack(
+        tk.Label(hdr, text="🔄  Acción 2 — Listados de SAP", font=FONT_TITLE, fg=C_ACCENT, bg=C_DARK).pack(
             side="left", padx=14)
 
         resumen = tk.Frame(self, bg=C_CARD, padx=14, pady=8)

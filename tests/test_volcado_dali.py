@@ -88,10 +88,9 @@ class TestLogica(unittest.TestCase):
 
 
 class TestSinBoton2(unittest.TestCase):
-    def test_no_queda_el_boton_ni_el_metodo_de_la_accion_2(self):
-        with open(os.path.join(RAIZ, "app/principal/interfaz.py"), encoding="utf-8") as f:
-            interfaz = f.read()
-        self.assertNotIn('frm_acc, "2"', interfaz)
+    def test_no_queda_el_metodo_de_la_antigua_accion_2(self):
+        # (20 nov 2026, v10.2.86) Desde la renumeración sí hay botón 2: es «Actualizar listado materiales SAP»
+        # (la antigua 3). Lo que no debe volver es el método de la antigua Acción 2 (test_renumeracion_acciones.py).
         for carpeta in ("app", "tests"):
             for raiz, _d, archivos in os.walk(os.path.join(RAIZ, carpeta)):
                 for a in archivos:

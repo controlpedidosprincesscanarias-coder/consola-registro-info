@@ -27,6 +27,7 @@ from app.comun.tarifa_core import (
     TARIFA_NAME, FOLDER_TARIFAS, FOLDER_RECURSOS,
     buscar_tarifa, listar_xls, ConsolaLog, CanvasProgressBar, abrir_con_su_programa,
 )
+from app.comun import incompletos
 from app.ui.tarifa_dialogs import (
     VentanaSeleccionXLS, VentanaCrearProyecto,
 )
@@ -223,44 +224,43 @@ class InterfazApp:
         frm_acc = tk.Frame(pad, bg=C_SIDEBAR)
         frm_acc.pack(fill="x", pady=(3, 0))
 
-        # (13 nov 2026, petición de Víctor) La Acción 1 termina actualizando el catálogo y Catálogo Asignaciones
-        # (ventana_volcado_dali.py): ya no hay botón 2. Los demás conservan su número.
+        # (20 nov 2026, petición de Víctor, v10.2.86) Botones numerados 1 a 6 sin huecos. Antes: 1, 3, 4, 5, 6, 7, 8
+        # (la antigua 2 se unió a la 1 el 13 nov). La 3 pasa a 2, la 4 a 3, la 5 (abrir la última TARIFA, sin uso)
+        # desaparece, la 6 pasa a 4, la 8 a 5 y la 7 a 6. Los métodos conservan su nombre de siempre
+        # (_accion_3_guiada, _crear_registro_sap…), y los comentarios del código anteriores a esta versión hablan de
+        # la numeración antigua: ver CLAUDE.md.
         self._boton_accion(
             frm_acc, "1", "Organizar artículos DALI y actualizar Catálogo Asignaciones", "📋",
             self._organizar_dali, strip_color="#2E8B57"
         ).pack(fill="x", pady=(0, 2))
 
         self._boton_accion(
-            frm_acc, "3", "Actualizar listado materiales SAP", "🔄",
+            frm_acc, "2", "Actualizar listado materiales SAP", "🔄",
             self._accion_3_guiada, strip_color="#1A7A9B"   # v10.2.74: antes comprueba los listados de SAP
         ).pack(fill="x", pady=(0, 2))
 
         self._btn_procesar = self._boton_accion(
-            frm_acc, "4", "Generar TARIFA final y Procesar Tarifas Incompletas", "⚙️",
+            frm_acc, "3", "Generar TARIFA final y Procesar Tarifas Incompletas", "⚙️",
             self._procesar, strip_color=C_ACCENT, state="normal"
         )
         self._btn_procesar.pack(fill="x", pady=(0, 2))
 
-        self._btn_abrir_resultado = self._boton_accion(
-            frm_acc, "5", "Abrir archivo ultima TARIFA procesada", "🗂️",
-            self._abrir_resultado, strip_color="#2A6B9B", state="disabled"
+        # Sombreado mientras no haya tarifas [INCOMPLETO] en TARIFAS (_refrescar_btn_incompletos)
+        self._btn_incompletos = self._boton_accion(
+            frm_acc, "4", "Actualizar manualmente archivos [INCOMPLETOS]", "💾",
+            self._crear_registro_sap, strip_color="#7B4FA6", state="disabled"
         )
-        self._btn_abrir_resultado.pack(fill="x", pady=(0, 2))
+        self._btn_incompletos.pack(fill="x", pady=(0, 2))
 
+        # (v10.2.50) Asignar SAP pendientes: todos los DALI activos sin SAP (accion_asignar_sap.py)
         self._boton_accion(
-            frm_acc, "6", "Actualizar manualmente archivos [INCOMPLETOS]", "💾",
-            self._crear_registro_sap, strip_color="#7B4FA6"
-        ).pack(fill="x", pady=(0, 2))
-
-        self._boton_accion(
-            frm_acc, "7", "Generar Listado Tarifa Proveedor Vacia", "📄",
-            self._wip, strip_color="#5A4A7A", wip=True
-        ).pack(fill="x", pady=(0, 2))
-
-        # (v10.2.50) Acción 8: todos los códigos DALI activos sin SAP, para asignarlos (accion_asignar_sap.py)
-        self._boton_accion(
-            frm_acc, "8", "Asignar SAP pendientes (DALI activos sin SAP)", "🧩",
+            frm_acc, "5", "Asignar SAP pendientes (DALI activos sin SAP)", "🧩",
             self._asignar_sap_pendientes, strip_color="#1A6B5A"
+        ).pack(fill="x", pady=(0, 2))
+
+        self._boton_accion(
+            frm_acc, "6", "Generar Listado Tarifa Proveedor Vacia", "📄",
+            self._wip, strip_color="#5A4A7A", wip=True
         ).pack(fill="x", pady=(0, 0))
 
     # ── CONSOLA + ACCESOS RÁPIDOS ─────────────────────────────────────────
@@ -773,24 +773,46 @@ class InterfazApp:
                                      text="TARIFA.xls\nENCONTRADA \u2714")
             txt = f"Mod.: {fecha}" if fecha else ruta
             self._lbl_ruta_resultado.config(text=txt, fg=C_SUCCESS)
-            # Acción 4 siempre activa; Acción 5 solo si hay resultado generado
+            # La Acción 3 (generar TARIFA) está siempre activa
         else:
             self._lbl_estado_icon.config(fg=C_ERROR, text="●")
             self._lbl_estado.config(fg=C_ERROR,
                                      text="TARIFA.xls\nNO ENCONTRADA")
             self._lbl_ruta_resultado.config(
                 text="Puede abrir tarifa\nexistente o renombrar.", fg=C_WARNING)
-            # Acción 4 permanece activa; solo resetear Acción 5 si procede
-            if reset_resultado:
-                self._habilitar_btn_resultado(False)
+        # (v10.2.86) La Acción 4 solo se puede usar si hay tarifas [INCOMPLETO]
+        self._refrescar_btn_incompletos()
 
     def _habilitar_btn_procesar(self, habilitar):
         cmd = self._procesar if habilitar else None
         self._set_boton_estado(self._btn_procesar, habilitar, cmd)
 
-    def _habilitar_btn_resultado(self, habilitar):
-        cmd = self._abrir_resultado if habilitar else None
-        self._set_boton_estado(self._btn_abrir_resultado, habilitar, cmd)
+    def _habilitar_btn_resultado(self, habilitar=True):
+        """(v10.2.86) Ya no hay botón «Abrir archivo última TARIFA procesada». Se llama al empezar y al terminar
+        una TARIFA: se aprovecha para actualizar la Acción 4, que depende de las tarifas [INCOMPLETO]."""
+        self._refrescar_btn_incompletos()
+
+    def _refrescar_btn_incompletos(self):
+        """(20 nov 2026, petición de Víctor) La Acción 4 queda sombreada mientras no haya tarifas [INCOMPLETO] en
+        TARIFAS. Se comprueba al cambiar de proyecto o de TARIFA, al terminar una TARIFA y cada 10 s
+        (_vigilar_incompletos), por si se crean o se renombran a mano."""
+        btn = getattr(self, "_btn_incompletos", None)
+        if btn is None:
+            return
+        carpeta = self._carpeta_proyecto.get().strip() if hasattr(self, "_carpeta_proyecto") else ""
+        activo = bool(carpeta) and incompletos.hay(os.path.join(carpeta, FOLDER_TARIFAS))
+        if activo != getattr(btn, "_enabled", None):
+            try:
+                self._set_boton_estado(btn, activo, self._crear_registro_sap if activo else None)
+            except tk.TclError:
+                pass
+
+    def _vigilar_incompletos(self):
+        self._refrescar_btn_incompletos()
+        try:
+            self.after(10000, self._vigilar_incompletos)
+        except tk.TclError:
+            pass
 
     # ── Acciones ──────────────────────────────────────────────
 
@@ -894,18 +916,6 @@ class InterfazApp:
         if vent.seleccionado:
             self.after(200, self._buscar)
 
-
-    def _abrir_resultado(self):
-        if self._ruta_resultado and os.path.isfile(self._ruta_resultado):
-            self.log_consola(f"Abriendo resultado: {self._ruta_resultado}", "INFO")
-            try:
-                abrir_con_su_programa(self._ruta_resultado)    # (13 nov 2026) que Excel quede delante
-            except Exception as e:
-                self.log_consola(f"Error al abrir: {e}", "ERROR")
-                messagebox.showerror("Error", f"No se pudo abrir:\n{e}")
-        else:
-            messagebox.showwarning("Sin resultado",
-                                   "A\xfan no se ha generado ning\xfan archivo procesado.")
 
     # ── Actualización automática (nov 2026) ───────────────────────────────
     def _comprobar_actualizaciones(self, version_local):

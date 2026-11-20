@@ -36,7 +36,7 @@ PASOS = (
 
 AVISO_PARCIAL = ("La web (Catálogo Asignaciones) queda PARCIALMENTE actualizada: ya tiene los códigos SAP, pero no "
                  "sus datos SAP (descripción, unidad, grupos, categoría de valoración) hasta que descargues "
-                 "Productos.xlsx y Listas de productos.xlsx en RECURSOS y pulses la Acción 3.")
+                 "Productos.xlsx y Listas de productos.xlsx en RECURSOS y pulses la Acción 2.")
 
 
 def rutas(carpeta_recursos):
