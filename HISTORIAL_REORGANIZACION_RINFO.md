@@ -1604,7 +1604,7 @@ Revisando el log que mandó Víctor (tarifa OASISFISH, 20 nov 2026) salieron dos
 
 ---
 
-## 87. La Consola conserva la columna «Conversión DALI - SAP» (20 nov 2026, v10.2.92) — PR en GitHub
+## 87. La Consola conserva la columna «Conversión DALI - SAP» (20 nov 2026, próxima compilación: v10.2.90 si aún no se ha compilado la 86, si no v10.2.92) — PR en GitHub
 
 Petición de Víctor: después de añadir en Catálogo Asignaciones (v1.20.74) la columna de equivalencias al final del catálogo, que la Consola también trabaje con ella. Dijo «sí» a la propuesta.
 - **Antes:** la Consola leía el catálogo por títulos de columna (la nueva no le estorbaba), pero al **regenerar** `catalogo-dali-completo.xlsx` (final de la Acción 1 y Acción 2) lo escribía de nuevo con sus 22 columnas y la columna desaparecía de ese Excel.
