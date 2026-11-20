@@ -956,7 +956,7 @@ class CatalogoDali:
             if not os.path.isfile(ruta_catalogo):
                 self.log_consola(
                     "  ℹ catalogo-dali-completo.xlsx no existe todavía "
-                    "(genérelo con la Acción 8) — catálogo no actualizado.",
+                    "(genérelo con la Acción 1) — catálogo no actualizado.",
                     "INFO")
                 return
 

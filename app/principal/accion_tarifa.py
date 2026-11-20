@@ -783,7 +783,7 @@ class AccionesTarifa:
                                 "C\xf3digos SAP faltantes",
                                 f"{len(falt)} c\xf3digo(s) DALI no tienen SAP asignado.\n\n"
                                 "No se encontr\xf3 RECURSOS/catalogo-dali-completo.xlsx.\n"
-                                "Ejecuta la Acci\xf3n 2 (o desc\xe1rgalo de Cat\xe1logo Asignaciones) y vuelve a intentarlo.")
+                                "Ejecuta la Acci\xf3n 1 (o desc\xe1rgalo de Cat\xe1logo Asignaciones) y vuelve a intentarlo.")
                         self.after(200, _avisar_sin_listado)
 
 
