@@ -101,6 +101,13 @@ Desde la etapa 2 (nov 2026) el código está en el paquete `app/`, y `tarifa_app
 
 **Al empezar un hilo:** leer este archivo y el de los repositorios que toque. Si la tarea afecta a otra aplicación (contrato del chat o del puente, base de datos compartida, historial compartido), añadir ese repositorio al hilo en vez de suponer cómo está. Responder siempre en **español**, claro y sin jerga: Víctor no siempre ve los comandos ni su salida.
 
+**Cada sesión trabaja sola, de punta a punta** (decisión de Víctor, 20 nov 2026: «cuando pido hacer algo en cualquiera de los 7 proyectos, trabajar directamente en el que corresponda, abrir automáticamente las PR necesarias y solo pedir fusionar»):
+- Cualquier sesión de Claude Code trabaja igual, la abra Víctor desde donde la abra. Decide ella sola en qué repositorio va cada cosa, mirando la tabla de arriba y el código.
+- **Repositorio que falta en la sesión:** si la petición toca un repositorio que no está en la sesión (también el historial compartido, que está en Control Pedidos y en el Organizador), lo añade ella misma con la herramienta para añadir repositorios y lo clona, sin esperar a que se lo pida. Si no puede, dice qué paso de GitHub falla (clonar, subir la rama o abrir la PR) y cómo arreglarlo: conectar GitHub en https://claude.ai/connect-github e instalar la app de Claude en la organización `controlpedidosprincesscanarias-coder`, con acceso a todos los repositorios.
+- **Al terminar el trabajo, abre siempre las PR** (la del cambio y las del historial compartido) sin preguntar, y da los enlaces. **Nunca fusiona** hasta que Víctor diga «fusionar». Tampoco hace push a `main`.
+- **Pregunta solo** lo que únicamente puede decidir Víctor (criterio de negocio, qué manda sobre qué, dónde va algo en pantalla), con opciones y una recomendada. Lo demás lo decide y lo dice.
+- **Para que funcione así**, Víctor abre las sesiones en **claude.ai/code** (no en un chat normal de Claude, que no puede tocar los repositorios), con los 7 repositorios seleccionados (o al menos el principal de la tarea), el entorno «Default» y los permisos en modo automático.
+
 **Cómo se trabaja una petición:**
 1. Investigar en el código real antes de proponer. Lo que solo puede decidir Víctor (un criterio de negocio, qué manda sobre qué) se le pregunta con opciones y una recomendada; lo demás se decide y se dice.
 2. Rama nueva desde `main` al día, commits pequeños con la versión en el mensaje y cada error encontrado en su **propio commit**.
