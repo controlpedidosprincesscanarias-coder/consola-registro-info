@@ -1594,6 +1594,16 @@ Petición de Víctor (con captura de «Categoría valoración ambigua — revisa
 
 ---
 
+## 86. Aviso de reactivar en SAP con solo centros borrados y búsqueda doble (20 nov 2026, v10.2.90) — PR en GitHub
+
+Revisando el log que mandó Víctor (tarifa OASISFISH, 20 nov 2026) salieron dos errores, cada uno en su commit:
+- **Materiales a reactivar a mano en SAP sin aviso.** El Purchasing traía 50 filas de Hoja 2 con «Organización de compras marcada para borrado» (AN = X) y ninguna cabecera marcada (Hoja 1, AJ). La Consola limpiaba la marca y el log decía «ver aviso siguiente sobre gestión manual», pero el aviso y la ventana «Materiales a reactivar manualmente en SAP» solo miraban la cabecera, así que no salía nada. Lo borrado en SAP es justo ese segmento por centro (caso MELOCOTÓN, sección de septiembre), así que esos precios no quedan vigentes al cargar el RINFO. Ahora el material entra en la lista (con su registro y descripción de Hoja 1 y sus centros) y salen el aviso en la consola y la ventana (`_limpiar_marca_aj_heredados`, `generador_existente.py`).
+- **Búsqueda de TARIFA.xls dos veces.** Al elegir un `.xls` en la lista, la buscaban a la vez la propia ventana (`VentanaSeleccionXLS._confirmar`) y quien la abrió (`interfaz._abrir_seleccion`): dos hilos y el log duplicado. Ahora solo la lanza `_abrir_seleccion`.
+- **Pruebas:** `tests/test_reactivar_solo_centros.py` (3, con el código real; falla sin el arreglo). 319 en verde.
+- **No probado:** en Windows ni con el Purchasing real de OASISFISH. Los 5 materiales de hoy hay que reactivarlos a mano en SAP («Marcar reg.info de compra para borrar», desmarcando las dos casillas en cada centro).
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
 - ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).
