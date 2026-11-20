@@ -1062,7 +1062,7 @@ class TC22_LayoutCatalogo(unittest.TestCase):
         "Texto UM (expl.)", "Precio €", "Grupo productos SAP",
         "Descripción grupo productos SAP", "Indicador impuestos SAP",
         "Categoría valoración", "Tipo producto", "Grupo compras SAP",
-        "Nombre grupo compras SAP", "Activo",
+        "Nombre grupo compras SAP", "Activo", "Conversión DALI - SAP",
     ]
 
     def test_definicion_canonica_coincide_con_el_excel_de_la_web(self):
@@ -1086,11 +1086,12 @@ class TC22_LayoutCatalogo(unittest.TestCase):
         self.assertEqual(m["precio"], 14)
         self.assertEqual(m["grp_prod"], 15)      # antes 13
         self.assertEqual(m["activo"], 22)        # antes 20
+        self.assertEqual(m["conversion"], 23)    # (20 nov 2026) equivalencias, al final
 
     def test_mapa_formato_viejo_de_20_columnas(self):
         import app.comun.sap_helpers as S
         viejas = [h for h in self.CABECERAS_NUEVAS
-                  if h not in ("Texto UM (expl.)", "Precio €")]
+                  if h not in ("Texto UM (expl.)", "Precio €", "Conversión DALI - SAP")]
         m = S.mapa_columnas_catalogo(viejas)
         self.assertEqual(len(viejas), 20)
         self.assertNotIn("texto_um", m)

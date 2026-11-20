@@ -1604,6 +1604,17 @@ Revisando el log que mandó Víctor (tarifa OASISFISH, 20 nov 2026) salieron dos
 
 ---
 
+## 87. La Consola conserva la columna «Conversión DALI - SAP» (20 nov 2026, v10.2.92) — PR en GitHub
+
+Petición de Víctor: después de añadir en Catálogo Asignaciones (v1.20.74) la columna de equivalencias al final del catálogo, que la Consola también trabaje con ella. Dijo «sí» a la propuesta.
+- **Antes:** la Consola leía el catálogo por títulos de columna (la nueva no le estorbaba), pero al **regenerar** `catalogo-dali-completo.xlsx` (final de la Acción 1 y Acción 2) lo escribía de nuevo con sus 22 columnas y la columna desaparecía de ese Excel.
+- **Ahora:** `CATALOGO_COLUMNAS` (`sap_helpers.py`) termina con «Conversión DALI - SAP» y `_regenerar_catalogo_dali_completo_impl` la copia del catálogo anterior **por código DALI**, también cuando cambia el proveedor (no depende de él, a diferencia del precio y del código de proveedor). Se reconoce también con el título de su Excel («COVERSION DALI - SAP»), sin tildes o como «Equivalencias» (`es_cabecera_conversion`). El log de la regeneración dice cuántas hay.
+- **No se envía a la web** (no está en `catalogo_web.CLAVE_WEB`): las equivalencias se cargan solo en Catálogo Asignaciones con «Importar Excel» (decisión de Víctor). Las demás escrituras del catálogo (bajar cambios de la web, precios de la tarifa) ya tocaban solo sus celdas.
+- **Pruebas:** `test_conserva_la_equivalencia_por_codigo_dali` (`tests/test_catalogo_unico.py`, falla sin el arreglo) y la definición de columnas en `test_crear_registro_info.py`. 320 en verde.
+- **No probado:** en Windows ni con el catálogo real.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
 - ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).

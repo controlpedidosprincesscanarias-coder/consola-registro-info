@@ -597,6 +597,7 @@ class CatalogoDali:
         self.after(0, lambda: self._barra.indeterminate("Actualizando catálogo DALI..."))
         _datos_previos = {}   # clave DALI -> (cod_proveedor_previo, proveedor_asignado_previo)
         _precios_previos = {}   # clave DALI -> precio previo (columna "Precio €")
+        _conversiones_previas = {}   # (20 nov 2026) clave DALI -> «Conversión DALI - SAP» del catálogo anterior
         if os.path.isfile(ruta_catalogo):
             try:
                 wb_prev = openpyxl.load_workbook(ruta_catalogo, read_only=True, data_only=True)
@@ -611,6 +612,7 @@ class CatalogoDali:
                         _i_cprov = _mapa_prev.get("cod_prov", 2)
                         _i_prov  = _mapa_prev.get("proveedor", 9)
                         _i_prec  = _mapa_prev.get("precio")     # None si el catálogo viejo no la tiene
+                        _i_conv  = _mapa_prev.get("conversion")  # None si no la tiene (antes del 20 nov 2026)
                         continue
                     if not row or len(row) < _i_clave or row[_i_clave - 1] is None:
                         continue
@@ -620,13 +622,16 @@ class CatalogoDali:
                     _datos_previos[clave_prev] = (cod_prov_prev, prov_asig_prev)
                     if _i_prec and len(row) >= _i_prec and row[_i_prec - 1] not in (None, ""):
                         _precios_previos[clave_prev] = row[_i_prec - 1]
+                    if _i_conv and len(row) >= _i_conv and row[_i_conv - 1] not in (None, ""):
+                        _conversiones_previas[clave_prev] = row[_i_conv - 1]
                 wb_prev.close()
                 _con_cod_prov_previo = sum(
                     1 for cp, _ in _datos_previos.values() if cp not in (None, ""))
                 self.log_consola(
                     f"  └ {len(_datos_previos)} código(s) leídos del catálogo anterior "
                     f"({_con_cod_prov_previo} con código proveedor, "
-                    f"{len(_precios_previos)} con precio)", "INFO")
+                    f"{len(_precios_previos)} con precio, "
+                    f"{len(_conversiones_previas)} con equivalencia)", "INFO")
             except Exception as _e_prev:
                 self.log_consola(
                     f"  ⚠  No se pudo leer el catálogo anterior "
@@ -772,6 +777,9 @@ class CatalogoDali:
                 # "Precio €": igual que el código proveedor, se conserva del
                 # catálogo anterior solo si el Proveedor Asignado no cambió.
                 "precio":      precio,
+                # (20 nov 2026, petición de Víctor) Equivalencia DALI - SAP: se carga en Catálogo Asignaciones
+                # («Importar Excel») y aquí solo se conserva, por código DALI, aunque cambie el proveedor.
+                "conversion":  _conversiones_previas.get(clave),
             }
             for _k_sap in CATALOGO_CLAVES_SAP:
                 valores[_k_sap] = s.get(_k_sap)

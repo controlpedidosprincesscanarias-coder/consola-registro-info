@@ -11,6 +11,7 @@ Central Compras Princess Canarias — (c) VAMA 2026
 
 import datetime as _dt
 import os
+import re
 
 
 def normalizar_codigo_sap(valor):
@@ -227,6 +228,10 @@ CATALOGO_COLUMNAS = (
     ("grp_compras",      "Grupo compras SAP",               18.43),
     ("desc_grp_compras", "Nombre grupo compras SAP",        25.86),
     ("activo",           "Activo",                          11.14),
+    # (20 nov 2026, petición de Víctor) Equivalencias. Solo se cargan en Catálogo Asignaciones con «Importar
+    # Excel»; la Consola no las cambia ni las envía (no está en catalogo_web.CLAVE_WEB): al regenerar el
+    # catálogo se conservan del archivo anterior por código DALI. Mismo título que la exportación de la web.
+    ("conversion",       "Conversión DALI - SAP",           22.0),
 )
 
 # Columnas cuyo valor procede del LISTADO CODIGOS DALI - SAP.xlsx.
@@ -244,6 +249,16 @@ def normalizar_cabecera_catalogo(texto):
     return " ".join(str(texto).split()).casefold()
 
 
+def es_cabecera_conversion(texto):
+    """(20 nov 2026) «Conversión DALI - SAP», también como venía en el Excel de Víctor («COVERSION DALI - SAP»),
+    sin tildes o como «Equivalencias» (las mismas variantes que acepta la web al importar)."""
+    import unicodedata
+    t = unicodedata.normalize("NFD", str(texto or ""))
+    t = "".join(ch for ch in t if unicodedata.category(ch) != "Mn")
+    t = " ".join(t.upper().split())
+    return re.fullmatch(r"(CON?VERSION|EQUIVALENCIAS?)( DALI ?- ?SAP)?", t) is not None
+
+
 def mapa_columnas_catalogo(cabeceras):
     """
     Devuelve {clave_interna: nº de columna (base 1)} para las cabeceras
@@ -256,6 +271,8 @@ def mapa_columnas_catalogo(cabeceras):
     mapa = {}
     for idx, h in enumerate(cabeceras, start=1):
         clave = por_cabecera.get(normalizar_cabecera_catalogo(h))
+        if clave is None and es_cabecera_conversion(h):
+            clave = "conversion"
         if clave is not None and clave not in mapa:
             mapa[clave] = idx
     return mapa
