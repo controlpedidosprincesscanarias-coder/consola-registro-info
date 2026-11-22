@@ -1655,7 +1655,7 @@ Petición de Víctor (21 nov 2026): «Creamos un nuevo paso llamado "Generar pla
 
 ---
 
-## 91. Columna REGISTRO INFO en la TARIFA final y en la plantilla desde RINFO (22 nov 2026, próxima compilación: v10.2.94) — PR en GitHub
+## 91. Columna REGISTRO INFO y recuadro de HOTELES encima de la tabla (22 nov 2026, próxima compilación: v10.2.94) — PR en GitHub
 
 Petición de Víctor (22 nov 2026): «¿Podríamos añadir una nueva columna donde se ponga el Registro Info de cada material? En el purchasing, todo código SAP (material) tiene asociado un registro info, normalmente en la primera columna de cada hoja. En el caso del Excel tarifa creado desde cero, creamos igualmente la columna». Decisión (1B): en la TARIFA final de la Acción 3, rellenarla con el Purchasing del proveedor que haya en TARIFAS, «los registros info no varían».
 
@@ -1665,6 +1665,7 @@ Petición de Víctor (22 nov 2026): «¿Podríamos añadir una nueva columna don
 - **[INCOMPLETO]:** al reprocesar (paso 4b de `_reaplicar_sap_y_guardar_inc`) se completan los Registros Info de los códigos SAP recién puestos, sin tocar lo escrito y solo si la tarifa tiene la columna.
 - **Pruebas:** 4 nuevas en `tests/test_plantilla_rinfo.py` (`TestRegistroInfo`: números del Purchasing también de los borrados, por código de proveedor, un solo proveedor, no pisar, y `transformar()` con y sin la búsqueda) y las de la plantilla al día. Total: 359.
 - **Manual:** frase en «Teléfono del proveedor y hoteles de la TARIFA» y una marca más en la captura de la plantilla; las dos capturas de Excel rehechas con Registros Info inventados.
+- **Recuadro de HOTELES encima de la tabla** (petición de Víctor, mismo día, con la captura del manual: «¿Podríamos integrar el bloque de hoteles sobre el resto de la información, para que no se amplíe 3 columnas más la plantilla? Rodar hacia la izquierda»). Pasa de H1:L5 a **E1:H6**: título «HOTELES» combinado en E1:H1, siglas en E y G y casillas en F y H, filas 2-6, encima de FORMATO, PRECIO, DESCUENTO y REGISTRO INFO. La frase roja «DESCUENTOS YA APLICADOS EN PRECIO FINAL» pasa de E5:G5 a **B6:D6**, debajo de «Dto.(%)» (la escribe `escribir_huecos`), y la fila 6 deja de ser un separador (en `_finalizar_y_guardar` no cuenta para el ancho de A..D). `leer_datos_tarifa` busca ahora las siglas en E1:T6. No hace falta compatibilidad con H1:L5: nunca se publicó.
 - **No probado:** en Windows con un Purchasing real (que los números de la columna A de la hoja 1 salgan como en SAP) y una tarifa nueva de un proveedor con y sin Purchasing en TARIFAS.
 
 ---

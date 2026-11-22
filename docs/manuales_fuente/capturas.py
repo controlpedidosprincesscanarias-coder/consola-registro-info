@@ -589,10 +589,10 @@ def captura_tarifa_cabecera(nombre="c_tarifa_cabecera"):
         for i in range(4):                                # códigos SAP y Registros Info inventados (A y H)
             ws.cell(8 + i, 1).value = 10100001 + i        # (sin catálogo de ejemplo, el paso 27b no los pone)
             ws.cell(8 + i, 8).value = 5300000101 + i
-        for c in ("J1", "J4", "L1", "L2", "L3"):          # GY, TA, MG, GC, MT
+        for c in ("F2", "F5", "H2", "H3", "H4"):          # GY, TA, MG, GC, MT
             ws[c] = "✔"
 
-    _foto_excel(ruta, nombre, "SUMINISTROS DEMO SL [22-11-2026].xlsx - Excel", [("B4:C4", "r"), ("H1:L5", "l")],
+    _foto_excel(ruta, nombre, "SUMINISTROS DEMO SL [22-11-2026].xlsx - Excel", [("B4:C4", "r"), ("E1:H6", "r")],
                 rellenar)
 
 
@@ -628,7 +628,7 @@ def captura_plantilla_tarifa(nombre="c_plantilla_tarifa"):
     pls = PR.preparar_plantillas(datos, catalogo, fecha=_dt.date(2026, 11, 22))
     ruta = escribir_plantilla(pls[0], tmp)
     _foto_excel(ruta, nombre, f"{pls[0]['nombre_archivo']} - Excel",
-                [("C3:D3", "r"), ("B4:C4", "ir"), ("H1:L5", "l"), ("F8:F11", "b"), ("H8:H11", "b"), ("I7:J11", "b")])
+                [("C3:D3", "ir"), ("B4:C4", "ir"), ("E1:H6", "r"), ("F8:F11", "b"), ("H8:H11", "b"), ("I7:J11", "b")])
 
 
 def main():
