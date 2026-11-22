@@ -339,6 +339,9 @@ def pasos(app):
         ("c_rinfo_telefono", lambda: cri.VentanaTelefonoRINFO(app, lambda *a: None), lambda v: [(de_clase(v, "Entry"), 1, "r"), (boton(v, "Asignar teléfono"), 2, "l"), (boton(v, "Sin teléfono"), 3, "l")]),
         ("c_rinfo_fechas", lambda: cri.VentanaFechasRINFO(app, lambda *a: None), lambda v: [(de_clase(v, "Entry", 0), 1, "r"), (de_clase(v, "Entry", 1), 2, "r"), (boton(v, "Confirmar fechas"), 3, "t")]),
         ("c_rinfo_centros", lambda: cri.VentanaCentrosRINFO(app, lambda *a: None), lambda v: [(caja(v, B(v, "Todos"), B(v, "Ninguno")), 1, "r"), (caja(v, B(v, "0110"), B(v, "0910")), 2, "r"), (boton(v, "Confirmar selección"), 3, "t")]),
+        ("c_plantilla_rinfo", lambda: __import__("app.ui.ventana_plantilla_rinfo", fromlist=["x"]).VentanaPlantillaRinfo(
+            app, TARIFAS, lambda r: None), lambda v: (v._lbl_zona_sub.config(text="(uno o varios a la vez)"),   # el texto de Windows (en Linux no hay arrastre)
+                         [(v._zona, 1, "l"), (boton(v, "Examinar"), 2, "t")])[1]),
         ("c_rinfo_sin_tarifa", lambda: cri._ventana_sin_tarifa(app, [
             {"codigo": "10509001", "desc": "ROTULADOR PERMANENTE NEGRO", "fecha": "31/12/2026", "fila_h1": 12},
             {"codigo": "10509002", "desc": "SOBRE BLANCO 110X220 CAJA 500", "fecha": "31/12/2026", "fila_h1": 13}]), lambda v: [(de_clase(v, "Treeview"), 1, "ir"), (boton(v, "MANTENER"), 2, "t"), (boton(v, "DAR BAJA"), 3, "t")]),
@@ -480,7 +483,7 @@ def marcas_principal(v):
         (B(v, "Crear estructura PROYECTO"), 3, "ir"),
         (B(v, "Localizar").master.master if B(v, "Localizar") else None, 4, "tr"),
         (prog, 5, "r"),
-        (caja_de(v, [B(v, "Organizar artículos DALI").master, B(v, "Generar Listado Tarifa").master]), 6, "tr"),
+        (caja_de(v, [B(v, "Organizar artículos DALI").master, B(v, "Generar plantilla Tarifa").master]), 6, "tr"),
         (B(v, "Consultar el manual").master, 7, "tr"),
         (v.consola, 8, "ir"),
         (caja_de(v, [B(v, "guardar log"), B(v, "limpiar")]), 9, "b"),
@@ -490,16 +493,71 @@ def marcas_principal(v):
     ]
 
 
-# ── (22 nov 2026) Cabecera de la TARIFA final con el teléfono y los hoteles ─────────────────────────────
+# ── (22 nov 2026) Capturas de Excel: la TARIFA y la plantilla de revisión de precios ─────────────────────
+_COLORES_MARCA = [(255, 0, 255), (0, 255, 255), (255, 128, 0), (0, 200, 0), (0, 0, 255)]
+
+
+def _foto_excel(ruta, nombre, titulo, marcas, ajustar=None):
+    """Guarda <nombre>.png con el libro `ruta` tal como se ve en Excel (renderizado con LibreOffice, con la
+    cuadrícula). marcas: [(rango, lado)]. Para situarlas, se renderiza antes una copia con cada rango pintado de un
+    color único y se busca ese color en la imagen (el relleno no cambia la geometría)."""
+    import openpyxl
+    from openpyxl.styles import PatternFill
+    tmp = tempfile.mkdtemp(prefix="excel_manual_")
+
+    def copia(destino, pintar):
+        wb = openpyxl.load_workbook(ruta)
+        ws = wb.active
+        if ajustar:
+            ajustar(ws)
+        if pintar:
+            for (rango, _lado), rgb in zip(marcas, _COLORES_MARCA):
+                for fila in ws[rango]:
+                    for c in fila:
+                        c.fill = PatternFill(fill_type="solid", fgColor="%02X%02X%02X" % rgb)
+        ws.print_area = f"A1:L{min(ws.max_row, 16)}"
+        ws.page_setup.orientation = "landscape"
+        ws.sheet_properties.pageSetUpPr.fitToPage = True
+        ws.page_setup.fitToWidth, ws.page_setup.fitToHeight = 1, 1
+        ws.print_options.gridLines = True
+        wb.save(destino)
+
+    def renderizar(xlsx):
+        subprocess.run(["soffice", "--headless", "--convert-to", "pdf", "--outdir", tmp, xlsx],
+                       check=True, capture_output=True, timeout=120)
+        pdf = os.path.splitext(xlsx)[0] + ".pdf"
+        subprocess.run(["pdftoppm", "-r", "200", "-png", "-singlefile", pdf, pdf[:-4]], check=True, timeout=120)
+        return Image.open(pdf[:-4] + ".png").convert("RGB")
+
+    def caja_de_color(img, rgb):
+        mask = Image.new("L", img.size)
+        mask.putdata([255 if abs(p[0] - rgb[0]) < 12 and abs(p[1] - rgb[1]) < 12 and abs(p[2] - rgb[2]) < 12 else 0
+                      for p in img.getdata()])
+        return mask.getbbox()
+
+    copia(os.path.join(tmp, "marcas.xlsx"), True)
+    copia(os.path.join(tmp, "final.xlsx"), False)
+    con_marcas, img = renderizar(os.path.join(tmp, "marcas.xlsx")), renderizar(os.path.join(tmp, "final.xlsx"))
+    cajas = [caja_de_color(con_marcas, rgb) for rgb in _COLORES_MARCA[:len(marcas)]]
+    recorte = Image.eval(img.convert("L"), lambda v: 255 if v < 250 else 0).getbbox()
+    x0, y0 = max(0, recorte[0] - 30), max(0, recorte[1] - 30)
+    img = img.crop((x0, y0, min(img.width, recorte[2] + 30), min(img.height, recorte[3] + 30)))
+    img, dy = _barra_titulo(img, titulo)
+    d = ImageDraw.Draw(img)
+    for n, (caja, (_rango, lado)) in enumerate(zip(cajas, marcas), start=1):
+        if caja is None:
+            log(f"   ⚠ {nombre}: no se encontró la marca {n}")
+            continue
+        _marca(d, (caja[0] - x0, caja[1] - y0 + dy, caja[2] - x0, caja[3] - y0 + dy), n, lado, img.width, img.height)
+    img.save(os.path.join(SALIDA, nombre + ".png"))
+    log(f"  ✓ {nombre}")
+
+
 def captura_tarifa_cabecera(nombre="c_tarifa_cabecera"):
-    """La cabecera de una TARIFA final de EJEMPLO (la genera transformar() de verdad, con un .xls inventado) tal
-    como se ve en Excel, renderizada con LibreOffice. Las marcas se sitúan pintando antes las celdas de un color
-    único y buscándolo en la imagen (el relleno no cambia la geometría)."""
+    """La cabecera de una TARIFA final de EJEMPLO (la genera transformar() de verdad, con un .xls inventado)."""
     if SOLO and not nombre.startswith(SOLO):
         return
     from unittest import mock
-    import openpyxl
-    from openpyxl.styles import PatternFill
     from app.tarifas import transformar_tarifa as TT
 
     class _Hoja:
@@ -526,60 +584,55 @@ def captura_tarifa_cabecera(nombre="c_tarifa_cabecera"):
     with mock.patch.object(TT, "_leer_xls", return_value=_Hoja(celdas)):
         ruta, _ = TT.transformar(xls)
 
-    def rellenar(destino, colores):
-        wb = openpyxl.load_workbook(ruta)
-        ws = wb.active
+    def rellenar(ws):
         ws["C4"] = "928 000 000"
         for c in ("J1", "J4", "L1", "L2", "L3"):          # GY, TA, MG, GC, MT
             ws[c] = "✔"
-        for rango, color in colores:
-            for fila in ws[rango]:
-                for c in fila:
-                    c.fill = PatternFill(fill_type="solid", fgColor=color)
-        ws.print_area = "A1:L11"
-        ws.page_setup.orientation = "landscape"
-        ws.sheet_properties.pageSetUpPr.fitToPage = True
-        ws.page_setup.fitToWidth, ws.page_setup.fitToHeight = 1, 1
-        ws.print_options.gridLines = True
-        wb.save(destino)
 
-    def renderizar(xlsx):
-        subprocess.run(["soffice", "--headless", "--convert-to", "pdf", "--outdir", tmp, xlsx],
-                       check=True, capture_output=True, timeout=120)
-        pdf = os.path.splitext(xlsx)[0] + ".pdf"
-        subprocess.run(["pdftoppm", "-r", "200", "-png", "-singlefile", pdf, pdf[:-4]], check=True, timeout=120)
-        return Image.open(pdf[:-4] + ".png").convert("RGB")
+    _foto_excel(ruta, nombre, "SUMINISTROS DEMO SL [22-11-2026].xlsx - Excel", [("B4:C4", "r"), ("H1:L5", "l")],
+                rellenar)
 
-    def caja_de_color(img, rgb):
-        mask = Image.new("L", img.size)
-        mask.putdata([255 if abs(p[0] - rgb[0]) < 12 and abs(p[1] - rgb[1]) < 12 and abs(p[2] - rgb[2]) < 12 else 0
-                      for p in img.getdata()])
-        return mask.getbbox()
 
-    rellenar(os.path.join(tmp, "marcas.xlsx"), [("B4:C4", "FF00FF"), ("H1:L5", "00FFFF")])
-    rellenar(os.path.join(tmp, "final.xlsx"), [])
-    con_marcas, img = renderizar(os.path.join(tmp, "marcas.xlsx")), renderizar(os.path.join(tmp, "final.xlsx"))
-    cajas = [caja_de_color(con_marcas, (255, 0, 255)), caja_de_color(con_marcas, (0, 255, 255))]
-    recorte = Image.eval(img.convert("L"), lambda v: 255 if v < 250 else 0).getbbox()
-    x0, y0 = max(0, recorte[0] - 30), max(0, recorte[1] - 30)
-    img = img.crop((x0, y0, min(img.width, recorte[2] + 30), min(img.height, recorte[3] + 30)))
-    img, dy = _barra_titulo(img, "SUMINISTROS DEMO SL [22-11-2026].xlsx - Excel")
-    d = ImageDraw.Draw(img)
-    for n, (caja, lado) in enumerate(zip(cajas, ("r", "l")), start=1):
-        if caja is None:
-            log(f"   ⚠ {nombre}: no se encontró la marca {n}")
-            continue
-        _marca(d, (caja[0] - x0, caja[1] - y0 + dy, caja[2] - x0, caja[3] - y0 + dy), n, lado, img.width, img.height)
-    img.save(os.path.join(SALIDA, nombre + ".png"))
-    log(f"  ✓ {nombre}")
+def captura_plantilla_tarifa(nombre="c_plantilla_tarifa"):
+    """(22 nov 2026) La plantilla de revisión de precios de la Acción 6, generada de verdad (plantilla_rinfo +
+    plantilla_tarifa) con datos inventados de un Purchasing: un proveedor DEMO con dos grupos de hoteles."""
+    if SOLO and not nombre.startswith(SOLO):
+        return
+    import datetime as _dt
+    from collections import OrderedDict
+    from app.comun import plantilla_rinfo as PR
+    from app.tarifas.plantilla_tarifa import escribir_plantilla
+    ini, fin = _dt.date(2026, 1, 1), _dt.date(2026, 12, 31)
+    todos = ["0110", "0120", "0210", "0310", "0410", "0510", "0610", "0710", "0810", "0910"]
+    materiales = OrderedDict()
+    for mat, ref, texto, precio in (("10100001", "REF-001", "ACEITE OLIVA DEMO 1L", 4.35),
+                                    ("10100002", "REF-002", "VINAGRE EJEMPLO 1L", 1.20),
+                                    ("10100003", "REF-003", "SAL MARINA MODELO 1KG", 0.85),
+                                    ("10100004", "REF-004", "AZUCAR DEMO 1KG", 1.10)):
+        materiales[mat] = {"texto": texto, "um": "UN", "cod_prov_mat": ref,
+                           "precios": {c: (precio - (0.25 if c in ("0810", "0910") and mat == "10100001" else 0),
+                                           ini, fin) for c in todos}}
+    datos = {"proveedores": OrderedDict([("1009999", {"codigo": "1009999", "nombre": "SUMINISTROS DEMO SL",
+                                                      "telefono": "928000000", "materiales": materiales})])}
+    catalogo = PR.mapa_catalogo([(90001 + i, t, "UD", m) for i, (m, t) in
+                                 enumerate((("10100001", "ACEITE DE OLIVA DEMO 1L"),
+                                            ("10100002", "VINAGRE DE EJEMPLO 1L"),
+                                            ("10100003", "SAL MARINA MODELO 1KG"),
+                                            ("10100004", "AZUCAR DEMO 1KG")))])
+    tmp = tempfile.mkdtemp(prefix="plantilla_manual_")
+    pls = PR.preparar_plantillas(datos, catalogo, fecha=_dt.date(2026, 11, 22))
+    ruta = escribir_plantilla(pls[0], tmp)
+    _foto_excel(ruta, nombre, f"{pls[0]['nombre_archivo']} - Excel",
+                [("C3:D3", "r"), ("B4:C4", "ir"), ("H1:L5", "l"), ("F8:F11", "b"), ("H7:I11", "b")])
 
 
 def main():
     os.makedirs(SALIDA, exist_ok=True)
-    try:
-        captura_tarifa_cabecera()
-    except Exception:  # noqa: BLE001
-        log(f"   ✗ c_tarifa_cabecera: {traceback.format_exc()}")
+    for _captura in (captura_tarifa_cabecera, captura_plantilla_tarifa):
+        try:
+            _captura()
+        except Exception:  # noqa: BLE001
+            log(f"   ✗ {_captura.__name__}: {traceback.format_exc()}")
     app = tarifa_app.App()
     app.geometry("1280x820+0+0")
     pendientes = []

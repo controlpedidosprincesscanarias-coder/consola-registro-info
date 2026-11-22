@@ -258,9 +258,10 @@ class InterfazApp:
             self._asignar_sap_pendientes, strip_color="#1A6B5A"
         ).pack(fill="x", pady=(0, 2))
 
+        # (22 nov 2026, petición de Víctor) Antes «Generar Listado Tarifa Proveedor Vacia», en construcción.
         self._boton_accion(
-            frm_acc, "6", "Generar Listado Tarifa Proveedor Vacia", "📄",
-            self._wip, strip_color="#5A4A7A", wip=True
+            frm_acc, "6", "Generar plantilla Tarifa desde RINFO", "📄",
+            self._generar_plantilla_desde_rinfo, strip_color="#5A4A7A"
         ).pack(fill="x", pady=(0, 0))
 
     # ── CONSOLA + ACCESOS RÁPIDOS ─────────────────────────────────────────
@@ -815,12 +816,6 @@ class InterfazApp:
             pass
 
     # ── Acciones ──────────────────────────────────────────────
-
-    def _wip(self):
-        messagebox.showinfo(
-            "En construcci\xf3n",
-            "\U0001f6a7  Esta funci\xf3n est\xe1 actualmente en construcci\xf3n.\n\n"
-            "Estar\xe1 disponible en una pr\xf3xima versi\xf3n.")
 
     def _seleccionar_proyecto(self):
         carpeta = filedialog.askdirectory(

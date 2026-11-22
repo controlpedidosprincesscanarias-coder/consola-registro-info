@@ -14,6 +14,7 @@ from tkinter import messagebox
 import datetime as _dt_mod          # módulo completo — usado en lógica de fechas de baja
 from datetime import datetime
 import openpyxl
+from app.comun import datos_tarifa as DT  # (22 nov 2026) PRECIO NUEVO de la plantilla del proveedor
 from app.comun.catalogo_local import abrir_como_listado  # v10.2.50: catálogo con forma de LISTADO
 # normalizar_codigo_sap vive en sap_helpers.py (sin tkinter) para que
 # también pueda importarla test_crear_registro_info.py sin arrastrar
@@ -912,19 +913,15 @@ class CreadorRINFO:
             hoja_t = (wb_t[HOJA_TARIFA]
                       if HOJA_TARIFA in wb_t.sheetnames
                       else wb_t.active)
-            for row in hoja_t.iter_rows(min_row=8, min_col=1,
-                                         max_col=6, values_only=True):
-                cod   = row[0]   # col A  CODIGO SAP
-                precio = row[5]  # col F  PRECIO
-                if cod is None:
-                    continue
-                cod = normalizar_codigo_sap(cod)
-                clave = str(cod).strip()
-                if clave and precio is not None:
-                    dic_tarifa[clave] = precio
+            # (22 nov 2026) col A CODIGO SAP y col F PRECIO; con la columna PRECIO NUEVO de la plantilla de
+            # revisión de precios (Acción 6), manda el del proveedor donde esté relleno.
+            dic_tarifa, n_nuevos = DT.precios_tarifa(hoja_t)
             wb_t.close()
             _log(self._parent,
                  f"Tarifa para Hoja3 cargada: {len(dic_tarifa)} precios.", "INFO")
+            if n_nuevos:
+                _log(self._parent,
+                     f"  {n_nuevos} de ellos son el PRECIO NUEVO que ha rellenado el proveedor.", "OK")
         except Exception as exc:
             _log(self._parent,
                  f"Error al leer precios de la tarifa para Hoja3: {exc} — col O vacía.",

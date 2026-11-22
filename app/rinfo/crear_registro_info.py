@@ -48,7 +48,6 @@ from app.comun.tarifa_constants import (
     FONT_SUB, FONT_LABEL, FONT_BOLD,
 )
 from app.comun.tarifa_core import cargar_icono_ventana
-from app.comun import fechas_tarifa as FT  # (13 nov 2026) periodo de la tarifa para las fechas de validez
 from app.comun import datos_tarifa as DT   # (22 nov 2026) teléfono y hoteles escritos en la tarifa
 # normalizar_codigo_sap vive en sap_helpers.py (sin tkinter) para que
 # también pueda importarla test_crear_registro_info.py sin arrastrar
@@ -677,7 +676,7 @@ class VentanaPurchasingEncontrado(tk.Toplevel):
             return
         self._telefono_pendiente = resultado
         VentanaFechasRINFO(self._parent_ventana, self._tras_fechas,
-                           periodo=FT.leer_periodo_tarifa(self._ruta_tarifa))
+                           periodo=DT.periodo_propuesto(self._ruta_tarifa))  # (22 nov 2026) FECHA INICIO del proveedor
 
     def _tras_fechas(self, resultado):
         """Callback de VentanaFechasRINFO."""
@@ -938,7 +937,7 @@ class VentanaOpcionesSinPurchasing(tk.Toplevel):
             # Guardar teléfono temporalmente y pasar a pantalla de fechas
             self._telefono_pendiente = resultado   # str validado o None
             VentanaFechasRINFO(self._parent_ventana, _tras_fechas,
-                               periodo=FT.leer_periodo_tarifa(self._ruta_tarifa))
+                               periodo=DT.periodo_propuesto(self._ruta_tarifa))  # (22 nov 2026) FECHA INICIO del proveedor
 
         self._telefono_pendiente = None
         self._fechas_pendientes  = (None, None)

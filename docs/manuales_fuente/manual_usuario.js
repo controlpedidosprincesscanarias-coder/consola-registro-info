@@ -16,7 +16,7 @@ s.push(...indice([
   ["4. Preparar el proyecto", "Carpetas TARIFAS y RECURSOS y qué archivos van en cada una"],
   ["5. El catálogo DALI / SAP (Acciones 1, 2 y 5)", "ARTICULOS_DALI, catálogo completo, códigos SAP pendientes y listados de SAP"],
   ["6. Generar la TARIFA (Acciones 3 y 4)", "De la tarifa del proveedor a la TARIFA final; códigos SAP faltantes y duplicados"],
-  ["7. Crear el Registro Info (RINFO)", "Con un Purchasing Info Records existente o desde cero, y cargarlo en SAP"],
+  ["7. Crear el Registro Info (RINFO)", "Con un Purchasing Info Records existente o desde cero, y cargarlo en SAP; la plantilla de revisión de precios (Acción 6)"],
   ["8. Cambios en Catálogo Asignaciones", "Qué se envía a la web y cómo revisarlo antes"],
   ["9. Consultar el manual y actualizaciones", "La ayuda dentro de la app y las versiones nuevas"],
   ["10. Consulta rápida y problemas frecuentes", "Tablas de referencia"],
@@ -35,7 +35,7 @@ s.push(...tabla(["Acción", "Para qué sirve", "Cuándo usarla"], [
   ["3. Generar TARIFA final", "Convierte la tarifa del proveedor en la TARIFA final con los códigos SAP", "Con cada tarifa nueva"],
   ["4. Archivos [INCOMPLETOS]", "Abre en Excel una tarifa incompleta para corregirla a mano", "Si una tarifa queda [INCOMPLETO] (sin ninguna, sale sombreada)"],
   ["5. Asignar SAP pendientes", "Lista todos los artículos DALI activos sin código SAP para escribir sus códigos", "Cuando haya artículos sin código SAP"],
-  ["6. Tarifa de proveedor vacía", "En preparación («PRÓXIMO»)", "—"],
+  ["6. Generar plantilla Tarifa desde RINFO", "Del RINFO o Purchasing de SAP saca la tarifa que se envía al proveedor para que rellene los precios nuevos", "En cada revisión de precios con un proveedor"],
   ["Crear / Actualizar Registro Info", "Genera el RINFO de una TARIFA final (acceso rápido)", "Con la TARIFA ya completa"],
 ], [3000, 4300, 2338]));
 
@@ -233,6 +233,21 @@ s.push(...imagen("c_rinfo_creado", 10, "Registro Info creado desde cero."));
 s.push(...leyenda([[1, "Valores escritos: proveedor SAP, código y artículos copiados."], [2, "**Sí, abrir ahora**."]]));
 s.push(...recuadro("importante", "Antes de importarlo en SAP", ["Mira el **resumen de validación** de la consola: si dice «Sin incidencias detectadas», el archivo puede importarse.",
   "Importa cada RINFO **una sola vez**. Si necesitas repetir la carga, vuelve a descargar el Purchasing de SAP y genera el RINFO otra vez: un Purchasing antiguo ya no refleja lo que hay en SAP."]));
+
+s.push(h2("Acción 6 — Generar plantilla Tarifa desde RINFO (revisión de precios)"));
+s.push(p("Es el paso **al revés**: a partir de un **RINFO** o de un **Purchasing Info Records** descargado de SAP, la consola prepara la tarifa que se **envía al proveedor** para que rellene la nueva revisión de precios. Pulsa **6 · Generar plantilla Tarifa desde RINFO**:"));
+s.push(...imagen("c_plantilla_rinfo", 10, "Elegir el RINFO o el Purchasing."));
+s.push(...leyenda([[1, "**Arrastra** aquí uno o varios archivos desde el Explorador de Windows."], [2, "O pulsa **Examinar…** para elegirlos."]]));
+s.push(p("La ventana se cierra y la consola genera las plantillas en **TARIFAS**, sin más preguntas. En la consola verás cada archivo generado, con cuántos artículos, qué hoteles y qué teléfono lleva:"));
+s.push(...["**Una tarifa por proveedor**, con sus artículos, el precio **vigente hoy**, su código de proveedor, el teléfono y los hoteles marcados.",
+  "Si un proveedor tiene **precios distintos según el hotel**, sale **una tarifa por cada grupo de hoteles con los mismos precios**; el grupo va en el nombre, por ejemplo «SUMINISTROS DEMO SL (JN-FV) [22-11-2026].xlsx». Si todos pagan lo mismo, sale una sola.",
+  "El **código DALI**, la **descripción** y el **formato** salen del catálogo, buscando por código SAP; si un material no está en el catálogo, se ponen los datos de SAP.",
+  "No salen los Registros Info o centros **marcados para borrar** ni los precios **caducados**. Los materiales con **escalado** de precio llevan el precio base y la consola los avisa en amarillo.",
+  "Nunca se pisa un archivo: si ya existe uno con ese nombre, se añade «(2)»."].map(t => vineta(t)));
+s.push(...imagen("c_plantilla_tarifa", 17, "La plantilla para el proveedor (datos de ejemplo)."));
+s.push(...leyenda([[1, "**Periodo**: vacío y en amarillo, para que el proveedor indique el nuevo periodo."], [2, "**Teléfono** del proveedor, el que tiene SAP."], [3, "**Hoteles** a los que se aplica (capítulo 6)."],
+  [4, "**PRECIO** que tiene SAP hoy."], [5, "**PRECIO NUEVO** y **FECHA INICIO**, en amarillo, para el proveedor. Los artículos que no cambian se dejan en blanco."]]));
+s.push(...recuadro("consejo", "Cuando el proveedor la devuelva", ["Guárdala en **TARIFAS** y úsala tal cual en **Crear / Actualizar Registro Info SAP**: la consola toma el **PRECIO NUEVO** donde esté relleno (y el precio de siempre donde no), lo dice en la consola, y propone en la ventana de fechas la **FECHA INICIO** que haya puesto el proveedor (hasta el final del periodo que indique o, si no, hasta el 31 de diciembre)."]));
 
 // ── 8 ──────────────────────────────────────────────────────────────────────
 s.push(h1("8. Cambios en Catálogo Asignaciones"));

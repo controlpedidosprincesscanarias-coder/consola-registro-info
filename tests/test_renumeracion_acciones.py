@@ -28,7 +28,7 @@ class Botones(unittest.TestCase):
     def test_orden_y_funcion_de_cada_boton(self):
         self.assertEqual([(n, m) for n, _t, m in _botones()], [
             ("1", "_organizar_dali"), ("2", "_accion_3_guiada"), ("3", "_procesar"),
-            ("4", "_crear_registro_sap"), ("5", "_asignar_sap_pendientes"), ("6", "_wip")])
+            ("4", "_crear_registro_sap"), ("5", "_asignar_sap_pendientes"), ("6", "_generar_plantilla_desde_rinfo")])
 
     def test_ya_no_hay_boton_para_abrir_la_ultima_tarifa(self):
         self.assertFalse(any("ultima TARIFA" in t for _n, t, _m in _botones()))
