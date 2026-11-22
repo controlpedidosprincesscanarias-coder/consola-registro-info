@@ -172,6 +172,7 @@ s.push(p("La TARIFA final lleva en la cabecera dos huecos para que, al crear el 
 s.push(...imagen("c_tarifa_cabecera", 17, "Cabecera de la TARIFA final con el teléfono y los hoteles (datos de ejemplo)."));
 s.push(...leyenda([[1, "**Teléfono:** del proveedor, de 8 a 10 cifras (los espacios no importan)."],
   [2, "**HOTELES**: marca con **✔** (lista desplegable de cada casilla) o con una **X** los hoteles a los que se aplica la tarifa: GY Guayarmina, IT Inspire Tenerife, LP La Palma & Teneguía, TA Taurito, ST Suite, MG Mogán, GC Gran Canaria, MT Maspalomas & Tabaiba, JN Club Jandía y FV Fuerteventura."]]));
+s.push(p("La última columna de la tabla, **REGISTRO INFO**, lleva el número del Registro Info de SAP de cada material. La consola lo copia del **Purchasing Info Records** de ese proveedor que haya en TARIFAS (el mismo que usará al crear el RINFO; vale aunque sea antiguo, porque esos números no cambian). Si no hay ninguno, la columna queda vacía, y los materiales que aún no tienen Registro Info en SAP también quedan en blanco."));
 s.push(...recuadro("nota", "Si los dejas en blanco", ["No pasa nada: al crear el RINFO la consola te pregunta el teléfono y los centros como siempre. Lo mismo con las tarifas generadas antes de esta versión, que no tienen estos huecos."]));
 s.push(h2("Códigos SAP faltantes"));
 s.push(p("Si algún código DALI de la tarifa no tiene SAP en el catálogo, se abre esta ventana para escribirlo. Lo que guardes se escribe a la vez en el catálogo y en la tarifa, se **completan sus datos SAP** (descripción, unidad de medida, grupos y categoría de valoración, con Productos.xlsx y Listas de productos.xlsx, igual que en la Acción 5) y se envía a Catálogo Asignaciones. Si algún código no está todavía en Productos.xlsx, después te guía para descargar los listados de SAP (capítulo 5). Para los artículos sin SAP que no son de esta tarifa, usa la **Acción 5** (capítulo 5)."));
@@ -239,14 +240,15 @@ s.push(p("Es el paso **al revés**: a partir de un **RINFO** o de un **Purchasin
 s.push(...imagen("c_plantilla_rinfo", 10, "Elegir el RINFO o el Purchasing."));
 s.push(...leyenda([[1, "**Arrastra** aquí uno o varios archivos desde el Explorador de Windows."], [2, "O pulsa **Examinar…** para elegirlos."]]));
 s.push(p("La ventana se cierra y la consola genera las plantillas en **TARIFAS**, sin más preguntas. En la consola verás cada archivo generado, con cuántos artículos, qué hoteles y qué teléfono lleva:"));
-s.push(...["**Una tarifa por proveedor**, con sus artículos, el precio **vigente hoy**, su código de proveedor, el teléfono y los hoteles marcados.",
+s.push(...["**Una tarifa por proveedor**, con sus artículos, el precio **vigente hoy**, su código de proveedor, su **Registro Info**, el teléfono y los hoteles marcados.",
   "Si un proveedor tiene **precios distintos según el hotel**, sale **una tarifa por cada grupo de hoteles con los mismos precios**; el grupo va en el nombre, por ejemplo «SUMINISTROS DEMO SL (JN-FV) [22-11-2026].xlsx». Si todos pagan lo mismo, sale una sola.",
   "El **código DALI**, la **descripción** y el **formato** salen del catálogo, buscando por código SAP; si un material no está en el catálogo, se ponen los datos de SAP.",
   "No salen los Registros Info o centros **marcados para borrar** ni los precios **caducados**. Los materiales con **escalado** de precio llevan el precio base y la consola los avisa en amarillo.",
   "Nunca se pisa un archivo: si ya existe uno con ese nombre, se añade «(2)»."].map(t => vineta(t)));
 s.push(...imagen("c_plantilla_tarifa", 17, "La plantilla para el proveedor (datos de ejemplo)."));
 s.push(...leyenda([[1, "**Periodo**: vacío y en amarillo, para que el proveedor indique el nuevo periodo."], [2, "**Teléfono** del proveedor, el que tiene SAP."], [3, "**Hoteles** a los que se aplica (capítulo 6)."],
-  [4, "**PRECIO** que tiene SAP hoy."], [5, "**PRECIO NUEVO** y **FECHA INICIO**, en amarillo, para el proveedor. Los artículos que no cambian se dejan en blanco."]]));
+  [4, "**PRECIO** que tiene SAP hoy."], [5, "**REGISTRO INFO** de SAP de cada material (vacío si el material aún no lo tiene, por ejemplo en un RINFO todavía sin importar)."],
+  [6, "**PRECIO NUEVO** y **FECHA INICIO**, en amarillo, para el proveedor. Los artículos que no cambian se dejan en blanco."]]));
 s.push(...recuadro("consejo", "Cuando el proveedor la devuelva", ["Guárdala en **TARIFAS** y úsala tal cual en **Crear / Actualizar Registro Info SAP**: la consola toma el **PRECIO NUEVO** donde esté relleno (y el precio de siempre donde no), lo dice en la consola, y propone en la ventana de fechas la **FECHA INICIO** que haya puesto el proveedor (hasta el final del periodo que indique o, si no, hasta el 31 de diciembre)."]));
 
 // ── 8 ──────────────────────────────────────────────────────────────────────
