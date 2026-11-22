@@ -533,7 +533,7 @@ def _finalizar_y_guardar(wb, ws, ultima, ruta_xls, nombre_base,
     ws.column_dimensions["E"].width = 19
     ws.column_dimensions["F"].width = 16
     ws.column_dimensions["G"].width = 19
-    ws.column_dimensions["H"].width = 17   # (22 nov 2026) REGISTRO INFO (y «HOTELES» encima)
+    ws.column_dimensions["H"].width = 21   # (22 nov 2026) REGISTRO INFO (y «HOTELES» encima)
 
     # Altos de fila: logo filas 1-5, separador fila 6, tabla fila 7, datos desde 8
     for r in range(1, 6):

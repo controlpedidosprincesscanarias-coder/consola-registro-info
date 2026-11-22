@@ -116,7 +116,7 @@ def escribir_plantilla(plantilla, carpeta_tarifas):
         largo = max([len(_texto_visible(ws.cell(r, c).value, c)) for r in list(range(1, 6)) + list(range(8, ultima + 1))]
                     or [0])
         ws.column_dimensions[get_column_letter(c)].width = max(round(largo * 1.60) + 4, anchos_min[c])
-    for letra, ancho in (("E", 19), ("F", 16), ("G", 16), ("H", 18), ("I", 18), ("J", 18)):
+    for letra, ancho in (("E", 19), ("F", 16), ("G", 16), ("H", 21), ("I", 18), ("J", 18)):
         ws.column_dimensions[letra].width = ancho
     for r in range(1, 6):
         ws.row_dimensions[r].height = 18
