@@ -123,9 +123,11 @@ def leer_purchasing(ruta, hoy=None):
             continue
         clave_prov = prov or nombre
         p = proveedores.setdefault(clave_prov, {"codigo": prov, "nombre": nombre or prov, "telefono": "",
-                                                "materiales": OrderedDict()})
+                                                "materiales": OrderedDict(), "registros": {}})
         if not p["telefono"]:
             p["telefono"] = _txt(_celda(f, 30))
+        if reg and mat not in p["registros"]:      # (22 nov 2026) Registro Info de cada material, también si
+            p["registros"][mat] = reg              # está marcado para borrar (el número no cambia)
         if _marcado(_celda(f, 36)):
             borrados.add((clave_prov, mat))
             avisos["borrados"].add(mat)
@@ -213,7 +215,8 @@ def agrupar_por_precios(proveedor):
         primero = centros[0]
         materiales = [(mat, m, m["precios"][primero]) for mat, m in proveedor["materiales"].items()
                       if primero in m["precios"]]
-        grupos.append({"centros": centros, "siglas": [_SIGLA[c] for c in centros], "materiales": materiales})
+        grupos.append({"centros": centros, "siglas": [_SIGLA[c] for c in centros], "materiales": materiales,
+                       "registros": proveedor.get("registros", {})})
     return grupos
 
 
@@ -236,7 +239,8 @@ def filas_tarifa(grupo, catalogo):
         dalis = catalogo.get(mat) or [("", "", "")]
         for dali, desc, unidad in dalis:
             filas.append({"sap": mat, "dali": dali, "cod_prov": m["cod_prov_mat"],
-                          "descripcion": desc or m["texto"], "formato": unidad or m["um"], "precio": precio})
+                          "descripcion": desc or m["texto"], "formato": unidad or m["um"], "precio": precio,
+                          "registro_info": grupo.get("registros", {}).get(mat, "")})
     return filas
 
 
@@ -277,3 +281,33 @@ def preparar_plantillas(datos, catalogo, fecha=None, existentes=()):
                            "telefono": p["telefono"], "centros": g["centros"], "siglas": g["siglas"],
                            "filas": filas})
     return salida
+
+
+def registros_info_de(ruta, nombre_proveedor=None, codigo_proveedor=None):
+    """(22 nov 2026, petición de Víctor) {código SAP: Registro Info} del proveedor en un Purchasing, para la columna
+    REGISTRO INFO de la TARIFA final de la Acción 3. Los números no cambian (Víctor), así que vale un Purchasing
+    antiguo. Proveedor por código o por nombre exacto; si el Purchasing solo tiene uno, ese. {} si no se encuentra."""
+    datos = leer_purchasing(ruta)
+    provs = list(datos["proveedores"].values())
+    nombre = (nombre_proveedor or "").strip().upper()
+    for p in provs:
+        if (codigo_proveedor and p["codigo"] == str(codigo_proveedor).strip()) or \
+                (nombre and p["nombre"].strip().upper() == nombre):
+            return dict(p["registros"])
+    return dict(provs[0]["registros"]) if len(provs) == 1 else {}
+
+
+def rellenar_registros_info(ws, registros, fila_desde=8):
+    """Escribe en la columna REGISTRO INFO (H) de la hoja de una TARIFA el Registro Info de cada fila según su código
+    SAP (columna A). No toca las filas sin código SAP ni las que ya tienen uno. Devuelve cuántas ha rellenado."""
+    from app.comun.datos_tarifa import COL_REGISTRO_INFO
+    n = 0
+    for r in range(fila_desde, ws.max_row + 1):
+        sap = _txt(ws.cell(r, 1).value)
+        if not sap or ws.cell(r, COL_REGISTRO_INFO).value not in (None, ""):
+            continue
+        reg = registros.get(sap)
+        if reg:
+            ws.cell(r, COL_REGISTRO_INFO).value = int(reg) if reg.isdigit() else reg
+            n += 1
+    return n

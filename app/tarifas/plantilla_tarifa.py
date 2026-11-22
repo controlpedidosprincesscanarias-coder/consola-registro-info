@@ -5,7 +5,7 @@ plantilla Tarifa desde RINFO», 22 nov 2026, petición de Víctor). Sin tkinter.
 
 Es una TARIFA final como la de la Acción 3 (mismo aspecto, cabecera con logo, Código, Proveedor, Periodo, Teléfono,
 Dto. y el recuadro HOTELES; tabla en la fila 7) con los datos que ya tiene SAP, y dos columnas más en amarillo para el
-proveedor: PRECIO NUEVO y FECHA INICIO. El «Periodo:» también va en amarillo, vacío, para el nuevo periodo. Como
+proveedor: PRECIO NUEVO y FECHA INICIO (detrás de REGISTRO INFO, columna H). El «Periodo:» también va en amarillo, vacío, para el nuevo periodo. Como
 lleva el nombre de las tarifas («PROVEEDOR [dd-mm-aaaa].xlsx»), lo que devuelva el proveedor se usa directamente en
 «Crear / Actualizar Registro Info SAP» (datos_tarifa.precios_tarifa y periodo_propuesto).
 
@@ -20,13 +20,13 @@ import openpyxl
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-from app.comun.datos_tarifa import CAB_FECHA_INICIO, CAB_PRECIO_NUEVO, escribir_huecos
+from app.comun.datos_tarifa import CAB_FECHA_INICIO, CAB_PRECIO_NUEVO, CAB_REGISTRO_INFO, escribir_huecos
 from app.tarifas.transformar_tarifa import (
     _BORDE_TODO, _GRIS, _alin, _font, _insertar_logo_cabecera, _texto_visible,
 )
 
 CABECERAS = ["CODIGO SAP", "CODIGO DALI", "CODIGO PROVEEDOR", "DESCRIPCION", "FORMATO", "PRECIO", "DESCUENTO",
-             CAB_PRECIO_NUEVO, CAB_FECHA_INICIO]
+             CAB_REGISTRO_INFO, CAB_PRECIO_NUEVO, CAB_FECHA_INICIO]   # (22 nov 2026) REGISTRO INFO en H
 AMARILLO = PatternFill(fill_type="solid", fgColor="FFF2A8")
 AMARILLO_CAB = PatternFill(fill_type="solid", fgColor="FFD966")
 NOTA = ("Indique el PRECIO NUEVO (sin IGIC y con los descuentos ya aplicados) y la FECHA INICIO en las columnas "
@@ -68,10 +68,6 @@ def escribir_plantilla(plantilla, carpeta_tarifas):
     ws.cell(3, 3).fill = AMARILLO                      # nuevo periodo, lo rellena el proveedor
     ws.cell(3, 4).value = "← nuevo periodo"
     ws.cell(3, 4).font = Font(name="Arial", size=9, italic=True, color="7F6000")
-    ws.merge_cells("E5:G5")
-    ws.cell(5, 5).value = "DESCUENTOS YA APLICADOS EN PRECIO FINAL"
-    ws.cell(5, 5).font = Font(name="Arial", size=11, bold=True, color="FF0000")
-    ws.cell(5, 5).alignment = _alin(h="center", v="center")
     linea = Side(style="thin", color="000000")
     for fila in (1, 2, 3, 5):                          # borde exterior de B:D en cada fila, como la TARIFA final
         for col in range(2, 5):
@@ -91,7 +87,8 @@ def escribir_plantilla(plantilla, carpeta_tarifas):
     fila = 8
     for f in plantilla["filas"]:
         valores = [_como_numero(f["sap"]), _como_numero(f["dali"]) if f["dali"] else None, f["cod_prov"] or None,
-                   f["descripcion"] or None, f["formato"] or None, round(f["precio"], 4), None, None, None]
+                   f["descripcion"] or None, f["formato"] or None, round(f["precio"], 4), None,
+                   _como_numero(f.get("registro_info")) if f.get("registro_info") else None, None, None]
         for c, v in enumerate(valores, start=1):
             celda = ws.cell(fila, c)
             celda.value = v
@@ -100,10 +97,10 @@ def escribir_plantilla(plantilla, carpeta_tarifas):
             celda.alignment = _alin(h="left" if c == 4 else "center")
         ws.cell(fila, 6).number_format = '#,##0.00 "€"'
         ws.cell(fila, 2).number_format = "000000"
-        ws.cell(fila, 8).fill = AMARILLO
-        ws.cell(fila, 8).number_format = '#,##0.00 "€"'
         ws.cell(fila, 9).fill = AMARILLO
-        ws.cell(fila, 9).number_format = "dd/mm/yyyy"
+        ws.cell(fila, 9).number_format = '#,##0.00 "€"'
+        ws.cell(fila, 10).fill = AMARILLO
+        ws.cell(fila, 10).number_format = "dd/mm/yyyy"
         fila += 1
     ultima = fila - 1
     ws.cell(fila + 1, 1).value = NOTA
@@ -115,14 +112,14 @@ def escribir_plantilla(plantilla, carpeta_tarifas):
         largo = max([len(_texto_visible(ws.cell(r, c).value, c)) for r in list(range(1, 6)) + list(range(8, ultima + 1))]
                     or [0])
         ws.column_dimensions[get_column_letter(c)].width = max(round(largo * 1.60) + 4, anchos_min[c])
-    for letra, ancho in (("E", 19), ("F", 16), ("G", 16), ("H", 18), ("I", 18)):
+    for letra, ancho in (("E", 19), ("F", 16), ("G", 16), ("H", 21), ("I", 18), ("J", 18)):
         ws.column_dimensions[letra].width = ancho
     for r in range(1, 6):
         ws.row_dimensions[r].height = 18
-    ws.row_dimensions[6].height = 6
+    ws.row_dimensions[6].height = 18   # aviso de descuentos y último hotel
     ws.row_dimensions[7].height = 20
     ws.freeze_panes = "A8"
-    ws.auto_filter.ref = f"A7:I{max(ultima, 7)}"
-    ws.cell(7, 8).alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    ws.auto_filter.ref = f"A7:J{max(ultima, 7)}"
+    ws.cell(7, 9).alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
     wb.save(ruta)
     return ruta

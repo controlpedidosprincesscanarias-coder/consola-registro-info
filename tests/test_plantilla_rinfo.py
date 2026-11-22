@@ -196,9 +196,10 @@ class TestAgrupar(Base):
 class TestPlantillaExcelYVuelta(Base):
     def _generar(self):
         crear_purchasing(self.ruta,
-                         h1=[h1("1", "10100001", ref="REF-1", tel="928 111 222"), h1("2", "10100002", ref="REF-2")],
-                         h3=[h3("1", "10100001", "0110", 4.35), h3("1", "10100001", "0410", 4.35),
-                             h3("2", "10100002", "0110", 1.2), h3("2", "10100002", "0410", 1.2)])
+                         h1=[h1("5300001", "10100001", ref="REF-1", tel="928 111 222"),
+                             h1("5300002", "10100002", ref="REF-2")],
+                         h3=[h3("5300001", "10100001", "0110", 4.35), h3("5300001", "10100001", "0410", 4.35),
+                             h3("5300002", "10100002", "0110", 1.2), h3("5300002", "10100002", "0410", 1.2)])
         from app.tarifas.plantilla_tarifa import escribir_plantilla
         cat = PR.mapa_catalogo([(90001, "ACEITE DEMO 1L", "UD", 10100001)])
         pl = PR.preparar_plantillas(PR.leer_purchasing(self.ruta, hoy=HOY), cat, fecha=HOY)[0]
@@ -211,12 +212,14 @@ class TestPlantillaExcelYVuelta(Base):
         self.assertEqual(ws.title, "TARIFA")
         self.assertEqual((ws["C1"].value, ws["C2"].value), (1000123, "SUMINISTROS DEMO SL"))
         self.assertIsNone(ws["C3"].value)                         # nuevo periodo, lo pone el proveedor
-        self.assertEqual([ws.cell(7, c).value for c in range(1, 10)],
+        self.assertEqual([ws.cell(7, c).value for c in range(1, 11)],
                          ["CODIGO SAP", "CODIGO DALI", "CODIGO PROVEEDOR", "DESCRIPCION", "FORMATO", "PRECIO",
-                          "DESCUENTO", "PRECIO NUEVO", "FECHA INICIO"])
-        self.assertEqual([ws.cell(8, c).value for c in range(1, 7)],
-                         [10100001, 90001, "REF-1", "ACEITE DEMO 1L", "UD", 4.35])
-        self.assertEqual(ws.cell(8, 8).fill.fgColor.rgb[-6:], "FFF2A8")   # amarillo
+                          "DESCUENTO", "REGISTRO INFO", "PRECIO NUEVO", "FECHA INICIO"])
+        self.assertEqual([ws.cell(8, c).value for c in range(1, 9)],
+                         [10100001, 90001, "REF-1", "ACEITE DEMO 1L", "UD", 4.35, None, 5300001])
+        self.assertEqual(ws.cell(9, 8).value, 5300002)                   # Registro Info de cada material
+        self.assertIsNone(ws.cell(8, 8).fill.fgColor.rgb if ws.cell(8, 8).fill.fill_type else None)
+        self.assertEqual(ws.cell(8, 9).fill.fgColor.rgb[-6:], "FFF2A8")   # amarillo
         self.assertEqual(ws.freeze_panes, "A8")
         d = DT.leer_datos_tarifa(ruta)
         self.assertEqual(d["telefono"], "928111222")
@@ -237,10 +240,10 @@ class TestPlantillaExcelYVuelta(Base):
         # Lo que hace el proveedor: precio nuevo en una fila (otra con texto «1,30 €»), fecha y periodo
         wb = openpyxl.load_workbook(ruta)
         ws = wb.active
-        ws["H8"] = 4.60
-        ws["I8"] = dt.datetime(2027, 1, 1)
-        ws["H9"] = "1,30 €"
-        ws["I9"] = "15/01/2027"
+        ws["I8"] = 4.60
+        ws["J8"] = dt.datetime(2027, 1, 1)
+        ws["I9"] = "1,30 €"
+        ws["J9"] = "15/01/2027"
         ws["C3"] = "AÑO 2027"
         wb.save(ruta)
         ws = openpyxl.load_workbook(ruta, read_only=True, data_only=True).active
@@ -250,7 +253,7 @@ class TestPlantillaExcelYVuelta(Base):
     def test_periodo_sin_fin_reconocible_hasta_fin_de_anio(self):
         ruta, _pl = self._generar()
         wb = openpyxl.load_workbook(ruta)
-        wb.active["I8"] = "01/03/2027"
+        wb.active["J8"] = "01/03/2027"
         wb.save(ruta)
         self.assertEqual(DT.periodo_propuesto(ruta), "01/03/2027 - 31/12/2027")
 
@@ -268,6 +271,74 @@ class TestPlantillaExcelYVuelta(Base):
         wb.save(ruta)
         self.assertEqual(DT.precios_tarifa(openpyxl.load_workbook(ruta).active), ({"10100001": 2.5}, 0))
         self.assertEqual(DT.periodo_propuesto(ruta), "4º TRIMESTRE 2026")
+
+
+class TestRegistroInfo(Base):
+    """(22 nov 2026, petición de Víctor) Columna REGISTRO INFO (H) en las dos tarifas."""
+
+    def test_registros_del_purchasing_tambien_los_borrados(self):
+        crear_purchasing(self.ruta,
+                         h1=[h1("5300001", "10100001"), h1("5300009", "10100009", borrado="X"),
+                             h1("5400001", "20200001", prov="2000456", nombre="BEBIDAS EJEMPLO SA")],
+                         h3=[h3("5300001", "10100001", "0110", 1.0)])
+        self.assertEqual(PR.registros_info_de(self.ruta, "SUMINISTROS DEMO SL"),
+                         {"10100001": "5300001", "10100009": "5300009"})
+        self.assertEqual(PR.registros_info_de(self.ruta, "otro nombre", codigo_proveedor="2000456"),
+                         {"20200001": "5400001"})
+        self.assertEqual(PR.registros_info_de(self.ruta, "NO ESTÁ"), {})        # dos proveedores y ninguno casa
+
+    def test_un_solo_proveedor_aunque_el_nombre_no_case(self):
+        crear_purchasing(self.ruta, h1=[h1("5300001", "10100001")], h3=[])
+        self.assertEqual(PR.registros_info_de(self.ruta, "Suministros Demo, S.L."), {"10100001": "5300001"})
+
+    def test_rellenar_no_pisa_y_salta_sin_sap(self):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws["A8"], ws["A9"], ws["A10"], ws["H10"] = 10100001, 10100002, 10100003, 999
+        ws["A11"] = None
+        n = PR.rellenar_registros_info(ws, {"10100001": "5300001", "10100003": "5300003"})
+        self.assertEqual(n, 1)
+        self.assertEqual((ws["H8"].value, ws["H9"].value, ws["H10"].value), (5300001, None, 999))
+
+    def test_tarifa_final_de_la_accion_3(self):
+        """transformar() con la búsqueda del Purchasing que le pasa la Acción 3, y sin ella (columna vacía)."""
+        from tests.test_datos_tarifa import _HojaXls
+        from app.tarifas import transformar_tarifa as TT
+        celdas = {(2, 4): 4321, (4, 4): "SUMINISTROS DEMO SL", (17, 3): "2027",
+                  (24, 1): 5001, (24, 2): "R1", (24, 4): "ACEITE DEMO", (24, 6): "UD", (24, 7): 3.5,
+                  (25, 1): 5002, (25, 2): "R2", (25, 4): "VINAGRE DEMO", (25, 6): "UD", (25, 7): 1.25}
+        os.makedirs(os.path.join(self.tmp, "TARIFAS"))
+        os.makedirs(os.path.join(self.tmp, "RECURSOS"))
+        # Catálogo mínimo para que el paso 27b ponga el código SAP
+        cat = openpyxl.Workbook()
+        cws = cat.active
+        from app.comun.sap_helpers import CATALOGO_COLUMNAS, CATALOGO_FILA_CABECERA
+        for i, (_k, cab, _a) in enumerate(CATALOGO_COLUMNAS, start=1):
+            cws.cell(CATALOGO_FILA_CABECERA, i).value = cab
+        claves = [k for k, _c, _a in CATALOGO_COLUMNAS]
+        for n, (dali, sap) in enumerate(((5001, 10100001), (5002, 10100002)), start=CATALOGO_FILA_CABECERA + 1):
+            cws.cell(n, claves.index("clave") + 1).value = dali
+            cws.cell(n, claves.index("cod_sap") + 1).value = sap
+            cws.cell(n, claves.index("descripcion") + 1).value = "X"
+        cat.save(os.path.join(self.tmp, "RECURSOS", "catalogo-dali-completo.xlsx"))
+        pedidos = []
+
+        def buscar(nombre):
+            pedidos.append(nombre)
+            return {"mapa": {"10100001": "5300001"}, "archivo": "Purchasing Info Records.xlsx", "fecha": None}
+
+        for funcion, esperado in ((buscar, [5300001, None]), (None, [None, None])):
+            xls = os.path.join(self.tmp, "TARIFAS", "TARIFA.xls")
+            open(xls, "wb").close()
+            with mock.patch.object(TT, "_leer_xls", return_value=_HojaXls(celdas)):
+                ruta, _ = TT.transformar(xls, registros_info=funcion)
+            ws = openpyxl.load_workbook(ruta).active
+            self.assertEqual(ws["H7"].value, "REGISTRO INFO")
+            self.assertEqual([ws["A8"].value, ws["A9"].value], [10100001, 10100002])
+            self.assertEqual([ws["H8"].value, ws["H9"].value], esperado)
+            self.assertEqual(ws["G7"].value, "DESCUENTO")              # A..G no se mueven
+            os.remove(ruta)
+        self.assertEqual(pedidos, ["SUMINISTROS DEMO SL"])
 
 
 @unittest.skipUnless(HAY_TK, "las ventanas y el RINFO importan tkinter")

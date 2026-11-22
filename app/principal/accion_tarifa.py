@@ -117,6 +117,21 @@ class AccionesTarifa:
                 "No se ha podido generar ninguna plantilla. Revise la consola: el archivo tiene que ser un RINFO o "
                 "un Purchasing Info Records con precios vigentes."))
 
+    @staticmethod
+    def _registros_info_para_tarifa(carpeta_tarifas):
+        """(22 nov 2026, petición de Víctor, opción 1B) Para la columna REGISTRO INFO de la TARIFA final: busca en
+        TARIFAS el Purchasing del proveedor igual que «Crear / Actualizar Registro Info SAP» (por el nombre de C2,
+        el más parecido y, a igual parecido, el más reciente) y devuelve sus Registros Info por código SAP."""
+        def buscar(nombre_proveedor):
+            from app.rinfo.comun_rinfo import _buscar_purchasing_compatible
+            from app.comun.plantilla_rinfo import registros_info_de
+            pur = _buscar_purchasing_compatible(str(nombre_proveedor or ""), carpeta_tarifas)
+            if not pur:
+                return None
+            return {"mapa": registros_info_de(pur["ruta"], pur.get("proveedor_purchasing")),
+                    "archivo": pur.get("archivo"), "fecha": pur.get("fecha")}
+        return buscar
+
     def _avisos_plantilla_rinfo(self, av):
         """Lo que no sale en las plantillas, a la consola (en WARN lo que conviene revisar)."""
         if av["borrados"]:
@@ -601,7 +616,9 @@ class AccionesTarifa:
                         pp, TOTAL_PASOS, f"Paso {pp} de {TOTAL_PASOS}..."))
 
             try:
-                resultado = transformar(self._ruta_tarifa, log_fn=log_con_progreso)
+                resultado = transformar(self._ruta_tarifa, log_fn=log_con_progreso,
+                                        registros_info=self._registros_info_para_tarifa(
+                                            os.path.dirname(self._ruta_tarifa)))
                 # V10+: transformar devuelve (ruta_salida, _analisis)
                 if isinstance(resultado, tuple):
                     ruta_salida, _analisis = resultado
@@ -1284,6 +1301,21 @@ class AccionesTarifa:
                     _dup_dali.append(_cd)
             else:
                 _vistos_dali[_cd] = _row2[0].row if _row2[0] else 0
+
+        # ── 4b. (22 nov 2026) REGISTRO INFO de los códigos SAP que se acaban de poner ──
+        #  Solo en tarifas con la columna (las de antes no la tienen) y sin tocar lo ya escrito.
+        try:
+            from app.comun.datos_tarifa import CAB_REGISTRO_INFO, COL_REGISTRO_INFO
+            if str(ws_inc.cell(7, COL_REGISTRO_INFO).value or "").strip().upper() == CAB_REGISTRO_INFO:
+                _enc = self._registros_info_para_tarifa(os.path.dirname(ruta_inc))(ws_inc["C2"].value)
+                if _enc and _enc.get("mapa"):
+                    from app.comun.plantilla_rinfo import rellenar_registros_info
+                    _n_reg = rellenar_registros_info(ws_inc, _enc["mapa"])
+                    if _n_reg:
+                        self.log_consola(f"  REGISTRO INFO: {_n_reg} completado(s) con el Purchasing "
+                                         f"«{_enc.get('archivo', '')}».", "OK")
+        except Exception as _e_reg:  # noqa: BLE001 — nunca para la reinscripción
+            self.log_consola(f"  ⚠ No se pudo completar la columna REGISTRO INFO: {_e_reg}", "WARN")
 
         # ── 5. Guardar INC actualizado ─────────────────────────────
         try:

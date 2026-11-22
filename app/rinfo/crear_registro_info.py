@@ -121,7 +121,7 @@ from app.rinfo.generador_existente import (  # noqa: F401  (reexportados: tarifa
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  (22 nov 2026, petición de Víctor) TELÉFONO Y HOTELES DESDE LA TARIFA
-#  Si la tarifa trae un teléfono válido (C4) o algún hotel marcado (H1:L5), no se
+#  Si la tarifa trae un teléfono válido (C4) o algún hotel marcado (E1:H6), no se
 #  pregunta: se usa y se dice en la consola. Si no, la ventana de siempre. Las
 #  fechas se siguen preguntando (decisión de Víctor).
 # ─────────────────────────────────────────────────────────────────────────────

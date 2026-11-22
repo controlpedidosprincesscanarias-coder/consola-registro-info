@@ -3,7 +3,7 @@
 Teléfono del proveedor y hoteles en la cabecera de la TARIFA final (22 nov 2026, petición de Víctor).
 
 - app/comun/datos_tarifa.py: escribir los huecos, leerlos (también en solo lectura, con X, ✔, «sí»…), teléfono válido.
-- La TARIFA final de la Acción 3 (transformar) sale con «Teléfono:» en B4 y el recuadro HOTELES en H1:L5, en blanco,
+- La TARIFA final de la Acción 3 (transformar) sale con «Teléfono:» en B4 y el recuadro HOTELES en E1:H6 (encima de la tabla), en blanco,
   sin mover la tabla (cabecera en la fila 7).
 - «Crear / Actualizar Registro Info SAP» no pregunta el teléfono ni los centros si la tarifa los trae, y pregunta
   como siempre si faltan o en una tarifa antigua.
@@ -64,10 +64,10 @@ class TestTelefonoYMarcas(unittest.TestCase):
     def test_siglas_y_posiciones(self):
         self.assertEqual([s for s, _c, _n in DT.CENTROS_TARIFA],
                          ["GY", "IT", "LP", "TA", "ST", "MG", "GC", "MT", "JN", "FV"])
-        self.assertEqual(DT.posicion_centro(0), (1, 9, 10))    # GY en I1, casilla J1
-        self.assertEqual(DT.posicion_centro(4), (5, 9, 10))    # ST en I5
-        self.assertEqual(DT.posicion_centro(5), (1, 11, 12))   # MG en K1, casilla L1
-        self.assertEqual(DT.posicion_centro(9), (5, 11, 12))   # FV en K5
+        self.assertEqual(DT.posicion_centro(0), (2, 5, 6))     # GY en E2, casilla F2
+        self.assertEqual(DT.posicion_centro(4), (6, 5, 6))     # ST en E6
+        self.assertEqual(DT.posicion_centro(5), (2, 7, 8))     # MG en G2, casilla H2
+        self.assertEqual(DT.posicion_centro(9), (6, 7, 8))     # FV en G6
 
     @unittest.skipUnless(HAY_TK, "comun_rinfo importa tkinter")
     def test_mismos_centros_que_el_rinfo(self):
@@ -110,8 +110,12 @@ class TestEscribirYLeer(unittest.TestCase):
         wb = openpyxl.load_workbook(self._guardar())
         ws = wb.active
         self.assertEqual(ws["B4"].value, "Teléfono:")
-        self.assertEqual(ws["H1"].value, "HOTELES")
-        self.assertEqual([ws["I1"].value, ws["I5"].value, ws["K1"].value, ws["K5"].value], ["GY", "ST", "MG", "FV"])
+        self.assertEqual(ws["E1"].value, "HOTELES")
+        self.assertIn("E1:H1", [str(r) for r in ws.merged_cells.ranges])
+        self.assertEqual([ws["E2"].value, ws["E6"].value, ws["G2"].value, ws["G6"].value], ["GY", "ST", "MG", "FV"])
+        # El aviso de descuentos pasa a B6:D6 y nada queda a la derecha de la columna H
+        self.assertEqual(ws["B6"].value, "DESCUENTOS YA APLICADOS EN PRECIO FINAL")
+        self.assertTrue(all(ws.cell(r, c).value is None for r in range(1, 7) for c in range(9, 15)))
         # La lista desplegable «✔» cubre las 10 casillas y sobrevive a abrir y guardar con openpyxl
         # (la Acción 4 reescribe así los archivos INC).
         wb.save(self.ruta)
@@ -120,7 +124,7 @@ class TestEscribirYLeer(unittest.TestCase):
         self.assertEqual(len(dvs), 1)
         self.assertEqual(dvs[0].formula1, '"✔"')
         rango = str(dvs[0].sqref)
-        for celda in ("J1", "J5", "L1", "L5"):
+        for celda in ("F2", "F6", "H2", "H6"):
             self.assertIn(celda, rango)
         # La tabla no se mueve
         self.assertEqual(ws["A7"].value, "CODIGO SAP")
@@ -132,9 +136,9 @@ class TestEscribirYLeer(unittest.TestCase):
         wb = openpyxl.load_workbook(self.ruta)
         ws = wb.active
         ws["C4"] = "928 33 44 55"
-        ws["J4"] = "x"        # TA
-        ws["L2"] = "sí"       # GC
-        ws["J1"] = "NO"       # GY, no
+        ws["F5"] = "x"        # TA
+        ws["H3"] = "sí"       # GC
+        ws["F2"] = "NO"       # GY, no
         wb.save(self.ruta)
         d = DT.leer_datos_tarifa(self.ruta)
         self.assertEqual(d["telefono"], "928334455")
@@ -200,7 +204,9 @@ class TestTarifaFinalDeLaAccion3(unittest.TestCase):
         self.assertEqual(ws["C3"].value, "01/01/2027 - 31/12/2027")
         self.assertEqual(ws["B4"].value, "Teléfono:")
         self.assertIsNone(ws["C4"].value)
-        self.assertEqual(ws["H1"].value, "HOTELES")
+        self.assertEqual(ws["E1"].value, "HOTELES")
+        self.assertEqual(ws["B6"].value, "DESCUENTOS YA APLICADOS EN PRECIO FINAL")
+        self.assertLess(ws.column_dimensions["B"].width, 30)   # el aviso de B6:D6 no ensancha la columna B
         self.assertEqual(ws["A7"].value, "CODIGO SAP")
         self.assertEqual(ws["B8"].value, 5001)
         self.assertGreater(ws.row_dimensions[4].height, 6)   # ya no es un separador
