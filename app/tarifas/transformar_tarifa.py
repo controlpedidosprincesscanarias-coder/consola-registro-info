@@ -35,7 +35,8 @@ NUEVO MAPEO CABECERA (filas 1-6 del xlsx):
   B1     → "Código:"      C1 → D2 xls  (código proveedor)
   B2     → "Proveedor:"   C2 → D4 xls  (nombre proveedor)
   B3     → "Periodo:"     C3 → C17 xls (período)
-  Fila 4 → vacía (alto 6, separador fino)
+  B4     → "Teléfono:"    C4 → teléfono del proveedor (22 nov 2026; en blanco)
+  H1:L5  → HOTELES: siglas GY IT LP TA ST MG GC MT JN FV y casilla ✔ (22 nov 2026)
   B5     → "Dto.(%):"     C5=D8&" línea"  D5=D10&" general"  E5/F5 vacíos
   Fila 6 → vacía (separador)
   Fila 7 → cabecera tabla
@@ -62,6 +63,8 @@ from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.styles.differential import DifferentialStyle
 from openpyxl.formatting.rule import Rule
 from openpyxl.utils import get_column_letter
+
+from app.comun.datos_tarifa import escribir_huecos
 
 
 # ============================================================
@@ -265,7 +268,7 @@ def _insertar_logo_cabecera(ws, log_fn=None) -> None:
 
         # -- Insertar en Excel con TwoCellAnchor --
         #  El logo arranca en la MITAD de A1 y termina en la MITAD de A5.
-        #  Fila 4 tiene alto 6pt; filas 1,2,3,5 tienen 18pt cada una.
+        #  Filas 1 a 5 de 18pt cada una (la 4 tenía 6pt hasta el 22 nov 2026).
         #  1 px = 9525 EMU.  Mitad de fila (18pt×1.333px/pt ≈ 24px → 12px offset).
         from openpyxl.drawing.spreadsheet_drawing import (
             AnchorMarker, TwoCellAnchor
@@ -288,8 +291,11 @@ def _insertar_logo_cabecera(ws, log_fn=None) -> None:
 
         # _from: arranca con margen de centrado desde el borde izq. de col A
         # _to:   termina margen + ancho del logo (todo dentro de col A)
-        _from = AnchorMarker(col=0, colOff=_margen_emu,              row=0, rowOff=FILA_MID)
-        _to   = AnchorMarker(col=0, colOff=_margen_emu + ANCHO_EMU,  row=4, rowOff=FILA_MID)
+        # (22 nov 2026) La fila 4 pasa de 6 a 18 pt (lleva el teléfono): se recortan 8 px arriba y abajo para que
+        # el logo conserve su alto de siempre (80 px) y no se estire.
+        _AJUSTE_FILA4 = 8 * EMU_PX
+        _from = AnchorMarker(col=0, colOff=_margen_emu,              row=0, rowOff=FILA_MID + _AJUSTE_FILA4)
+        _to   = AnchorMarker(col=0, colOff=_margen_emu + ANCHO_EMU,  row=4, rowOff=FILA_MID - _AJUSTE_FILA4)
 
         anchor        = TwoCellAnchor(editAs="oneCell", _from=_from, to=_to)
         anchor.pic    = None
@@ -503,7 +509,7 @@ def _finalizar_y_guardar(wb, ws, ultima, ruta_xls, nombre_base,
     # Altos de fila: logo filas 1-5, separador fila 6, tabla fila 7, datos desde 8
     for r in range(1, 6):
         ws.row_dimensions[r].height = 18   # 5 filas × 18 = 90pt ≈ alto logo
-    ws.row_dimensions[4].height = 6        # fila 4: separador delgado
+    # (22 nov 2026) La fila 4 ya no es un separador: lleva el teléfono del proveedor.
     ws.row_dimensions[6].height = 6        # fila 6: separador delgado
     ws.row_dimensions[7].height = 20       # cabecera tabla
     for r in range(8, ultima + 1):
@@ -669,7 +675,8 @@ def transformar(ruta_xls: str, log_fn=None) -> str:
     #    B1     → "Código:"      C1 → código proveedor
     #    B2     → "Proveedor:"   C2 → nombre proveedor
     #    B3     → "Periodo:"     C3 → período  (C17 xls — igual en ambos formatos)
-    #    Fila 4 → vacía (alto 6, separador fino)
+    #    B4     → "Teléfono:"    C4 → teléfono del proveedor (22 nov 2026, en blanco)
+    #    H1:L5  → HOTELES: siglas y casilla ✔ de los 10 hoteles (22 nov 2026)
     #    B5     → "Dto.(%):"     C5 → dto_línea   D5 → dto_general
     #    Fila 6 → vacía (separador)
     #    Fila 7 → cabecera tabla
@@ -700,8 +707,10 @@ def transformar(ruta_xls: str, log_fn=None) -> str:
     ws.cell(3, 2).value = "Periodo:"
     ws.cell(3, 3).value = val_periodo
 
-    # ── Fila 4: vacía ─────────────────────────────────────────
-    # (sin valor)
+    # ── Fila 4: teléfono del proveedor (22 nov 2026) ──────────
+    # Antes, fila separadora vacía. «Teléfono:» y el recuadro de los
+    # HOTELES (H1:L5) los escribe datos_tarifa.escribir_huecos() tras los
+    # bordes de la cabecera: en blanco, para rellenarlos antes del RINFO.
 
     # ── Fila 5: Dto. línea y Dto. general en la misma fila ───
     #  C5 = val_dto_linea (D8 origen) & " línea"
@@ -773,6 +782,13 @@ def transformar(ruta_xls: str, log_fn=None) -> str:
     _borde_externo(3, 2, 3, 4)   # B3:D3
     _borde_externo(5, 2, 5, 4)   # B5:D5
     _log(log_fn, "  └ Bordes externos cabecera aplicados.", "INFO")
+
+    # ── PASO 14a (22 nov 2026, petición de Víctor): teléfono y hoteles ──
+    #  B4 «Teléfono:» + C4, y H1:L5 con las siglas de los 10 hoteles y una
+    #  casilla ✔ para cada uno. «Crear / Actualizar Registro Info SAP» los
+    #  usa y no pregunta (app/comun/datos_tarifa.py).
+    escribir_huecos(ws)
+    _log(log_fn, "  └ Huecos de teléfono (C4) y hoteles (H1:L5) añadidos, en blanco.", "INFO")
 
     # ── PASO 14b: Logo en A1:A6 ──────────────────────────────
     #    Extraido a _insertar_logo_cabecera() -- ver esa funcion para

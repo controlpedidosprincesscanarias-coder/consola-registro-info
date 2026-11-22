@@ -108,7 +108,7 @@ import tarifa_app  # noqa: E402
 # El inicio de sesión de Catálogo Asignaciones (sin red) se fotografía aparte (c_login); aquí se entra sin él.
 tarifa_app.App._iniciar_sesion_consola = lambda self: (self.deiconify(), self._tras_iniciar_sesion())
 # La versión que se enseña es la del .exe que llevará este manual (en el código fuente, APP_VERSION es la antigua).
-tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.90")
+tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.94")
 _crear_catalogo_demo()
 
 
@@ -490,8 +490,96 @@ def marcas_principal(v):
     ]
 
 
+# ── (22 nov 2026) Cabecera de la TARIFA final con el teléfono y los hoteles ─────────────────────────────
+def captura_tarifa_cabecera(nombre="c_tarifa_cabecera"):
+    """La cabecera de una TARIFA final de EJEMPLO (la genera transformar() de verdad, con un .xls inventado) tal
+    como se ve en Excel, renderizada con LibreOffice. Las marcas se sitúan pintando antes las celdas de un color
+    único y buscándolo en la imagen (el relleno no cambia la geometría)."""
+    if SOLO and not nombre.startswith(SOLO):
+        return
+    from unittest import mock
+    import openpyxl
+    from openpyxl.styles import PatternFill
+    from app.tarifas import transformar_tarifa as TT
+
+    class _Hoja:
+        class _C:
+            def __init__(self, v):
+                self.value = v
+
+        def __init__(self, celdas):
+            self._c, self.nrows, self.ncols = celdas, max(r for r, _ in celdas), 10
+
+        def cell(self, r, c):
+            return self._C(self._c.get((r + 1, c + 1), ""))
+
+    celdas = {(2, 4): 4321, (4, 4): "SUMINISTROS DEMO SL", (8, 4): "", (10, 4): "",
+              (17, 3): "01/01/2027 - 31/12/2027"}
+    for i, (desc, prec) in enumerate((("ACEITE DE OLIVA DEMO 1L", 4.35), ("VINAGRE DE EJEMPLO 1L", 1.20),
+                                      ("SAL MARINA MODELO 1KG", 0.85), ("AZUCAR DEMO 1KG", 1.10))):
+        celdas.update({(24 + i, 1): 90001 + i, (24 + i, 2): f"REF-{i + 1:03d}", (24 + i, 4): desc,
+                       (24 + i, 6): "UD", (24 + i, 7): prec})
+    tmp = tempfile.mkdtemp(prefix="tarifa_manual_")
+    os.makedirs(os.path.join(tmp, "TARIFAS"))
+    xls = os.path.join(tmp, "TARIFAS", "TARIFA.xls")
+    open(xls, "wb").close()
+    with mock.patch.object(TT, "_leer_xls", return_value=_Hoja(celdas)):
+        ruta, _ = TT.transformar(xls)
+
+    def rellenar(destino, colores):
+        wb = openpyxl.load_workbook(ruta)
+        ws = wb.active
+        ws["C4"] = "928 000 000"
+        for c in ("J1", "J4", "L1", "L2", "L3"):          # GY, TA, MG, GC, MT
+            ws[c] = "✔"
+        for rango, color in colores:
+            for fila in ws[rango]:
+                for c in fila:
+                    c.fill = PatternFill(fill_type="solid", fgColor=color)
+        ws.print_area = "A1:L11"
+        ws.page_setup.orientation = "landscape"
+        ws.sheet_properties.pageSetUpPr.fitToPage = True
+        ws.page_setup.fitToWidth, ws.page_setup.fitToHeight = 1, 1
+        ws.print_options.gridLines = True
+        wb.save(destino)
+
+    def renderizar(xlsx):
+        subprocess.run(["soffice", "--headless", "--convert-to", "pdf", "--outdir", tmp, xlsx],
+                       check=True, capture_output=True, timeout=120)
+        pdf = os.path.splitext(xlsx)[0] + ".pdf"
+        subprocess.run(["pdftoppm", "-r", "200", "-png", "-singlefile", pdf, pdf[:-4]], check=True, timeout=120)
+        return Image.open(pdf[:-4] + ".png").convert("RGB")
+
+    def caja_de_color(img, rgb):
+        mask = Image.new("L", img.size)
+        mask.putdata([255 if abs(p[0] - rgb[0]) < 12 and abs(p[1] - rgb[1]) < 12 and abs(p[2] - rgb[2]) < 12 else 0
+                      for p in img.getdata()])
+        return mask.getbbox()
+
+    rellenar(os.path.join(tmp, "marcas.xlsx"), [("B4:C4", "FF00FF"), ("H1:L5", "00FFFF")])
+    rellenar(os.path.join(tmp, "final.xlsx"), [])
+    con_marcas, img = renderizar(os.path.join(tmp, "marcas.xlsx")), renderizar(os.path.join(tmp, "final.xlsx"))
+    cajas = [caja_de_color(con_marcas, (255, 0, 255)), caja_de_color(con_marcas, (0, 255, 255))]
+    recorte = Image.eval(img.convert("L"), lambda v: 255 if v < 250 else 0).getbbox()
+    x0, y0 = max(0, recorte[0] - 30), max(0, recorte[1] - 30)
+    img = img.crop((x0, y0, min(img.width, recorte[2] + 30), min(img.height, recorte[3] + 30)))
+    img, dy = _barra_titulo(img, "SUMINISTROS DEMO SL [22-11-2026].xlsx - Excel")
+    d = ImageDraw.Draw(img)
+    for n, (caja, lado) in enumerate(zip(cajas, ("r", "l")), start=1):
+        if caja is None:
+            log(f"   ⚠ {nombre}: no se encontró la marca {n}")
+            continue
+        _marca(d, (caja[0] - x0, caja[1] - y0 + dy, caja[2] - x0, caja[3] - y0 + dy), n, lado, img.width, img.height)
+    img.save(os.path.join(SALIDA, nombre + ".png"))
+    log(f"  ✓ {nombre}")
+
+
 def main():
     os.makedirs(SALIDA, exist_ok=True)
+    try:
+        captura_tarifa_cabecera()
+    except Exception:  # noqa: BLE001
+        log(f"   ✗ c_tarifa_cabecera: {traceback.format_exc()}")
     app = tarifa_app.App()
     app.geometry("1280x820+0+0")
     pendientes = []

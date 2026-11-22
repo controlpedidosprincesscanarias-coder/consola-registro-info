@@ -1,7 +1,7 @@
 // Manual de usuario de la Consola Registro Info SAP (TARIFA Finder).
 // La idea y el desarrollo de la aplicación, incluidas sus pruebas, son de Víctor Alejandro Martín Andrade,
 // para el Departamento de Central de Compras de Princess Hotels en Canarias.
-const V = process.env.VERSION || "v 10.2.90";
+const V = process.env.VERSION || "v 10.2.94";
 const L = require("./lib.js");
 const { p, vineta, pasos, h1, h2, imagen, leyenda, recuadro, tabla, flujo, portada, indice, generar } = L;
 const fecha = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
@@ -167,6 +167,12 @@ s.push(...pasos(["Deja la tarifa del proveedor (el **.xls** que envía) en **TAR
   "Resultado en TARIFAS: «**PROVEEDOR [dd-mm-aaaa].xlsx**» si está completa, o «**PROVEEDOR [INCOMPLETO] [dd-mm-aaaa].xlsx**» si faltan códigos SAP o hay duplicados. El .xls de origen se borra."]));
 s.push(...imagen("c_seleccion_xls", 11, "Elegir la tarifa del proveedor."));
 s.push(...leyenda([[1, "Los **.xls** que hay en TARIFAS."], [2, "**Usar este archivo**: lo renombra a TARIFA.xls y sigue."]]));
+s.push(h2("Teléfono del proveedor y hoteles de la TARIFA"));
+s.push(p("La TARIFA final lleva en la cabecera dos huecos para que, al crear el Registro Info, la consola **no tenga que preguntarte** el teléfono del proveedor ni los hoteles. Salen **en blanco**: rellénalos en Excel antes de crear el RINFO (capítulo 7)."));
+s.push(...imagen("c_tarifa_cabecera", 17, "Cabecera de la TARIFA final con el teléfono y los hoteles (datos de ejemplo)."));
+s.push(...leyenda([[1, "**Teléfono:** del proveedor, de 8 a 10 cifras (los espacios no importan)."],
+  [2, "**HOTELES**: marca con **✔** (lista desplegable de cada casilla) o con una **X** los hoteles a los que se aplica la tarifa: GY Guayarmina, IT Inspire Tenerife, LP La Palma & Teneguía, TA Taurito, ST Suite, MG Mogán, GC Gran Canaria, MT Maspalomas & Tabaiba, JN Club Jandía y FV Fuerteventura."]]));
+s.push(...recuadro("nota", "Si los dejas en blanco", ["No pasa nada: al crear el RINFO la consola te pregunta el teléfono y los centros como siempre. Lo mismo con las tarifas generadas antes de esta versión, que no tienen estos huecos."]));
 s.push(h2("Códigos SAP faltantes"));
 s.push(p("Si algún código DALI de la tarifa no tiene SAP en el catálogo, se abre esta ventana para escribirlo. Lo que guardes se escribe a la vez en el catálogo y en la tarifa, se **completan sus datos SAP** (descripción, unidad de medida, grupos y categoría de valoración, con Productos.xlsx y Listas de productos.xlsx, igual que en la Acción 5) y se envía a Catálogo Asignaciones. Si algún código no está todavía en Productos.xlsx, después te guía para descargar los listados de SAP (capítulo 5). Para los artículos sin SAP que no son de esta tarifa, usa la **Acción 5** (capítulo 5)."));
 s.push(...imagen("c_sap_faltantes", 16, "Códigos DALI sin SAP asignado (datos de ejemplo)."));
@@ -203,6 +209,7 @@ s.push(...leyenda([[1, "**Descargar el Purchasing desde SAP primero**: muestra l
 s.push(...imagen("c_rinfo_instrucciones", 11, "Cómo descargar el Purchasing Info Records desde SAP."));
 s.push(...leyenda([[1, "Acceso directo a SAP S/4HANA. Sigue los pasos y guarda el archivo descargado en TARIFAS."]]));
 s.push(h2("Teléfono, fechas y centros"));
+s.push(p("Si la TARIFA trae el **teléfono** y algún **hotel marcado** (capítulo 6), la consola los usa sin preguntar y lo dice en la consola; solo te pide las **fechas**. Si falta alguno de los dos, o el teléfono no tiene de 8 a 10 cifras, te sale su ventana como siempre:"));
 s.push(...imagen("c_rinfo_telefono", 9, "Teléfono del proveedor (opcional)."));
 s.push(...leyenda([[1, "Teléfono (8 a 10 cifras; los espacios se quitan solos)."], [2, "**Asignar teléfono y continuar**."], [3, "**Sin teléfono**, si no lo tienes."]]));
 s.push(...imagen("c_rinfo_fechas", 9, "Fechas de validez de la tarifa."));
