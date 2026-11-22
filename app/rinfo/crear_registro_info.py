@@ -49,6 +49,7 @@ from app.comun.tarifa_constants import (
 )
 from app.comun.tarifa_core import cargar_icono_ventana
 from app.comun import fechas_tarifa as FT  # (13 nov 2026) periodo de la tarifa para las fechas de validez
+from app.comun import datos_tarifa as DT   # (22 nov 2026) teléfono y hoteles escritos en la tarifa
 # normalizar_codigo_sap vive en sap_helpers.py (sin tkinter) para que
 # también pueda importarla test_crear_registro_info.py sin arrastrar
 # la UI. Ver ese fichero para la implementación y el porqué.
@@ -117,6 +118,37 @@ from app.rinfo.generador_existente import (  # noqa: F401  (reexportados: tarifa
     GeneradorDesdeExistente,
     _EstadoIndicesH3,
 )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  (22 nov 2026, petición de Víctor) TELÉFONO Y HOTELES DESDE LA TARIFA
+#  Si la tarifa trae un teléfono válido (C4) o algún hotel marcado (H1:L5), no se
+#  pregunta: se usa y se dice en la consola. Si no, la ventana de siempre. Las
+#  fechas se siguen preguntando (decisión de Víctor).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _telefono_de_tarifa_o_preguntar(parent, ruta_tarifa, callback):
+    datos = DT.leer_datos_tarifa(ruta_tarifa)
+    if datos["telefono"]:
+        _log(parent, f"Teléfono del proveedor tomado de la tarifa: {datos['telefono']}.", "OK")
+        callback(datos["telefono"])
+        return
+    if datos["telefono_texto"]:
+        _log(parent, f"El teléfono de la tarifa «{datos['telefono_texto']}» no es válido "
+                     "(tiene que tener de 8 a 10 dígitos): se pregunta.", "WARN")
+    VentanaTelefonoRINFO(parent, callback)
+
+
+def _centros_de_tarifa_o_preguntar(parent, ruta_tarifa, callback):
+    datos = DT.leer_datos_tarifa(ruta_tarifa)
+    if datos["centros"]:
+        _log(parent, f"Hoteles marcados en la tarifa ({len(datos['centros'])}): "
+                     f"{', '.join(datos['siglas'])}.", "OK")
+        callback(list(datos["centros"]))
+        return
+    if datos["tiene_huecos"]:
+        _log(parent, "La tarifa no tiene ningún hotel marcado: se pregunta.", "INFO")
+    VentanaCentrosRINFO(parent, callback)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -634,7 +666,7 @@ class VentanaPurchasingEncontrado(tk.Toplevel):
         self._fechas_pendientes  = (None, None)
         self.destroy()   # Cierra esta ventana; el flujo continúa en el padre
         self._parent_ventana.withdraw()   # re-ocultar: destroy() del hijo revierte el withdraw() previo
-        VentanaTelefonoRINFO(self._parent_ventana, self._tras_telefono)
+        _telefono_de_tarifa_o_preguntar(self._parent_ventana, self._ruta_tarifa, self._tras_telefono)
 
     def _tras_telefono(self, resultado):
         """Callback de VentanaTelefonoRINFO."""
@@ -658,7 +690,7 @@ class VentanaPurchasingEncontrado(tk.Toplevel):
         fecha_inicio, fecha_fin = resultado
         _log(self._parent_ventana,
              f"Fechas validez: inicio={fecha_inicio}  fin={fecha_fin}", "OK")
-        VentanaCentrosRINFO(self._parent_ventana, self._tras_centros)
+        _centros_de_tarifa_o_preguntar(self._parent_ventana, self._ruta_tarifa, self._tras_centros)
 
     def _tras_centros(self, resultado):
         """Callback de VentanaCentrosRINFO. Aquí bifurca según la elección."""
@@ -893,7 +925,7 @@ class VentanaOpcionesSinPurchasing(tk.Toplevel):
             fecha_inicio, fecha_fin = resultado_fechas
             _log(self._parent_ventana,
                  f"Fechas validez: inicio={fecha_inicio}  fin={fecha_fin}", "OK")
-            VentanaCentrosRINFO(self._parent_ventana, _tras_centros)
+            _centros_de_tarifa_o_preguntar(self._parent_ventana, self._ruta_tarifa, _tras_centros)
 
         def _tras_telefono(resultado):
             """Callback de VentanaTelefonoRINFO."""
@@ -910,7 +942,7 @@ class VentanaOpcionesSinPurchasing(tk.Toplevel):
 
         self._telefono_pendiente = None
         self._fechas_pendientes  = (None, None)
-        VentanaTelefonoRINFO(self._parent_ventana, _tras_telefono)
+        _telefono_de_tarifa_o_preguntar(self._parent_ventana, self._ruta_tarifa, _tras_telefono)
 
     def _cancelar(self):
         _log(self._parent_ventana, "Acción cancelada por el usuario.", "WARN")
