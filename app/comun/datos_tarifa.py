@@ -6,16 +6,21 @@ datos_tarifa.py — Teléfono del proveedor y hoteles de la TARIFA final (sin tk
 Registro Info SAP» no se pare a pedirlos:
 
     B4  «Teléfono:»   C4  el teléfono del proveedor (fila 4, antes una fila separadora vacía)
-    H1  «HOTELES»     I1:J5 y K1:L5  las siglas de los 10 hoteles y, al lado, una casilla para marcar con ✔
+    E1:H1 «HOTELES»   E2:H6  las siglas de los 10 hoteles y, al lado, una casilla para marcar con ✔
 
-        H          I    J      K    L
-    1  HOTELES     GY  [✔]     MG  [ ]
-    2              IT  [ ]     GC  [✔]
-    3              LP  [ ]     MT  [ ]
-    4              TA  [✔]     JN  [ ]
-    5              ST  [ ]     FV  [ ]
+        E (FORMATO) F (PRECIO)  G (DESCUENTO) H (REGISTRO INFO)
+    1  ─────────────── HOTELES ───────────────
+    2   GY          [✔]         MG            [ ]
+    3   IT          [ ]         GC            [✔]
+    4   LP          [ ]         MT            [ ]
+    5   TA          [✔]         JN            [ ]
+    6   ST          [ ]         FV            [ ]
 
-Decisiones de Víctor (22 nov 2026): el recuadro a la derecha de la cabecera (no en otra hoja); siglas GY IT LP TA ST
+    (22 nov 2026, petición de Víctor) El recuadro va ENCIMA de las columnas E..H de la tabla, para que la tarifa no
+    se ensanche; al principio estaba en H1:L5, a la derecha. Por eso la frase roja «DESCUENTOS YA APLICADOS EN
+    PRECIO FINAL», que estaba en E5:G5, pasa a B6:D6, debajo de «Dto.(%)», y la fila 6 deja de ser un separador.
+
+Decisiones de Víctor (22 nov 2026): el recuadro en la cabecera, encima de la tabla (no en otra hoja); siglas GY IT LP TA ST
 MG GC MT JN FV; las casillas salen en blanco en una tarifa nueva (si nadie marca ninguna, se pregunta como siempre);
 las fechas se siguen preguntando. Si el teléfono falta o no es válido, o no hay ningún hotel marcado, sale la ventana
 de siempre. Las tarifas antiguas, sin estos huecos, funcionan igual que antes.
@@ -47,13 +52,16 @@ COL_TELEFONO = 3            # C
 ETIQUETA_TELEFONO = "Teléfono:"
 
 FILA_TITULO_HOTELES = 1
-COL_TITULO_HOTELES = 8      # H
+COL_TITULO_HOTELES = 5      # E (combinada E1:H1)
+COL_FIN_HOTELES = 8         # H
 TITULO_HOTELES = "HOTELES"
 MARCA = "✔"
+AVISO_DESCUENTOS = "DESCUENTOS YA APLICADOS EN PRECIO FINAL"
+RANGO_AVISO_DESCUENTOS = "B6:D6"   # antes E5:G5, donde ahora van los hoteles
 
-# Donde se buscan las siglas al leer: filas 1..6, columnas H..T (por si alguien mueve el recuadro un poco).
+# Donde se buscan las siglas al leer: filas 1..6, columnas E..T (también vale si alguien mueve el recuadro un poco).
 _FILAS_BUSQUEDA = range(1, 7)
-_COLS_BUSQUEDA = range(8, 21)
+_COLS_BUSQUEDA = range(5, 21)
 
 _RE_TELEFONO = re.compile(r"^\d{8,10}$")   # la misma regla que VentanaTelefonoRINFO
 _NO_MARCADO = {"", "NO", "N", "0", "FALSE", "FALSO", "-", "✘", "✗"}
@@ -61,9 +69,9 @@ _NO_MARCADO = {"", "NO", "N", "0", "FALSE", "FALSO", "-", "✘", "✗"}
 
 def posicion_centro(indice):
     """(fila, columna de la sigla, columna de la casilla) del hotel `indice` (0..9)."""
-    fila = 1 + indice % 5
-    col_sigla = 9 + 2 * (indice // 5)       # I o K
-    return fila, col_sigla, col_sigla + 1   # casilla en J o L
+    fila = 2 + indice % 5
+    col_sigla = 5 + 2 * (indice // 5)       # E o G
+    return fila, col_sigla, col_sigla + 1   # casilla en F o H
 
 
 def limpiar_telefono(valor):
@@ -154,11 +162,10 @@ def leer_datos_tarifa(ruta_tarifa):
 
 # ── Escribir (TARIFA final de la Acción 3 y, más adelante, la plantilla desde RINFO) ─────────────────────
 def escribir_huecos(ws, telefono=None, codigos_marcados=()):
-    """Escribe en la cabecera de la TARIFA la fila «Teléfono:» y el recuadro de los hoteles, con su formato y una
-    lista desplegable «✔» en cada casilla. `telefono` y `codigos_marcados` (códigos SAP de centro) rellenan los
+    """Escribe en la cabecera de la TARIFA la fila «Teléfono:», el recuadro de los hoteles (con su formato y una
+    lista desplegable «✔» en cada casilla) y el aviso «DESCUENTOS YA APLICADOS EN PRECIO FINAL» en B6:D6. `telefono` y `codigos_marcados` (códigos SAP de centro) rellenan los
     huecos; por defecto quedan en blanco."""
     from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-    from openpyxl.utils import get_column_letter
     from openpyxl.worksheet.datavalidation import DataValidation
 
     linea = Side(style="thin", color="000000")
@@ -182,11 +189,16 @@ def escribir_huecos(ws, telefono=None, codigos_marcados=()):
             left=linea if col == COL_ETIQUETA_TELEFONO else Side(style=None),
             right=linea if col == COL_TELEFONO + 1 else Side(style=None))
 
-    # Hoteles
+    # Hoteles (E1:H6, encima de la tabla)
+    ws.merge_cells(start_row=FILA_TITULO_HOTELES, start_column=COL_TITULO_HOTELES,
+                   end_row=FILA_TITULO_HOTELES, end_column=COL_FIN_HOTELES)
     tit = ws.cell(FILA_TITULO_HOTELES, COL_TITULO_HOTELES)
     tit.value = TITULO_HOTELES
     tit.font = Font(name="Arial", size=11, bold=True)
+    tit.fill = gris
     tit.alignment = centro
+    for col in range(COL_TITULO_HOTELES, COL_FIN_HOTELES + 1):
+        ws.cell(FILA_TITULO_HOTELES, col).border = borde
     marcados = {str(c) for c in codigos_marcados}
     dv = DataValidation(type="list", formula1=f'"{MARCA}"', allow_blank=True, showErrorMessage=False)
     dv.prompt = "Marque con ✔ (o X) los hoteles a los que se aplica la tarifa."
@@ -206,9 +218,13 @@ def escribir_huecos(ws, telefono=None, codigos_marcados=()):
         cm.border = borde
         cm.alignment = centro
         dv.add(cm.coordinate)
-    ws.column_dimensions[get_column_letter(COL_TITULO_HOTELES)].width = 12
-    for col in range(9, 13):
-        ws.column_dimensions[get_column_letter(col)].width = 6
+
+    # Aviso de descuentos, debajo de «Dto.(%)» (antes en E5:G5)
+    ws.merge_cells(RANGO_AVISO_DESCUENTOS)
+    av = ws[RANGO_AVISO_DESCUENTOS.split(":")[0]]
+    av.value = AVISO_DESCUENTOS
+    av.font = Font(name="Arial", size=11, bold=True, color="FF0000")
+    av.alignment = centro
 
 
 # ── (22 nov 2026) Columnas del proveedor en la plantilla de revisión de precios (Acción 6) ───────────────

@@ -36,7 +36,8 @@ NUEVO MAPEO CABECERA (filas 1-6 del xlsx):
   B2     → "Proveedor:"   C2 → D4 xls  (nombre proveedor)
   B3     → "Periodo:"     C3 → C17 xls (período)
   B4     → "Teléfono:"    C4 → teléfono del proveedor (22 nov 2026; en blanco)
-  H1:L5  → HOTELES: siglas GY IT LP TA ST MG GC MT JN FV y casilla ✔ (22 nov 2026)
+  E1:H6  → HOTELES: siglas GY IT LP TA ST MG GC MT JN FV y casilla ✔ (22 nov 2026); el aviso de descuentos,
+           que estaba en E5:G5, pasa a B6:D6
   B5     → "Dto.(%):"     C5=D8&" línea"  D5=D10&" general"  E5/F5 vacíos
   Fila 6 → vacía (separador)
   Fila 7 → cabecera tabla
@@ -524,6 +525,8 @@ def _finalizar_y_guardar(wb, ws, ultima, ruta_xls, nombre_base,
     for c in range(1, 5):
         max_len = 0
         for r in range(1, ultima + 1):
+            if r == 6:          # (22 nov 2026) B6:D6 combinada con el aviso de descuentos: no cuenta para el ancho
+                continue
             tv = _texto_visible(ws.cell(r, c).value, c)
             max_len = max(max_len, len(tv))
         ancho = round(max_len * 1.60) + 4
@@ -539,7 +542,7 @@ def _finalizar_y_guardar(wb, ws, ultima, ruta_xls, nombre_base,
     for r in range(1, 6):
         ws.row_dimensions[r].height = 18   # 5 filas × 18 = 90pt ≈ alto logo
     # (22 nov 2026) La fila 4 ya no es un separador: lleva el teléfono del proveedor.
-    ws.row_dimensions[6].height = 6        # fila 6: separador delgado
+    ws.row_dimensions[6].height = 18       # (22 nov 2026) fila 6: aviso de descuentos y último hotel
     ws.row_dimensions[7].height = 20       # cabecera tabla
     for r in range(8, ultima + 1):
         ws.row_dimensions[r].height = 15
@@ -708,7 +711,8 @@ def transformar(ruta_xls: str, log_fn=None, registros_info=None) -> str:
     #    B2     → "Proveedor:"   C2 → nombre proveedor
     #    B3     → "Periodo:"     C3 → período  (C17 xls — igual en ambos formatos)
     #    B4     → "Teléfono:"    C4 → teléfono del proveedor (22 nov 2026, en blanco)
-    #    H1:L5  → HOTELES: siglas y casilla ✔ de los 10 hoteles (22 nov 2026)
+    #    E1:H6  → HOTELES: siglas y casilla ✔ de los 10 hoteles (22 nov 2026)
+    #    B6:D6  → «DESCUENTOS YA APLICADOS EN PRECIO FINAL» (antes E5:G5)
     #    B5     → "Dto.(%):"     C5 → dto_línea   D5 → dto_general
     #    Fila 6 → vacía (separador)
     #    Fila 7 → cabecera tabla
@@ -741,7 +745,7 @@ def transformar(ruta_xls: str, log_fn=None, registros_info=None) -> str:
 
     # ── Fila 4: teléfono del proveedor (22 nov 2026) ──────────
     # Antes, fila separadora vacía. «Teléfono:» y el recuadro de los
-    # HOTELES (H1:L5) los escribe datos_tarifa.escribir_huecos() tras los
+    # HOTELES (E1:H6) los escribe datos_tarifa.escribir_huecos() tras los
     # bordes de la cabecera: en blanco, para rellenarlos antes del RINFO.
 
     # ── Fila 5: Dto. línea y Dto. general en la misma fila ───
@@ -781,12 +785,9 @@ def transformar(ruta_xls: str, log_fn=None, registros_info=None) -> str:
         cell.font      = _font(bold=False, size=11)
         cell.alignment = _alin(h="left", v="center")
 
-    # ── E5:G5 — "DESCUENTOS YA APLICADOS EN PRECIO FINAL" — negrita, rojo ──
-    ws.merge_cells("E5:G5")
-    cell_e5 = ws.cell(5, 5)
-    cell_e5.value     = "DESCUENTOS YA APLICADOS EN PRECIO FINAL"
-    cell_e5.font      = Font(name="Arial", size=11, bold=True, color="FF0000")
-    cell_e5.alignment = _alin(h="center", v="center")
+    # ── "DESCUENTOS YA APLICADOS EN PRECIO FINAL" — negrita, rojo ──
+    #  (22 nov 2026) Ya no va en E5:G5, donde ahora está el recuadro de los
+    #  hoteles: lo escribe escribir_huecos() en B6:D6, debajo de «Dto.(%)».
 
     # ── BORDES EXTERNOS DE CABECERA ───────────────────────────
     #  Rangos: B1:D1 / C2:D2 / B3:C3 / B5:D5
@@ -816,11 +817,11 @@ def transformar(ruta_xls: str, log_fn=None, registros_info=None) -> str:
     _log(log_fn, "  └ Bordes externos cabecera aplicados.", "INFO")
 
     # ── PASO 14a (22 nov 2026, petición de Víctor): teléfono y hoteles ──
-    #  B4 «Teléfono:» + C4, y H1:L5 con las siglas de los 10 hoteles y una
+    #  B4 «Teléfono:» + C4, y E1:H6 con las siglas de los 10 hoteles y una
     #  casilla ✔ para cada uno. «Crear / Actualizar Registro Info SAP» los
     #  usa y no pregunta (app/comun/datos_tarifa.py).
     escribir_huecos(ws)
-    _log(log_fn, "  └ Huecos de teléfono (C4) y hoteles (H1:L5) añadidos, en blanco.", "INFO")
+    _log(log_fn, "  └ Huecos de teléfono (C4) y hoteles (E1:H6) añadidos, en blanco.", "INFO")
 
     # ── PASO 14b: Logo en A1:A6 ──────────────────────────────
     #    Extraido a _insertar_logo_cabecera() -- ver esa funcion para

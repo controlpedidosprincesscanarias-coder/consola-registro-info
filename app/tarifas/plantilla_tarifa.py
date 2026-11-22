@@ -68,10 +68,6 @@ def escribir_plantilla(plantilla, carpeta_tarifas):
     ws.cell(3, 3).fill = AMARILLO                      # nuevo periodo, lo rellena el proveedor
     ws.cell(3, 4).value = "← nuevo periodo"
     ws.cell(3, 4).font = Font(name="Arial", size=9, italic=True, color="7F6000")
-    ws.merge_cells("E5:G5")
-    ws.cell(5, 5).value = "DESCUENTOS YA APLICADOS EN PRECIO FINAL"
-    ws.cell(5, 5).font = Font(name="Arial", size=11, bold=True, color="FF0000")
-    ws.cell(5, 5).alignment = _alin(h="center", v="center")
     linea = Side(style="thin", color="000000")
     for fila in (1, 2, 3, 5):                          # borde exterior de B:D en cada fila, como la TARIFA final
         for col in range(2, 5):
@@ -120,7 +116,7 @@ def escribir_plantilla(plantilla, carpeta_tarifas):
         ws.column_dimensions[letra].width = ancho
     for r in range(1, 6):
         ws.row_dimensions[r].height = 18
-    ws.row_dimensions[6].height = 6
+    ws.row_dimensions[6].height = 18   # aviso de descuentos y último hotel
     ws.row_dimensions[7].height = 20
     ws.freeze_panes = "A8"
     ws.auto_filter.ref = f"A7:J{max(ultima, 7)}"
