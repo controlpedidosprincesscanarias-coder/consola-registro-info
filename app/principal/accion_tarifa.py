@@ -28,6 +28,116 @@ from app.ui.tarifa_dialogs import (
 
 
 class AccionesTarifa:
+
+    # ── (22 nov 2026, petición de Víctor) Acción 6: Generar plantilla Tarifa desde RINFO ──────────────────
+    def _generar_plantilla_desde_rinfo(self):
+        """Acción 6 (antes «Generar Listado Tarifa Proveedor Vacía», en construcción). Ventana para arrastrar o
+        elegir un RINFO o Purchasing Info Records; las plantillas se generan en segundo plano (lógica en
+        app/comun/plantilla_rinfo.py y app/tarifas/plantilla_tarifa.py)."""
+        from app.ui.ventana_plantilla_rinfo import VentanaPlantillaRinfo
+        carpeta = self._carpeta_proyecto.get().strip()
+        if not carpeta:
+            messagebox.showwarning("Sin proyecto", "Seleccione primero la carpeta del Proyecto.")
+            return
+        carpeta_tarifas = os.path.join(carpeta, FOLDER_TARIFAS)
+        if not os.path.isdir(carpeta_tarifas):
+            messagebox.showwarning("Sin carpeta TARIFAS", f"No se encontró la carpeta TARIFAS/ en:\n{carpeta}")
+            return
+        self.log_consola("Iniciando: Generar plantilla Tarifa desde RINFO…", "INFO")
+        VentanaPlantillaRinfo(self, carpeta_tarifas,
+                              lambda rutas: threading.Thread(
+                                  target=self._generar_plantillas_rinfo, args=(rutas, carpeta, carpeta_tarifas),
+                                  daemon=True).start())
+
+    def _generar_plantillas_rinfo(self, rutas, carpeta, carpeta_tarifas):
+        """En un hilo: lee cada archivo, prepara las tarifas (una por proveedor y grupo de hoteles con los mismos
+        precios) y las escribe en TARIFAS. Todo a la consola; ventana solo si no se pudo generar ninguna."""
+        from app.comun import catalogo_local as _cl
+        from app.comun import plantilla_rinfo as PR
+        from app.tarifas.plantilla_tarifa import escribir_plantilla
+        self.after(0, lambda: self._barra.indeterminate("Generando plantillas…"))
+        generadas, fallos = [], []
+        try:
+            catalogo = {}
+            ruta_cat = _cl.localizar_catalogo(carpeta or None, carpeta_tarifas)
+            if ruta_cat:
+                try:
+                    catalogo = PR.mapa_catalogo(_cl.filas_formato_listado(ruta_cat))
+                except Exception as e:  # noqa: BLE001
+                    self.log_consola(f"  ⚠ No se pudo leer el catálogo ({e}): los códigos DALI quedarán vacíos.",
+                                     "WARN")
+            else:
+                self.log_consola("  ⚠ catalogo-dali-completo.xlsx no encontrado: los códigos DALI quedarán vacíos "
+                                 "y la descripción y el formato serán los de SAP.", "WARN")
+            for ruta in rutas:
+                nombre = os.path.basename(ruta)
+                self.log_consola(f"Leyendo {nombre}…", "INFO")
+                try:
+                    datos = PR.leer_purchasing(ruta)
+                except PR.NoEsPurchasing as e:
+                    self.log_consola(f"  ✗ {nombre} no es un RINFO ni un Purchasing Info Records: {e}", "ERROR")
+                    fallos.append(nombre)
+                    continue
+                except Exception as e:  # noqa: BLE001
+                    self.log_consola(f"  ✗ No se pudo leer {nombre}: {e}", "ERROR")
+                    fallos.append(nombre)
+                    continue
+                self._avisos_plantilla_rinfo(datos["avisos"])
+                existentes = os.listdir(carpeta_tarifas)
+                plantillas = PR.preparar_plantillas(datos, catalogo, existentes=existentes)
+                if not plantillas:
+                    self.log_consola(f"  ⚠ {nombre} no tiene ningún precio vigente: no se genera ninguna plantilla.",
+                                     "WARN")
+                    fallos.append(nombre)
+                    continue
+                for pl in plantillas:
+                    try:
+                        escribir_plantilla(pl, carpeta_tarifas)
+                    except Exception as e:  # noqa: BLE001
+                        self.log_consola(f"  ✗ No se pudo guardar «{pl['nombre_archivo']}»: {e}", "ERROR")
+                        fallos.append(pl["nombre_archivo"])
+                        continue
+                    generadas.append(pl["nombre_archivo"])
+                    sin_dali = sum(1 for f in pl["filas"] if not f["dali"])
+                    self.log_consola(
+                        f"  ✔ {pl['nombre_archivo']}: {len(pl['filas'])} artículos, hoteles "
+                        f"{', '.join(pl['siglas'])}, teléfono {pl['telefono'] or '(sin teléfono)'}"
+                        + (f"; {sin_dali} sin código DALI en el catálogo" if sin_dali else "") + ".", "OK")
+        except Exception as e:  # noqa: BLE001 — en un hilo: que no muera en silencio
+            self.log_consola(f"Error al generar las plantillas: {e}", "ERROR")
+        if generadas:
+            self.log_consola(f"Plantillas generadas en TARIFAS: {len(generadas)}. Envíelas a los proveedores; "
+                             "cuando las devuelvan con el PRECIO NUEVO, úselas en «Crear / Actualizar Registro "
+                             "Info SAP».", "OK")
+            self.after(0, lambda: self._barra.completado(f"{len(generadas)} plantilla(s) generada(s)"))
+        else:
+            self.after(0, lambda: self._barra.reset("Sin plantillas"))
+            self.after(0, lambda: messagebox.showerror(
+                "Generar plantilla Tarifa desde RINFO",
+                "No se ha podido generar ninguna plantilla. Revise la consola: el archivo tiene que ser un RINFO o "
+                "un Purchasing Info Records con precios vigentes."))
+
+    def _avisos_plantilla_rinfo(self, av):
+        """Lo que no sale en las plantillas, a la consola (en WARN lo que conviene revisar)."""
+        if av["borrados"]:
+            self.log_consola(f"  · {len(av['borrados'])} material(es) con el Registro Info marcado para borrar: no "
+                             "salen.", "INFO")
+        if av["centros_borrados"]:
+            self.log_consola(f"  · {av['centros_borrados']} centro(s) marcados para borrar: no salen en esos "
+                             "hoteles.", "INFO")
+        if av["caducados"]:
+            mats = sorted({m for m, _c in av["caducados"]})
+            self.log_consola(f"  · {len(av['caducados'])} precio(s) caducados, sin precio vigente ni futuro "
+                             f"(materiales: {', '.join(mats[:15])}{'…' if len(mats) > 15 else ''}): no salen en "
+                             "ese hotel.", "INFO")
+        if av["escalas"]:
+            mats = sorted(av["escalas"])
+            self.log_consola(f"  ⚠ {len(mats)} material(es) con escalado de precio en SAP: en la plantilla va el "
+                             f"precio base. Revíselos: {', '.join(mats[:15])}{'…' if len(mats) > 15 else ''}.",
+                             "WARN")
+        if av["centros_desconocidos"]:
+            self.log_consola(f"  ⚠ Centros que no son de los 10 hoteles de Canarias (no salen): "
+                             f"{', '.join(sorted(av['centros_desconocidos']))}.", "WARN")
     # ── ACCIÓN 6 — Crear nuevo Registro Info SAP ──────────────
     def _crear_registro_sap(self):
         """

@@ -18,6 +18,7 @@ import datetime as _dt_mod          # módulo completo — usado en lógica de f
 from datetime import datetime
 from copy import copy
 import openpyxl
+from app.comun import datos_tarifa as DT  # (22 nov 2026) PRECIO NUEVO de la plantilla del proveedor
 from app.comun.catalogo_local import abrir_como_listado  # v10.2.50: catálogo con forma de LISTADO
 # normalizar_codigo_sap vive en sap_helpers.py (sin tkinter) para que
 # también pueda importarla test_crear_registro_info.py sin arrastrar
@@ -349,19 +350,15 @@ class GeneradorDesdeExistente:
             hoja_t = (wb_t[HOJA_TARIFA]
                       if HOJA_TARIFA in wb_t.sheetnames
                       else wb_t.active)
-            for row in hoja_t.iter_rows(min_row=8, min_col=1,
-                                         max_col=6, values_only=True):
-                cod    = row[0]
-                precio = row[5]
-                if cod is None:
-                    continue
-                cod = normalizar_codigo_sap(cod)
-                clave = str(cod).strip()
-                if clave and precio is not None:
-                    dic[clave] = precio
+            # (22 nov 2026) Con la columna PRECIO NUEVO de la plantilla de revisión de precios (Acción 6), manda
+            # el precio del proveedor donde esté relleno (datos_tarifa.precios_tarifa).
+            dic, n_nuevos = DT.precios_tarifa(hoja_t)
             wb_t.close()
             _log(self._parent,
                  f"Precios tarifa cargados: {len(dic)} entradas.", "INFO")
+            if n_nuevos:
+                _log(self._parent,
+                     f"  {n_nuevos} de ellos son el PRECIO NUEVO que ha rellenado el proveedor.", "OK")
         except Exception as e:
             _log(self._parent, f"Error al leer precios tarifa: {e}", "WARN")
         return dic

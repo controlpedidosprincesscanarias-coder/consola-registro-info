@@ -209,3 +209,110 @@ def escribir_huecos(ws, telefono=None, codigos_marcados=()):
     ws.column_dimensions[get_column_letter(COL_TITULO_HOTELES)].width = 12
     for col in range(9, 13):
         ws.column_dimensions[get_column_letter(col)].width = 6
+
+
+# ── (22 nov 2026) Columnas del proveedor en la plantilla de revisión de precios (Acción 6) ───────────────
+# La plantilla que se genera desde un RINFO (app/comun/plantilla_rinfo.py) lleva, después de DESCUENTO, dos columnas
+# amarillas que rellena el proveedor. Al volver, «Crear / Actualizar Registro Info SAP» usa el PRECIO NUEVO donde
+# esté relleno (si no, el PRECIO de siempre) y propone la FECHA INICIO (decisión de Víctor, 22 nov 2026, opción A).
+CAB_PRECIO_NUEVO = "PRECIO NUEVO"
+CAB_FECHA_INICIO = "FECHA INICIO"
+FILA_CABECERA_TABLA = 7
+
+
+def _norm_cab(v):
+    return re.sub(r"\s+", " ", _texto(v)).upper()
+
+
+def columnas_proveedor(ws):
+    """Índices (0 = columna A) de PRECIO NUEVO y FECHA INICIO en la cabecera de la tabla (fila 7), o None."""
+    nuevo = inicio = None
+    for fila in ws.iter_rows(min_row=FILA_CABECERA_TABLA, max_row=FILA_CABECERA_TABLA, values_only=True):
+        for i, v in enumerate(fila or ()):
+            cab = _norm_cab(v)
+            if cab == CAB_PRECIO_NUEVO and nuevo is None:
+                nuevo = i
+            elif cab == CAB_FECHA_INICIO and inicio is None:
+                inicio = i
+    return nuevo, inicio
+
+
+def numero(v):
+    """Un precio escrito en la celda (número o texto «4,35», «4,35 €») como float, o None."""
+    if v is None or isinstance(v, bool):
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    t = _texto(v).replace("€", "").replace(" ", "")
+    if not t:
+        return None
+    if "," in t and "." in t:
+        t = t.replace(".", "").replace(",", ".")
+    else:
+        t = t.replace(",", ".")
+    try:
+        return float(t)
+    except ValueError:
+        return None
+
+
+def precios_tarifa(ws):
+    """{código SAP: precio} de la tabla de la TARIFA (A = código SAP, F = PRECIO) desde la fila 8. Si la tarifa trae
+    la columna PRECIO NUEVO y el proveedor la ha rellenado (número mayor que 0), manda ese precio. Devuelve
+    (precios, cuántos son PRECIO NUEVO)."""
+    from app.comun.sap_helpers import normalizar_codigo_sap
+    col_nuevo, _ = columnas_proveedor(ws)
+    precios, nuevos = {}, 0
+    for fila in ws.iter_rows(min_row=FILA_CABECERA_TABLA + 1, values_only=True):
+        if not fila or fila[0] is None:
+            continue
+        clave = str(normalizar_codigo_sap(fila[0])).strip()
+        if not clave:
+            continue
+        precio = fila[5] if len(fila) > 5 else None
+        if col_nuevo is not None and len(fila) > col_nuevo:
+            nuevo = numero(fila[col_nuevo])
+            if nuevo is not None and nuevo > 0:
+                precio = nuevo
+                nuevos += 1
+        if precio is not None:
+            precios[clave] = precio
+    return precios, nuevos
+
+
+def periodo_propuesto(ruta_tarifa):
+    """El texto que se pasa a la ventana de fechas del RINFO. Normalmente el «Periodo:» (C3). Si la tarifa trae la
+    columna FECHA INICIO rellena, «inicio - fin» con la primera FECHA INICIO y el fin del periodo de C3 (o el 31/12
+    de ese año)."""
+    from app.comun import fechas_tarifa as FT
+    from app.comun.sap_helpers import parsear_fecha_celda
+    try:
+        import openpyxl
+        wb = openpyxl.load_workbook(ruta_tarifa, read_only=True, data_only=True)
+    except Exception:  # noqa: BLE001
+        return ""
+    try:
+        ws = wb["TARIFA"] if "TARIFA" in wb.sheetnames else wb.active
+        periodo = ""
+        for fila in ws.iter_rows(min_row=3, max_row=3, min_col=3, max_col=3, values_only=True):
+            periodo = _texto(fila[0]) if fila else ""
+        _, col_inicio = columnas_proveedor(ws)
+        inicios = []
+        if col_inicio is not None:
+            for fila in ws.iter_rows(min_row=FILA_CABECERA_TABLA + 1, values_only=True):
+                if fila and len(fila) > col_inicio:
+                    f = parsear_fecha_celda(fila[col_inicio])
+                    if f is None and isinstance(fila[col_inicio], str):
+                        f = FT._fecha(fila[col_inicio].strip())
+                    if f is not None:
+                        inicios.append(f)
+    except Exception:  # noqa: BLE001
+        return ""
+    finally:
+        wb.close()
+    if not inicios:
+        return periodo
+    inicio = min(inicios)
+    rango = FT.periodo_a_fechas(periodo)
+    fin = rango[1] if rango and rango[1] >= inicio else inicio.replace(month=12, day=31)
+    return f"{inicio:%d/%m/%Y} - {fin:%d/%m/%Y}"
