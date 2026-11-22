@@ -1655,6 +1655,20 @@ Petición de Víctor (21 nov 2026): «Creamos un nuevo paso llamado "Generar pla
 
 ---
 
+## 91. Columna REGISTRO INFO en la TARIFA final y en la plantilla desde RINFO (22 nov 2026, próxima compilación: v10.2.94) — PR en GitHub
+
+Petición de Víctor (22 nov 2026): «¿Podríamos añadir una nueva columna donde se ponga el Registro Info de cada material? En el purchasing, todo código SAP (material) tiene asociado un registro info, normalmente en la primera columna de cada hoja. En el caso del Excel tarifa creado desde cero, creamos igualmente la columna». Decisión (1B): en la TARIFA final de la Acción 3, rellenarla con el Purchasing del proveedor que haya en TARIFAS, «los registros info no varían».
+
+- **Dónde:** columna **H**, detrás de DESCUENTO. Así no se mueve ninguna de las columnas A..G, que la Acción 3, los [INCOMPLETO], el paso al catálogo y el RINFO leen por posición. Las tarifas de antes, sin esta columna, funcionan igual.
+- **Plantilla (Acción 6):** `leer_purchasing` guarda `registros` (material → nº de la columna A de la hoja 1, también si está marcado para borrar); `agrupar_por_precios` y `filas_tarifa` lo llevan a cada fila; `plantilla_tarifa.py` lo escribe en H. PRECIO NUEVO y FECHA INICIO pasan a I y J; la vuelta no cambia porque `datos_tarifa.columnas_proveedor` los busca por su título.
+- **TARIFA final (Acción 3):** `transformar` tiene el parámetro `registros_info` y un paso 27c (`_rellenar_registros_info`) tras poner los códigos SAP. La Acción 3 le pasa `_registros_info_para_tarifa(carpeta_tarifas)`: busca el Purchasing por el nombre de C2 con `_buscar_purchasing_compatible` (el mismo criterio que el RINFO: el más parecido y, a igual parecido, el más reciente) y saca sus números con `plantilla_rinfo.registros_info_de` (por código o nombre de proveedor; si el Purchasing solo tiene uno, ese). La consola dice cuántos ha puesto y de qué archivo; si no hay Purchasing, la columna queda vacía. Un fallo nunca para la tarifa.
+- **[INCOMPLETO]:** al reprocesar (paso 4b de `_reaplicar_sap_y_guardar_inc`) se completan los Registros Info de los códigos SAP recién puestos, sin tocar lo escrito y solo si la tarifa tiene la columna.
+- **Pruebas:** 5 nuevas en `tests/test_plantilla_rinfo.py` (`TestRegistroInfo`: números del Purchasing también de los borrados, por código de proveedor, un solo proveedor, no pisar, y `transformar()` con y sin la búsqueda) y las de la plantilla al día. Total: 360.
+- **Manual:** frase en «Teléfono del proveedor y hoteles de la TARIFA» y una marca más en la captura de la plantilla; las dos capturas de Excel rehechas con Registros Info inventados.
+- **No probado:** en Windows con un Purchasing real (que los números de la columna A de la hoja 1 salgan como en SAP) y una tarifa nueva de un proveedor con y sin Purchasing en TARIFAS.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Paso «Generar plantilla Tarifa desde RINFO»~~ hecho (sección 90, Acción 6). Pendiente: probarlo en Windows con un RINFO y un Purchasing reales (arrastrar, la plantilla en Excel y la vuelta al RINFO con PRECIO NUEVO). Si se quiere, que el PRECIO NUEVO pase también al catálogo y a Catálogo Asignaciones al crear el RINFO (hoy solo lo hace la Acción 3 con la tarifa de DALI).
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
