@@ -1624,7 +1624,24 @@ Petición de Víctor: «actualizar los manuales de consola y catálogo asignacio
 
 ---
 
+## 89. Teléfono del proveedor y hoteles en la TARIFA final (22 nov 2026, próxima compilación: v10.2.94) — PR en GitHub
+
+Petición de Víctor (22 nov 2026), a raíz de su idea del paso «Generar plantilla Tarifa desde RINFO»: «añadir en el Excel de tarifa un espacio para el teléfono del proveedor, otro con las iniciales de los 10 centros [hoteles] que marcaremos con un tick los que proceda la tarifa. De esta manera la generación de RINFO será más directa sin paradas pidiendo datos y la generación a la inversa de RINFO a TARIFA podrá también indicar la información. Dejaríamos igualmente las preguntas en la generación de RINFO para cuando la tarifa no indique algún dato».
+
+Decisiones de Víctor: recuadro a la derecha de la cabecera (no en otra hoja); siglas **GY IT LP TA ST MG GC MT JN FV** (orden de los centros SAP 0110…0910); **las fechas se siguen preguntando**; en una tarifa nueva las casillas salen **sin marcar**.
+
+- **`app/comun/datos_tarifa.py`** (nuevo, sin tkinter): `CENTROS_TARIFA` (sigla, centro SAP, nombre), `escribir_huecos(ws, telefono, codigos_marcados)` (B4 «Teléfono:» + C4 con formato texto; H1 «HOTELES», siglas en I1:I5 y K1:K5 con fondo gris, casillas en J/L con una lista desplegable «✔» que no rechaza otra cosa), `leer_datos_hoja` / `leer_datos_tarifa` (busca las siglas en H1:T6 por si se mueve el recuadro y lee la casilla de su derecha: ✔, X, «sí», 1… cuentan; vacío, «NO», 0, «-» no) y `limpiar_telefono` (quita espacios, guiones, puntos y barras; 8 a 10 dígitos, la regla de `VentanaTelefonoRINFO`).
+- **`transformar_tarifa.py`** (Acción 3, TARIFA final): paso 14a, `escribir_huecos(ws)` tras los bordes de la cabecera. La fila 4 deja de ser un separador de 6 pt; el logo (anclado de la mitad de A1 a la mitad de A5) se recorta 8 px arriba y abajo para conservar su alto de 80 px. La tabla no se mueve (cabecera en la fila 7, datos desde la 8, paneles en A8).
+- **`crear_registro_info.py`**: `_telefono_de_tarifa_o_preguntar` y `_centros_de_tarifa_o_preguntar` sustituyen a las 4 llamadas directas a `VentanaTelefonoRINFO` / `VentanaCentrosRINFO` (flujo «Purchasing encontrado» y «Crear desde cero»). Con dato válido, callback directo y línea OK en la consola («Teléfono del proveedor tomado de la tarifa…», «Hoteles marcados en la tarifa (n): GY, …»); teléfono mal escrito → WARN y ventana; sin hoteles marcados → ventana. Tarifas antiguas (sin huecos): igual que antes.
+- La lista desplegable sobrevive a abrir y guardar con openpyxl (lo hace la Acción 3 con los archivos INC): probado.
+- **Pruebas:** `tests/test_datos_tarifa.py`, 17 (teléfono, marcas, posiciones, mismos centros que `CENTROS_SAP_CANARIAS`, escribir/leer en blanco y relleno, lo que escribiría el usuario a mano, tarifa antigua, `transformar()` de punta a punta con un `.xls` inventado y los dos flujos del RINFO sin y con datos). Total: 337, todas bien con `xvfb-run` y Python 3.12 con tkinter.
+- **Manual:** apartado nuevo «Teléfono del proveedor y hoteles de la TARIFA» (capítulo 6) con una captura de la cabecera real (la genera `capturas.py`: `transformar()` con datos inventados, renderizada con LibreOffice; las marcas se sitúan pintando antes las celdas de un color único) y una frase en «Teléfono, fechas y centros» (capítulo 7). Capturas y manual con la versión v 10.2.94; PDF e índice copiados a `assets/`.
+- **No probado:** en Windows con Excel (que se vea bien la cabecera, la lista desplegable ✔ y el logo) y crear un RINFO real con la tarifa rellena.
+
+---
+
 ## Próximos pasos, en orden de prioridad
+- **PENDIENTE (petición de Víctor, 21 nov 2026): paso «Generar plantilla Tarifa desde RINFO»** (el inverso de «Crear / Actualizar Registro Info SAP»: arrastrar un RINFO o Purchasing y sacar una TARIFA). Propuesta enviada el 21 nov 2026; quedan por decidir: para qué es la plantilla (TARIFA de trabajo / plantilla para el proveedor con «PRECIO NUEVO» / las dos), varios proveedores en un Purchasing (una tarifa por proveedor / elegir uno), precios distintos por centro (el más repetido / elegir centro / una tarifa por centro) y dónde va el botón (sustituir el 6 «en construcción» / botón 7 / acceso rápido). Rellenará el teléfono (hoja 1, columna AD) y los hoteles (hoja 2, columna F) con `datos_tarifa.escribir_huecos` (sección 89). Arrastrar y soltar necesita una dependencia nueva (`tkinterdnd2`, versión fija en `compilacion/requisitos.txt`), con «Examinar…» de reserva.
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
 - ~~Al cambiar el Proveedor Asignado, el precio del proveedor anterior no debe quedarse~~ hecho (sección 69, con la web v1.20.69).
 - ~~Lo cambiado en la web baja solo al Excel y la Consola nunca lo pisa~~ hecho (sección 67): gana la última modificación.
