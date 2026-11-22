@@ -216,6 +216,10 @@ def escribir_huecos(ws, telefono=None, codigos_marcados=()):
 # amarillas que rellena el proveedor. Al volver, «Crear / Actualizar Registro Info SAP» usa el PRECIO NUEVO donde
 # esté relleno (si no, el PRECIO de siempre) y propone la FECHA INICIO (decisión de Víctor, 22 nov 2026, opción A).
 CAB_PRECIO_NUEVO = "PRECIO NUEVO"
+# (22 nov 2026, petición de Víctor) Columna H de las dos tarifas, detrás de DESCUENTO: el Registro Info SAP de cada
+# material. Al final de la tabla para no mover ninguna columna que la Consola lee por posición (A..G).
+CAB_REGISTRO_INFO = "REGISTRO INFO"
+COL_REGISTRO_INFO = 8   # H
 CAB_FECHA_INICIO = "FECHA INICIO"
 FILA_CABECERA_TABLA = 7
 

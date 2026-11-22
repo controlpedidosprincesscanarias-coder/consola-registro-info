@@ -64,7 +64,7 @@ from openpyxl.styles.differential import DifferentialStyle
 from openpyxl.formatting.rule import Rule
 from openpyxl.utils import get_column_letter
 
-from app.comun.datos_tarifa import escribir_huecos
+from app.comun.datos_tarifa import CAB_REGISTRO_INFO, COL_REGISTRO_INFO, escribir_huecos
 
 
 # ============================================================
@@ -464,6 +464,34 @@ def _cruzar_con_listado_dali_sap(ws, ruta_xls, ultima, log_fn=None) -> list:
 
     return _sin_desc_und
 
+def _rellenar_registros_info(ws, ultima, nombre_proveedor, registros_info, log_fn=None):
+    """Paso 27c (22 nov 2026): rellena la columna REGISTRO INFO (H) con el Registro Info de cada código SAP (col A),
+    sacado del Purchasing del proveedor que encuentre `registros_info(nombre_proveedor)`. Nunca para la tarifa: si no
+    hay Purchasing o falla, la columna queda vacía y se dice en la consola."""
+    if registros_info is None:
+        return 0
+    try:
+        encontrado = registros_info(nombre_proveedor)
+    except Exception as e:  # noqa: BLE001
+        _log(log_fn, f"  ⚠ No se pudo leer el Purchasing para la columna REGISTRO INFO ({e}): queda vacía.", "WARN")
+        return 0
+    if not encontrado or not encontrado.get("mapa"):
+        _log(log_fn, "  └ REGISTRO INFO: no hay en TARIFAS un Purchasing Info Records de este proveedor; la columna "
+                     "queda vacía.", "INFO")
+        return 0
+    from app.comun.plantilla_rinfo import rellenar_registros_info
+    n = rellenar_registros_info(ws, encontrado["mapa"])
+    con_sap = sum(1 for r in range(8, ultima + 1) if ws.cell(r, 1).value not in (None, ""))
+    fecha = encontrado.get("fecha")
+    _log(log_fn, f"  └ REGISTRO INFO: {n} de {con_sap} artículos con código SAP, del Purchasing "
+                 f"«{encontrado.get('archivo', '')}»" + (f" ({fecha:%d/%m/%Y})" if fecha else "") + ". "
+                 "Los que faltan aún no tienen Registro Info en SAP.", "OK")
+    for r in range(8, ultima + 1):
+        celda = ws.cell(r, COL_REGISTRO_INFO)
+        celda.alignment = _alin(h="center")
+    return n
+
+
 def _finalizar_y_guardar(wb, ws, ultima, ruta_xls, nombre_base,
                           sin_desc_und, log_fn=None):
     """
@@ -505,6 +533,7 @@ def _finalizar_y_guardar(wb, ws, ultima, ruta_xls, nombre_base,
     ws.column_dimensions["E"].width = 19
     ws.column_dimensions["F"].width = 16
     ws.column_dimensions["G"].width = 19
+    ws.column_dimensions["H"].width = 17   # (22 nov 2026) REGISTRO INFO (y «HOTELES» encima)
 
     # Altos de fila: logo filas 1-5, separador fila 6, tabla fila 7, datos desde 8
     for r in range(1, 6):
@@ -648,7 +677,10 @@ def _finalizar_y_guardar(wb, ws, ultima, ruta_xls, nombre_base,
     return ruta_salida, _analisis
 
 
-def transformar(ruta_xls: str, log_fn=None) -> str:
+def transformar(ruta_xls: str, log_fn=None, registros_info=None) -> str:
+    """registros_info (22 nov 2026): función opcional nombre_proveedor -> {"mapa": {SAP: Registro Info}, "archivo",
+    "fecha"} o None, para rellenar la columna REGISTRO INFO (H) con el Purchasing del proveedor que haya en TARIFAS
+    (la pasa la Acción 3, accion_tarifa.py). Sin ella, la columna queda vacía."""
 
     _log(log_fn, f"Leyendo origen: {os.path.basename(ruta_xls)}", "INFO")
     src = _leer_xls(ruta_xls)
@@ -799,20 +831,21 @@ def transformar(ruta_xls: str, log_fn=None) -> str:
     # ── PASO 15: CABECERA FILA 8 ───────────────────────────
     _log(log_fn, "Paso 15: Cabecera fila 7...", "INFO")
     cabeceras = ["CODIGO SAP", "CODIGO DALI", "CODIGO PROVEEDOR",
-                 "DESCRIPCION", "FORMATO", "PRECIO", "DESCUENTO"]
+                 "DESCRIPCION", "FORMATO", "PRECIO", "DESCUENTO",
+                 CAB_REGISTRO_INFO]   # (22 nov 2026) H: Registro Info SAP, al final para no mover A..G
     for c, cab in enumerate(cabeceras, start=1):
         ws.cell(7, c).value = cab
 
     # ── PASO 16: A8:G8 — Arial12, Negrita, Gris, Bordes, Filtros, Centrado ─
-    _log(log_fn, "Paso 16: Formato cabecera A7:G7...", "INFO")
-    for c in range(1, 8):
+    _log(log_fn, "Paso 16: Formato cabecera A7:H7...", "INFO")
+    for c in range(1, 9):
         cell = ws.cell(7, c)
         cell.font      = _font(bold=True)
         cell.fill      = _GRIS
         cell.border    = _BORDE_TODO
         cell.alignment = _alin(h="center")
     # Filtros (rango completo se actualiza al final)
-    ws.auto_filter.ref = "A7:G7"
+    ws.auto_filter.ref = "A7:H7"
 
     # ── PASOS 17–22: COPIAR DATOS DESDE FILA 24 DEL XLS ────
     _log(log_fn, "Pasos 17-22: Copiando datos de artículos...", "INFO")
@@ -875,9 +908,9 @@ def transformar(ruta_xls: str, log_fn=None) -> str:
     _log(log_fn, f"  └ Última fila con datos: {ultima}", "INFO")
 
     # ── PASO 24: A9:G(ultima) — Arial 12, Todos los bordes ──
-    _log(log_fn, f"Paso 24: Arial 12 + bordes A8:G{ultima}...", "INFO")
+    _log(log_fn, f"Paso 24: Arial 12 + bordes A8:H{ultima}...", "INFO")
     for r in range(8, ultima + 1):
-        for c in range(1, 8):
+        for c in range(1, 9):
             cell = ws.cell(r, c)
             cell.font   = _font()
             cell.border = _BORDE_TODO
@@ -910,6 +943,12 @@ def transformar(ruta_xls: str, log_fn=None) -> str:
     #    Extraido a _cruzar_con_listado_dali_sap() -- ver esa funcion para
     #    el detalle linea a linea (identico al que habia aqui antes).
     _sin_desc_und = _cruzar_con_listado_dali_sap(ws, ruta_xls, ultima, log_fn)
+
+    # ── PASO 27c (22 nov 2026, petición de Víctor): REGISTRO INFO (col H) ──
+    #  Con el Purchasing de este proveedor que haya en TARIFAS (lo busca la
+    #  Acción 3 igual que «Crear / Actualizar Registro Info SAP»). Los números
+    #  de Registro Info no cambian, así que vale aunque sea antiguo.
+    _rellenar_registros_info(ws, ultima, nombre_base, registros_info, log_fn)
 
     # ── PASO 28: F9:F(ultima) — Formato € español ───────────
     _log(log_fn, "Paso 28: Formato € en col F...", "INFO")
@@ -1000,7 +1039,7 @@ def transformar(ruta_xls: str, log_fn=None) -> str:
     ws.freeze_panes = "A8"
 
     # Actualizar rango de filtros con la fila real
-    ws.auto_filter.ref = f"A7:{get_column_letter(7)}{ultima}"
+    ws.auto_filter.ref = f"A7:{get_column_letter(8)}{ultima}"
 
     # ── PASO 31: AUTOAJUSTAR COLUMNAS Y FILAS ───────────────
     #    Extraido a _finalizar_y_guardar() -- ver esa funcion para el
