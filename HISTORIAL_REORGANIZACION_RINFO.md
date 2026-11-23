@@ -1706,6 +1706,23 @@ Petición de Víctor, con una captura (la ventana «Cambios para Catálogo Asign
 
 ---
 
+## 95. Bajas solo en los hoteles de la tarifa y sigla SU (23 nov 2026, próxima compilación: v10.2.100) — PR en GitHub
+
+Víctor mandó el log de las 10:02 (v10.2.98): RINFO de AHUMADOS CANARIOS SA LP con el Purchasing de las 09:53 y la tarifa de La Palma (solo LP marcado). AHUMADOS tiene tres tarifas por isla (FV, GC-TF, LP) y el Purchasing, 142 materiales en todos los hoteles; la tarifa de LP trae 108.
+
+- **Error grave corregido** (commit propio): los 34 materiales que no trae la tarifa de LP (21 «vencidos» automáticamente y 13 por «DAR BAJA») se marcaron con **H1 AJ = X** (Registro Info entero marcado para borrar) y la marca se propagó a 340 filas de H2 y 440 de H3. Las filas de los otros hoteles se quitan del archivo, pero la marca de la hoja 1 afecta en SAP a **todos** los centros: si se importa, se borran también en GC, TF y FV materiales que son de las otras tarifas. Ahora (`_limpiar_marca_aj_heredados` y `_propagar_borrado_h1_a_h2_h3`):
+  - material que solo está en hoteles de fuera de la tarifa → no se toca y no sale en la ventana «sin tarifa»;
+  - material también en hoteles de fuera → baja **solo en los hoteles de la tarifa** (H2 AN y H3 Y de esos centros, cierre de J), H1 AJ sin marcar (`_bajas_por_centro`);
+  - todos sus hoteles en la tarifa → como siempre.
+  La fecha de fin que decide «vencido / preguntar» se toma de los centros de la tarifa en los parciales. El resumen de la consola lo dice («N de baja SOLO en los hoteles de esta tarifa (0210), no en los demás», «N solo en hoteles fuera de esta tarifa (no se tocan)»).
+- **Sigla de Suite Princess: SU** (petición de Víctor con captura, «ST --> SU»). Las tarifas ya generadas con ST se siguen leyendo (`SIGLAS_ANTIGUAS`). En la misma captura el título REGISTRO INFO se cortaba con el botón del filtro: la columna H pasa de 21 a 24.
+- **Pruebas:** `tests/test_bajas_por_hotel.py`, 4 (tarifa de un hotel no borra el registro entero, material solo en otros hoteles no se toca ni se pregunta, tarifa de todos los hoteles como siempre, los que siguen en la tarifa no se tocan) y 1 de la sigla antigua. Total: 376.
+- **Manual:** recuadro «Tarifas de solo algunos hoteles» en «Avisos durante la generación» (capítulo 7), sigla SU y capturas con la v 10.2.100.
+- **Pendiente para Víctor:** no importar en SAP el RINFO de AHUMADOS LP generado a las 10:02 con la v10.2.98; si ya se importó, revisar en SAP los 34 materiales (que no hayan quedado marcados para borrar en GC, TF y FV). Volver a generarlo con la v10.2.100. Lo mismo con cualquier RINFO de una tarifa de solo algunos hoteles generado antes.
+- **No probado:** con la v10.2.100 en Windows y los archivos reales de AHUMADOS (habría que regenerar el RINFO de LP y comprobar en el resumen las bajas «solo en los hoteles de esta tarifa»).
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Paso «Generar plantilla Tarifa desde RINFO»~~ hecho (sección 90, Acción 6). Pendiente: probarlo en Windows con un RINFO y un Purchasing reales (arrastrar, la plantilla en Excel y la vuelta al RINFO con PRECIO NUEVO). Si se quiere, que el PRECIO NUEVO pase también al catálogo y a Catálogo Asignaciones al crear el RINFO (hoy solo lo hace la Acción 3 con la tarifa de DALI).
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).

@@ -3144,6 +3144,38 @@ class GeneradorDesdeExistente:
                 if clave and clave not in desc_por_codigo:
                     desc_por_codigo[clave] = str(val_f).strip() if val_f else ""
 
+            # ── (23 nov 2026, caso real AHUMADOS CANARIOS SA LP) Tarifa de solo unos hoteles ───────
+            #  Antes, un material sin tarifa se daba de baja con H1 AJ = X, que en SAP marca el Registro Info
+            #  ENTERO (todos los centros). Con una tarifa de un solo hotel (AHUMADOS LP: 34 materiales que son
+            #  de las tarifas de GC-TF o FV) eso borraba en SAP precios válidos de los otros hoteles. Ahora:
+            #    · si el material solo está en hoteles que NO son de esta tarifa → no se toca;
+            #    · si está también en hoteles de fuera → baja solo en los hoteles de esta tarifa
+            #      (H2 AN / H3 Y de esos centros; H1 AJ sin marcar), _bajas_por_centro;
+            #    · si todos sus hoteles son de esta tarifa → como siempre (H1 AJ).
+            self._bajas_por_centro = {}
+            _activos = {c for c, _n in (getattr(self, "_centros_activos", None) or [])}
+            _centros_por_mat = {}
+            if _activos and self.HOJA_2 in wb.sheetnames:
+                for _f in wb[self.HOJA_2].iter_rows(min_row=2, values_only=True):
+                    if not _f or len(_f) < 10 or _f[9] is None or not _f[5]:
+                        continue
+                    _centros_por_mat.setdefault(str(normalizar_codigo_sap(_f[9])).strip(), set()).add(
+                        str(_f[5]).strip())
+            _fin_activos = {}
+            if _activos and self.HOJA_3 in wb.sheetnames:
+                for _f in wb[self.HOJA_3].iter_rows(min_row=2, values_only=True):
+                    if not _f or len(_f) < 10 or _f[5] is None or str(_f[4] or "").strip() not in _activos:
+                        continue
+                    _fin_activos.setdefault(str(normalizar_codigo_sap(_f[5])).strip(), _f[9])
+            _parciales = {}        # código → centros de esta tarifa donde se daría de baja
+            _fuera_alcance = []    # códigos que solo están en hoteles de fuera de esta tarifa
+
+            def _marcar_baja(codigo, fila_h1):
+                if codigo in _parciales:
+                    self._bajas_por_centro[codigo] = set(_parciales[codigo])
+                else:
+                    ws.cell(row=fila_h1, column=36).value = "X"   # AJ (1-based)
+
             # ── Clasificar: automáticos vs pendientes de decisión usuario ───────
             hoy = _dt_mod.date.today()
             pendientes_ventana = []   # materiales vigentes → ventana tkinter
@@ -3156,7 +3188,15 @@ class GeneradorDesdeExistente:
                     _st_omitidos.append(codigo)
                     continue
 
-                val_fin = fin_validez_por_codigo.get(codigo)
+                _cm = _centros_por_mat.get(codigo, set())
+                if _activos and _cm and not (_cm & _activos):
+                    _fuera_alcance.append(codigo)
+                    continue
+                if _activos and _cm - _activos:
+                    _parciales[codigo] = _cm & _activos
+
+                val_fin = (_fin_activos.get(codigo, fin_validez_por_codigo.get(codigo))
+                           if codigo in _parciales else fin_validez_por_codigo.get(codigo))
 
                 # Normalizar la fecha de fin de validez a datetime.date
                 # (antes ~15 líneas inline; consolidado en sap_helpers.py)
@@ -3164,7 +3204,7 @@ class GeneradorDesdeExistente:
 
                 if fecha_fin_date is not None and fecha_fin_date < hoy:
                     # Vencido: marcar baja automáticamente
-                    ws.cell(row=fila_h1, column=36).value = "X"   # AJ (1-based)
+                    _marcar_baja(codigo, fila_h1)
                     _st_automaticos.append(
                         f"{codigo} (fin {fecha_fin_date.strftime('%d/%m/%Y')})")
                 else:
@@ -3256,7 +3296,7 @@ class GeneradorDesdeExistente:
                         fila_h1 = d.get("fila_h1")
                         codigo  = d.get("codigo", "?")
                         if fila_h1:
-                            ws.cell(row=fila_h1, column=36).value = "X"   # AJ
+                            _marcar_baja(codigo, fila_h1)
                             _st_baja_usuario.append(codigo)
                         else:
                             _st_sin_fila_usr.append(codigo)
@@ -3279,6 +3319,15 @@ class GeneradorDesdeExistente:
                 partes_resumen.append(f"{n_sin_decision} sin decisión (conservadas)")
             if _st_automaticos:
                 partes_resumen.append(f"Bajas auto: {', '.join(_st_automaticos)}")
+            if _fuera_alcance:
+                partes_resumen.append(
+                    f"{len(_fuera_alcance)} solo en hoteles fuera de esta tarifa (no se tocan): "
+                    f"{', '.join(_fuera_alcance)}")
+            if self._bajas_por_centro:
+                _cents = sorted({c for v in self._bajas_por_centro.values() for c in v})
+                partes_resumen.append(
+                    f"{len(self._bajas_por_centro)} de baja SOLO en los hoteles de esta tarifa "
+                    f"({', '.join(_cents)}), no en los demás")
             _log(self._parent,
                  " | ".join(partes_resumen) + ".",
                  "OK" if sin_tarifa else "INFO")
@@ -3561,13 +3610,19 @@ class GeneradorDesdeExistente:
                 raw = normalizar_codigo_sap(raw)
                 materiales_baja_h1.add(str(raw).strip())
 
-        self._audit["materiales_baja"] = set(materiales_baja_h1)
+        # (23 nov 2026) Bajas solo en los hoteles de esta tarifa (ver _limpiar_marca_aj_heredados)
+        bajas_por_centro = getattr(self, "_bajas_por_centro", None) or {}
+
+        def _de_baja(mat, centro):
+            return mat in materiales_baja_h1 or centro in bajas_por_centro.get(mat, ())
+
+        self._audit["materiales_baja"] = set(materiales_baja_h1) | set(bajas_por_centro)
 
         n_marcados_h2 = 0
         n_marcados_h3 = 0
 
         # 2. Marcar en H2 col AN (índice 1-based = 40)
-        if materiales_baja_h1 and self.HOJA_2 in wb.sheetnames:
+        if (materiales_baja_h1 or bajas_por_centro) and self.HOJA_2 in wb.sheetnames:
             ws_h2_baja = wb[self.HOJA_2]
             COL_AN_H2 = 40   # AN — «Organización de compras marcada para borrado»
             for fila_row in ws_h2_baja.iter_rows(min_row=2):
@@ -3576,7 +3631,8 @@ class GeneradorDesdeExistente:
                     continue
                 raw = val_j
                 raw = normalizar_codigo_sap(raw)
-                if str(raw).strip() in materiales_baja_h1:
+                _centro_h2 = str(fila_row[5].value or "").strip() if len(fila_row) > 5 else ""
+                if _de_baja(str(raw).strip(), _centro_h2):
                     ws_h2_baja.cell(
                         row=fila_row[0].row, column=COL_AN_H2).value = "X"
                     n_marcados_h2 += 1
@@ -3603,7 +3659,7 @@ class GeneradorDesdeExistente:
         #
         #  La col I (Inicio validez) nunca se modifica en ningún caso.
 
-        if materiales_baja_h1 and self.HOJA_3 in wb.sheetnames:
+        if (materiales_baja_h1 or bajas_por_centro) and self.HOJA_3 in wb.sheetnames:
             ws_h3_baja = wb[self.HOJA_3]
             COL_Y_H3 = 25    # Y  — «Indicador borrado»
             COL_J_H3 = 10    # J  — «Fin validez»
@@ -3640,11 +3696,10 @@ class GeneradorDesdeExistente:
                 raw_f = val_f
                 raw_f = normalizar_codigo_sap(raw_f)
                 clave_mat = str(raw_f).strip()
-                if clave_mat not in materiales_baja_h1:
-                    continue
-
                 val_e = fila_row[4].value if len(fila_row) > 4 else None
                 clave_centro = str(val_e).strip() if val_e is not None else ""
+                if not _de_baja(clave_mat, clave_centro):
+                    continue
 
                 _grupos_baja[(clave_mat, clave_centro)].append({
                     "row":    fila_row[0].row,
@@ -3686,9 +3741,11 @@ class GeneradorDesdeExistente:
                             column=COL_J_H3).value = _str_cierre_h3
                         n_j_cerradas_h3 += 1
 
-        if materiales_baja_h1:
+        if materiales_baja_h1 or bajas_por_centro:
             _log(self._parent,
-                 f"  Borrado propagado: {len(materiales_baja_h1)} material(es) "
+                 f"  Borrado propagado: {len(materiales_baja_h1)} material(es) en todos sus hoteles"
+                 + (f" + {len(bajas_por_centro)} solo en los hoteles de esta tarifa" if bajas_por_centro else "")
+                 + " "
                  f"→ {n_marcados_h2} fila(s) H2 col AN | "
                  f"{n_marcados_h3} fila(s) H3 col Y "
                  f"({n_j_cerradas_h3} col J cerrada(s) en fila más reciente"

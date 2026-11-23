@@ -14,14 +14,14 @@ Registro Info SAP» no se pare a pedirlos:
     3   IT          [ ]         GC            [✔]
     4   LP          [ ]         MT            [ ]
     5   TA          [✔]         JN            [ ]
-    6   ST          [ ]         FV            [ ]
+    6   SU          [ ]         FV            [ ]
 
     (22 nov 2026, petición de Víctor) El recuadro va ENCIMA de las columnas E..H de la tabla, para que la tarifa no
     se ensanche; al principio estaba en H1:L5, a la derecha. Por eso la frase roja «DESCUENTOS YA APLICADOS EN
     PRECIO FINAL», que estaba en E5:G5, pasa a B6:D6, debajo de «Dto.(%)», y la fila 6 deja de ser un separador.
 
-Decisiones de Víctor (22 nov 2026): el recuadro en la cabecera, encima de la tabla (no en otra hoja); siglas GY IT LP TA ST
-MG GC MT JN FV; las casillas salen en blanco en una tarifa nueva (si nadie marca ninguna, se pregunta como siempre);
+Decisiones de Víctor (22 nov 2026): el recuadro en la cabecera, encima de la tabla (no en otra hoja); siglas GY IT LP TA SU
+MG GC MT JN FV (SU, no ST, desde el 23 nov 2026); las casillas salen en blanco en una tarifa nueva (si nadie marca ninguna, se pregunta como siempre);
 las fechas se siguen preguntando. Si el teléfono falta o no es válido, o no hay ningún hotel marcado, sale la ventana
 de siempre. Las tarifas antiguas, sin estos huecos, funcionan igual que antes.
 
@@ -38,13 +38,16 @@ CENTROS_TARIFA = (
     ("IT", "0120", "PRINCESS INSPIRE TENERIFE"),
     ("LP", "0210", "LA PALMA&TENEGUIA PRINCESS"),
     ("TA", "0310", "TAURITO PRINCESS"),
-    ("ST", "0410", "SUITE PRINCESS"),
+    ("SU", "0410", "SUITE PRINCESS"),   # (23 nov 2026, Víctor) antes «ST»: se sigue leyendo
     ("MG", "0510", "MOGAN PRINCESS"),
     ("GC", "0610", "GRAN CANARIA PRINCESS"),
     ("MT", "0710", "MASPALOMAS&TABAIBA PRINCESS"),
     ("JN", "0810", "CLUB JANDIA PRINCESS"),
     ("FV", "0910", "FUERTEVENTURA PRINCESS"),
 )
+
+# (23 nov 2026) Siglas que se usaron antes y se siguen leyendo en las tarifas ya generadas.
+SIGLAS_ANTIGUAS = {"ST": "SU"}
 
 FILA_TELEFONO = 4
 COL_ETIQUETA_TELEFONO = 2   # B
@@ -122,6 +125,7 @@ def leer_datos_hoja(ws):
     for (r, col), v in celdas.items():
         if r in _FILAS_BUSQUEDA and col in _COLS_BUSQUEDA:
             s = _texto(v).upper()
+            s = SIGLAS_ANTIGUAS.get(s, s)
             if s and s not in por_sigla:
                 por_sigla[s] = (r, col)
     centros, siglas, hay_siglas = [], [], False

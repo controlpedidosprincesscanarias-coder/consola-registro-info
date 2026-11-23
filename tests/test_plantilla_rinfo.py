@@ -160,7 +160,7 @@ class TestAgrupar(Base):
         pls = PR.preparar_plantillas(self._datos(), catalogo, fecha=HOY)
         nombres = [p["nombre_archivo"] for p in pls]
         self.assertEqual(nombres, [
-            "SUMINISTROS DEMO SL (GY-IT-LP-TA-ST-MG-GC-MT) [22-11-2026].xlsx",
+            "SUMINISTROS DEMO SL (GY-IT-LP-TA-SU-MG-GC-MT) [22-11-2026].xlsx",
             "SUMINISTROS DEMO SL (JN-FV) [22-11-2026].xlsx",
             "BEBIDAS EJEMPLO SA [22-11-2026].xlsx"])
         demo8, demo2, bebidas = pls
@@ -223,7 +223,7 @@ class TestPlantillaExcelYVuelta(Base):
         self.assertEqual(ws.freeze_panes, "A8")
         d = DT.leer_datos_tarifa(ruta)
         self.assertEqual(d["telefono"], "928111222")
-        self.assertEqual(d["siglas"], ["GY", "ST"])
+        self.assertEqual(d["siglas"], ["GY", "SU"])
 
     def test_no_pisa_un_archivo_existente(self):
         from app.tarifas.plantilla_tarifa import escribir_plantilla

@@ -63,9 +63,9 @@ class TestTelefonoYMarcas(unittest.TestCase):
 
     def test_siglas_y_posiciones(self):
         self.assertEqual([s for s, _c, _n in DT.CENTROS_TARIFA],
-                         ["GY", "IT", "LP", "TA", "ST", "MG", "GC", "MT", "JN", "FV"])
+                         ["GY", "IT", "LP", "TA", "SU", "MG", "GC", "MT", "JN", "FV"])
         self.assertEqual(DT.posicion_centro(0), (2, 5, 6))     # GY en E2, casilla F2
-        self.assertEqual(DT.posicion_centro(4), (6, 5, 6))     # ST en E6
+        self.assertEqual(DT.posicion_centro(4), (6, 5, 6))     # SU en E6
         self.assertEqual(DT.posicion_centro(5), (2, 7, 8))     # MG en G2, casilla H2
         self.assertEqual(DT.posicion_centro(9), (6, 7, 8))     # FV en G6
 
@@ -112,7 +112,7 @@ class TestEscribirYLeer(unittest.TestCase):
         self.assertEqual(ws["B4"].value, "Teléfono:")
         self.assertEqual(ws["E1"].value, "HOTELES")
         self.assertIn("E1:H1", [str(r) for r in ws.merged_cells.ranges])
-        self.assertEqual([ws["E2"].value, ws["E6"].value, ws["G2"].value, ws["G6"].value], ["GY", "ST", "MG", "FV"])
+        self.assertEqual([ws["E2"].value, ws["E6"].value, ws["G2"].value, ws["G6"].value], ["GY", "SU", "MG", "FV"])
         # El aviso de descuentos pasa a B6:D6 y nada queda a la derecha de la columna H
         self.assertEqual(ws["B6"].value, "DESCUENTOS YA APLICADOS EN PRECIO FINAL")
         self.assertTrue(all(ws.cell(r, c).value is None for r in range(1, 7) for c in range(9, 15)))
@@ -148,6 +148,18 @@ class TestEscribirYLeer(unittest.TestCase):
         d = DT.leer_datos_tarifa(self._guardar("928 11"))
         self.assertIsNone(d["telefono"])
         self.assertEqual(d["telefono_texto"], "928 11")
+
+    def test_sigla_antigua_st_se_sigue_leyendo(self):
+        """(23 nov 2026) Las tarifas generadas antes de pasar ST → SU siguen leyéndose."""
+        self._guardar()
+        wb = openpyxl.load_workbook(self.ruta)
+        ws = wb.active
+        ws["E6"] = "ST"
+        ws["F6"] = "X"
+        wb.save(self.ruta)
+        d = DT.leer_datos_tarifa(self.ruta)
+        self.assertEqual(d["centros"], [("0410", "SUITE PRINCESS")])
+        self.assertEqual(d["siglas"], ["SU"])
 
     def test_tarifa_antigua_sin_huecos(self):
         wb = openpyxl.Workbook()

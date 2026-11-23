@@ -36,7 +36,7 @@ NUEVO MAPEO CABECERA (filas 1-6 del xlsx):
   B2     → "Proveedor:"   C2 → D4 xls  (nombre proveedor)
   B3     → "Periodo:"     C3 → C17 xls (período)
   B4     → "Teléfono:"    C4 → teléfono del proveedor (22 nov 2026; en blanco)
-  E1:H6  → HOTELES: siglas GY IT LP TA ST MG GC MT JN FV y casilla ✔ (22 nov 2026); el aviso de descuentos,
+  E1:H6  → HOTELES: siglas GY IT LP TA SU MG GC MT JN FV y casilla ✔ (22 nov 2026); el aviso de descuentos,
            que estaba en E5:G5, pasa a B6:D6
   B5     → "Dto.(%):"     C5=D8&" línea"  D5=D10&" general"  E5/F5 vacíos
   Fila 6 → vacía (separador)
@@ -536,7 +536,7 @@ def _finalizar_y_guardar(wb, ws, ultima, ruta_xls, nombre_base,
     ws.column_dimensions["E"].width = 19
     ws.column_dimensions["F"].width = 16
     ws.column_dimensions["G"].width = 19
-    ws.column_dimensions["H"].width = 21   # (22 nov 2026) REGISTRO INFO (y «HOTELES» encima)
+    ws.column_dimensions["H"].width = 24   # (22 nov 2026) REGISTRO INFO, con el botón del filtro (y «HOTELES» encima)
 
     # Altos de fila: logo filas 1-5, separador fila 6, tabla fila 7, datos desde 8
     for r in range(1, 6):

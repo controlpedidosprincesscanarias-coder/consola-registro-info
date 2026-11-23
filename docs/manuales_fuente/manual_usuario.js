@@ -1,7 +1,7 @@
 // Manual de usuario de la Consola Registro Info SAP (TARIFA Finder).
 // La idea y el desarrollo de la aplicación, incluidas sus pruebas, son de Víctor Alejandro Martín Andrade,
 // para el Departamento de Central de Compras de Princess Hotels en Canarias.
-const V = process.env.VERSION || "v 10.2.98";
+const V = process.env.VERSION || "v 10.2.100";
 const L = require("./lib.js");
 const { p, vineta, pasos, h1, h2, imagen, leyenda, recuadro, tabla, flujo, portada, indice, generar } = L;
 const fecha = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
@@ -171,7 +171,7 @@ s.push(h2("Teléfono del proveedor y hoteles de la TARIFA"));
 s.push(p("La TARIFA final lleva en la cabecera dos huecos para que, al crear el Registro Info, la consola **no tenga que preguntarte** el teléfono del proveedor ni los hoteles. Salen **en blanco**: rellénalos en Excel antes de crear el RINFO (capítulo 7)."));
 s.push(...imagen("c_tarifa_cabecera", 17, "Cabecera de la TARIFA final con el teléfono y los hoteles (datos de ejemplo)."));
 s.push(...leyenda([[1, "**Teléfono:** del proveedor, de 8 a 10 cifras (los espacios no importan)."],
-  [2, "**HOTELES**, encima de la tabla: marca con **✔** (lista desplegable de cada casilla) o con una **X** los hoteles a los que se aplica la tarifa: GY Guayarmina, IT Inspire Tenerife, LP La Palma & Teneguía, TA Taurito, ST Suite, MG Mogán, GC Gran Canaria, MT Maspalomas & Tabaiba, JN Club Jandía y FV Fuerteventura."]]));
+  [2, "**HOTELES**, encima de la tabla: marca con **✔** (lista desplegable de cada casilla) o con una **X** los hoteles a los que se aplica la tarifa: GY Guayarmina, IT Inspire Tenerife, LP La Palma & Teneguía, TA Taurito, SU Suite, MG Mogán, GC Gran Canaria, MT Maspalomas & Tabaiba, JN Club Jandía y FV Fuerteventura."]]));
 s.push(p("La última columna de la tabla, **REGISTRO INFO**, lleva el número del Registro Info de SAP de cada material. La consola lo copia del **Purchasing Info Records** de ese proveedor que haya en TARIFAS (el mismo que usará al crear el RINFO; vale aunque sea antiguo, porque esos números no cambian). Si no hay ninguno, la columna queda vacía, y los materiales que aún no tienen Registro Info en SAP también quedan en blanco."));
 s.push(...recuadro("nota", "Si los dejas en blanco", ["No pasa nada: al crear el RINFO la consola te pregunta el teléfono y los centros como siempre. Lo mismo con las tarifas generadas antes de esta versión, que no tienen estos huecos."]));
 s.push(h2("Códigos SAP faltantes"));
@@ -226,6 +226,7 @@ s.push(h2("Avisos durante la generación"));
 s.push(p("Con un Purchasing existente, puede preguntarte qué hacer con materiales que ya están en SAP pero **no vienen en la tarifa nueva**:"));
 s.push(...imagen("c_rinfo_sin_tarifa", 13, "Materiales sin tarifa activa."));
 s.push(...leyenda([[1, "Materiales del Purchasing que no están en la tarifa, con su fin de validez. Marca los que quieras **dar de baja**."], [2, "**MANTENER**: no cambia nada."], [3, "**DAR BAJA**: los marca para borrar en SAP."]]));
+s.push(...recuadro("importante", "Tarifas de solo algunos hoteles", ["Si la tarifa es solo de **algunos hoteles** (por ejemplo, la de La Palma de un proveedor que tiene otra para Gran Canaria y Tenerife), las bajas se hacen **solo en los hoteles de esa tarifa**: el Registro Info sigue vivo en los demás. Los materiales que solo están en hoteles de fuera de la tarifa **no se tocan** y ni siquiera salen en esta ventana. La consola lo dice en su resumen («de baja SOLO en los hoteles de esta tarifa»)."]));
 s.push(p("Y si algún material sigue en la tarifa pero su Registro Info está **marcado para borrar** en SAP (el registro entero o solo algunos de sus centros), te avisa en la consola y en esta ventana de que hay que reactivarlo a mano en SAP, con los centros afectados. Hasta que lo hagas, sus precios no estarán disponibles en SAP aunque el RINFO se cargue sin errores:"));
 s.push(...imagen("c_rinfo_reactivar", 13, "Materiales a reactivar manualmente en SAP."));
 s.push(...leyenda([[1, "Material, Registro Info y centros afectados."], [2, "Los pasos en SAP («Marcar reg.info de compra para borrar»), con una captura de referencia."]]));
