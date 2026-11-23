@@ -495,7 +495,7 @@ class CanvasProgressBar(tk.Frame):
         self._stop()
         self._mode     = "indeterminate"
         self._anim_pos = 0
-        self._lbl_estado.config(text=estado)
+        self._lbl_estado.config(text=estado, fg=C_MUTED)   # (23 nov 2026) sin el verde de «completado»
         self._lbl_pct.config(text="·  ·  ·", fg=C_MUTED)
         self._animate()
 

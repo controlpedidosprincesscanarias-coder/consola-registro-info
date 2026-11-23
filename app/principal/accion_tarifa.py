@@ -595,10 +595,14 @@ class AccionesTarifa:
         self._habilitar_btn_procesar(False)
         self._btn_buscar.config(state="disabled")
         self._habilitar_btn_resultado(False)
+        # (23 nov 2026, petición de Víctor) La barra en marcha (amarilla) desde el primer momento: antes seguía en
+        # verde «TARIFA.xls localizada» mientras se traía lo de la web y se leía el catálogo, y parecía bloqueada.
+        self._barra.indeterminate("Trayendo lo cambiado en Catálogo Asignaciones...")
 
         def proceso():
             # (13 nov 2026) Antes de leer el catálogo, lo cambiado en la web (SAP, precio, código de proveedor)
             self._traer_cambios_web("generar la TARIFA (Acción 3)")
+            self.after(0, lambda: self._barra.indeterminate("Preparando la TARIFA..."))
             try:
                 from app.tarifas.transformar_tarifa import transformar
             except ImportError:
@@ -1649,6 +1653,8 @@ class AccionesTarifa:
         self._habilitar_btn_procesar(False)
         self._btn_buscar.config(state="disabled")
         self._habilitar_btn_resultado(False)
+
+        self._barra.indeterminate("Trayendo lo cambiado en Catálogo Asignaciones...")   # (23 nov 2026) ver arriba
 
         def proceso():
             _barra_finalizada = {"v": False}   # red de seguridad, ver finally: más abajo
