@@ -1,7 +1,7 @@
 // Manual de usuario de la Consola Registro Info SAP (TARIFA Finder).
 // La idea y el desarrollo de la aplicación, incluidas sus pruebas, son de Víctor Alejandro Martín Andrade,
 // para el Departamento de Central de Compras de Princess Hotels en Canarias.
-const V = process.env.VERSION || "v 10.2.94";
+const V = process.env.VERSION || "v 10.2.96";
 const L = require("./lib.js");
 const { p, vineta, pasos, h1, h2, imagen, leyenda, recuadro, tabla, flujo, portada, indice, generar } = L;
 const fecha = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
@@ -204,6 +204,11 @@ s.push(...recuadro("importante", "Descarga el Purchasing después de cada import
 s.push(...imagen("c_rinfo_purchasing", 12, "Purchasing Info Records encontrado."));
 s.push(...leyenda([[1, "**Proveedor SAP** (nombre y código) encontrado en Proveedores.xlsx."], [2, "El **Purchasing** encontrado y su parecido con el proveedor."],
   [3, "**Continuar usando este Purchasing** (lo normal)."], [4, "**Comenzar desde cero**: un Registro Info nuevo sin tener en cuenta el Purchasing."]]));
+s.push(p("Antes de seguir, la consola comprueba si ese Purchasing **está al día**. Si la TARIFA lleva Registros Info que el Purchasing no tiene, o si en TARIFAS hay un RINFO de ese proveedor guardado **después** del Purchasing (por ejemplo, el de la última vez), la ventana lo avisa en naranja y la consola también:"));
+s.push(...imagen("c_rinfo_purchasing_aviso", 12, "Purchasing que puede estar desactualizado (datos de ejemplo)."));
+s.push(...leyenda([[1, "Qué ha encontrado: los Registros Info de la tarifa que faltan en el Purchasing y el RINFO guardado después."],
+  [2, "**Cómo descargar el Purchasing de SAP**: los pasos de siempre. Guárdalo en TARIFAS y vuelve a empezar."]]));
+s.push(p("Si el RINFO que avisa **no** se llegó a importar en SAP (por ejemplo, lo acabas de generar y lo vas a repetir), puedes **continuar** con el mismo Purchasing. Si ya lo importaste, descarga el Purchasing de nuevo: si no, SAP contestará «Ya existe el registro Info de compras…»."));
 s.push(h2("Si no hay Purchasing"));
 s.push(...imagen("c_rinfo_sin_purchasing", 10, "Proveedor sin Purchasing en TARIFAS."));
 s.push(...leyenda([[1, "**Descargar el Purchasing desde SAP primero**: muestra los 7 pasos en SAP. Guárdalo en TARIFAS y vuelve a empezar."], [2, "**Crear nuevo Registro Info desde cero**, si el proveedor no tiene ninguno en SAP."]]));
