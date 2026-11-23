@@ -443,6 +443,15 @@ def leer_listas_productos(ruta_listas):
     return tabla, conflictos, n, por_cabecera
 
 
+def conflictos_en_uso(conflictos, codigos_en_uso):
+    """(23 nov 2026, petición de Víctor) De los códigos con Categoría valoración distinta según el centro, solo
+    cuentan los que están en uso (con algún DALI del catálogo, que es lo que hay en la web). Devuelve
+    (en_uso, n_ignorados)."""
+    en_uso = {str(normalizar_codigo_sap(c)).strip() for c in codigos_en_uso if c is not None and str(c).strip()}
+    salida = [(c, v) for c, v in conflictos if str(normalizar_codigo_sap(c)).strip() in en_uso]
+    return salida, len(conflictos) - len(salida)
+
+
 def comprobar_listas_productos(tabla_categoria, tabla_productos, minimo=0.5):
     """None si Listas de productos.xlsx casa con Productos.xlsx; si no, el motivo (para parar antes de escribir).
     Casa si al menos `minimo` de sus códigos están en Productos.xlsx (en una descarga buena, casi todos)."""

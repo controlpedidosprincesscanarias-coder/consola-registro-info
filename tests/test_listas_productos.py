@@ -98,5 +98,47 @@ class AccionTresParaAntesDeEscribir(unittest.TestCase):
             self.assertEqual(tabla, {"QUESO BRIE (10100050)": "GUAYARMINA PRINCESS (0110)"})
 
 
+class CategoriaDistintaSoloEnUso(unittest.TestCase):
+    """(23 nov 2026, petición de Víctor) La Categoría valoración distinta según el centro solo se avisa si el código
+    está en uso en el catálogo (y la web); si no, no se tiene en cuenta."""
+
+    CONFLICTOS = [("10103148", {"3101": 8, "3106": 2}), ("10300003", {"3104": 9, "7901": 1}),
+                  ("10800950", {"3104": 9, "3100": 1})]
+
+    def test_filtra_por_codigos_en_uso(self):
+        en_uso, ignorados = H.conflictos_en_uso(self.CONFLICTOS, [10103148.0, None, "", " 10800950 "])
+        self.assertEqual([c for c, _v in en_uso], ["10103148", "10800950"])
+        self.assertEqual(ignorados, 1)
+
+    def test_ninguno_en_uso_no_avisa(self):
+        from app.principal.accion_listado_sap import AccionListadoSap
+        app = object.__new__(AccionListadoSap)
+        app.log_consola = mock.Mock()
+        en_uso, ignorados = app._avisar_conflictos_categoria(self.CONFLICTOS, ["99999999"])
+        self.assertEqual((en_uso, ignorados), ([], 3))
+        app.log_consola.assert_not_called()
+
+    def test_avisa_solo_los_en_uso(self):
+        from app.principal.accion_listado_sap import AccionListadoSap
+        app = object.__new__(AccionListadoSap)
+        app.log_consola = mock.Mock()
+        app._avisar_conflictos_categoria(self.CONFLICTOS, ["10300003"])
+        texto = " ".join(c.args[0] for c in app.log_consola.call_args_list)
+        self.assertIn("1 código(s) en uso", texto)
+        self.assertIn("10300003", texto)
+        self.assertNotIn("10103148", texto)
+
+    def test_la_lectura_ya_no_avisa_de_todos(self):
+        from app.principal.accion_listado_sap import AccionListadoSap
+        app = object.__new__(AccionListadoSap)
+        app.log_consola = mock.Mock()
+        with tempfile.TemporaryDirectory() as d:
+            ruta = _xlsx(d, [("Producto", "Categoría valoración"), ("QUESO (10100050)", "A (3101)"),
+                             ("QUESO (10100050)", "B (3106)")])
+            _t, conflictos = app._leer_categoria_valoracion(ruta)
+        self.assertEqual(len(conflictos), 1)
+        self.assertFalse(any(c.args[1] == "WARN" for c in app.log_consola.call_args_list))
+
+
 if __name__ == "__main__":
     unittest.main()

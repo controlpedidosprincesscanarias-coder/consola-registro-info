@@ -74,7 +74,8 @@ class AccionListadoSap:
         """
         Lee "Listas de productos.xlsx" (sap_helpers.leer_listas_productos): {código SAP: Categoría valoración}
         -> columna K del catálogo. Una fila por código y centro: si un código tiene valores distintos según el
-        centro, se toma el más frecuente y se devuelve en conflictos (clave, {valor: n}).
+        centro, se toma el más frecuente y se devuelve en conflictos (clave, {valor: n}). (23 nov 2026) Esos
+        conflictos se avisan después, en _avisar_conflictos_categoria, solo para los códigos en uso.
 
         (13 nov 2026) Las columnas se buscan por su cabecera («Producto», «Categoría valoración») y el código se
         saca de «DESCRIPCIÓN (código)». Con `tabla_productos`, si el listado no casa con Productos.xlsx lanza
@@ -96,16 +97,24 @@ class AccionListadoSap:
         if motivo:
             self.log_consola(f"  ✘  {motivo}", "ERROR")
             raise ValueError(motivo)
-        if conflictos:
-            self.log_consola(
-                f"  ⚠  {len(conflictos)} código(s) con Categoría valoración "
-                f"distinta según el centro — se tomó el valor más frecuente:", "WARN")
-            for clave, valores in conflictos[:20]:
-                self.log_consola(f"      · {clave}: {valores}", "WARN")
-            if len(conflictos) > 20:
-                self.log_consola(f"      … y {len(conflictos) - 20} más (omitidos del log)", "WARN")
-
         return tabla_categoria, conflictos
+
+    def _avisar_conflictos_categoria(self, conflictos, codigos_en_uso):
+        """(23 nov 2026, petición de Víctor) «Los códigos con categoría valoración distinta solo se tendrán en cuenta
+        si están en uso en la web y en catalogo-dali-completo; si no, no se tendrá en cuenta la incoherencia.»
+        `codigos_en_uso`: los códigos SAP de la columna D del catálogo (el mismo que se envía a la web, y que ya
+        trae lo cambiado allí)."""
+        from app.comun.sap_helpers import conflictos_en_uso
+        en_uso, ignorados = conflictos_en_uso(conflictos or [], codigos_en_uso)
+        if en_uso:
+            self.log_consola(
+                f"  ⚠  {len(en_uso)} código(s) en uso con Categoría valoración "
+                f"distinta según el centro — se tomó el valor más frecuente:", "WARN")
+            for clave, valores in en_uso[:20]:
+                self.log_consola(f"      · {clave}: {valores}", "WARN")
+            if len(en_uso) > 20:
+                self.log_consola(f"      … y {len(en_uso) - 20} más (omitidos del log)", "WARN")
+        return en_uso, ignorados
 
     def _leer_articulos_dali_sap(self, ruta_dali):
         """
@@ -314,6 +323,10 @@ class AccionListadoSap:
         h3 = 0   # D sin valor  y L = "SI"
 
         FILA_INI = 8
+        # (23 nov 2026) Categoría valoración distinta según el centro: solo se avisa de los códigos en uso
+        self._avisar_conflictos_categoria(
+            conflictos_categoria,
+            (ws_dest.cell(row=f, column=4).value for f in range(FILA_INI, ws_dest.max_row + 1)))
         for fila_num in range(FILA_INI, ws_dest.max_row + 1):
 
             # ── Cruce 1: col D destino ↔ col B Productos ──────────────
