@@ -17,6 +17,7 @@ import os
 import shutil
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -212,6 +213,7 @@ class TestPlantillaExcelYVuelta(Base):
         self.assertEqual(ws.title, "TARIFA")
         self.assertEqual((ws["C1"].value, ws["C2"].value), (1000123, "SUMINISTROS DEMO SL"))
         self.assertIsNone(ws["C3"].value)                         # nuevo periodo, lo pone el proveedor
+        self.assertEqual((ws["C5"].value, ws["D5"].value), ("0 línea", "0 general"))   # como la TARIFA final
         self.assertEqual([ws.cell(7, c).value for c in range(1, 11)],
                          ["CODIGO SAP", "CODIGO DALI", "CODIGO PROVEEDOR", "DESCRIPCION", "FORMATO", "PRECIO",
                           "DESCUENTO", "REGISTRO INFO", "PRECIO NUEVO", "FECHA INICIO"])
@@ -303,6 +305,39 @@ class TestRegistroInfo(Base):
         crear_purchasing(self.ruta, h1=[h1("5300001", "10100001")], h3=[])
         self.assertEqual(PR.registros_info_de(self.ruta, "Suministros Demo, S.L."), {"10100001": "5300001"})
 
+    def test_datos_del_proveedor_con_telefono(self):
+        crear_purchasing(self.ruta, h1=[h1("5300000001", "10100001", tel="928 230 256")], h3=[])
+        self.assertEqual(PR.datos_proveedor_de(self.ruta, "SUMINISTROS DEMO SL"),
+                         {"registros": {"10100001": "5300000001"}, "telefono": "928 230 256"})
+
+    def test_telefono_no_pisa_el_escrito_y_avisa(self):
+        from app.tarifas.transformar_tarifa import poner_telefono_del_purchasing
+        logs = []
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        self.assertTrue(poner_telefono_del_purchasing(ws, {"telefono": "928230256", "archivo": "P.xlsx"},
+                                                      lambda m, n: logs.append((n, m))))
+        self.assertEqual(ws["C4"].value, "928230256")
+        self.assertTrue(any(n == "WARN" and "Revísalo" in m for n, m in logs))
+        ws["C4"] = "922000000"
+        self.assertFalse(poner_telefono_del_purchasing(ws, {"telefono": "928230256"}))
+        self.assertEqual(ws["C4"].value, "922000000")
+
+    def test_codigo_dali_de_la_ultima_tarifa_del_proveedor(self):
+        for nombre, codigo, segundos in (("SUMINISTROS DEMO SL [01-07-2026].xlsx", 321, -3600),
+                                         ("SUMINISTROS DEMO SL [23-11-2026].xlsx", 322, 0),
+                                         ("OTRO SA [23-11-2026].xlsx", 999, 0),
+                                         ("RINFO SUMINISTROS DEMO SL [23-11-2026].xlsx", 111, 60)):
+            wb = openpyxl.Workbook()
+            wb.active.title = "TARIFA"
+            wb.active["C1"], wb.active["C2"] = codigo, nombre.split(" [")[0].replace("RINFO ", "")
+            ruta = os.path.join(self.tmp, nombre)
+            wb.save(ruta)
+            t = time.time() + segundos
+            os.utime(ruta, (t, t))
+        self.assertEqual(PR.codigo_dali_de_tarifas(self.tmp, "Suministros  Demo SL"), 322)
+        self.assertIsNone(PR.codigo_dali_de_tarifas(self.tmp, "NADIE SL"))
+
     def test_rellenar_no_pisa_y_salta_sin_sap(self):
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -337,7 +372,8 @@ class TestRegistroInfo(Base):
 
         def buscar(nombre):
             pedidos.append(nombre)
-            return {"mapa": {"10100001": "5300001"}, "archivo": "Purchasing Info Records.xlsx", "fecha": None}
+            return {"mapa": {"10100001": "5300001"}, "telefono": "928230256",
+                    "archivo": "Purchasing Info Records.xlsx", "fecha": None}
 
         for funcion, esperado in ((buscar, [5300001, None]), (None, [None, None])):
             xls = os.path.join(self.tmp, "TARIFAS", "TARIFA.xls")
@@ -349,6 +385,8 @@ class TestRegistroInfo(Base):
             self.assertEqual([ws["A8"].value, ws["A9"].value], [10100001, 10100002])
             self.assertEqual([ws["H8"].value, ws["H9"].value], esperado)
             self.assertEqual(ws["G7"].value, "DESCUENTO")              # A..G no se mueven
+            # (23 nov 2026) el teléfono del Purchasing va a C4, para revisarlo
+            self.assertEqual(ws["C4"].value, "928230256" if funcion else None)
             os.remove(ruta)
         self.assertEqual(pedidos, ["SUMINISTROS DEMO SL"])
 

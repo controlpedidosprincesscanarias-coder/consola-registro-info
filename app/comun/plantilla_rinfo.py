@@ -286,18 +286,66 @@ def preparar_plantillas(datos, catalogo, fecha=None, existentes=()):
     return salida
 
 
+def datos_proveedor_de(ruta, nombre_proveedor=None, codigo_proveedor=None):
+    """(23 nov 2026) Lo que la TARIFA final toma del Purchasing del proveedor: {"registros": {SAP: Registro Info},
+    "telefono": "…"} ({} si no se encuentra). Proveedor por código o por nombre exacto; si el Purchasing solo tiene
+    uno, ese."""
+    datos = leer_purchasing(ruta)
+    provs = list(datos["proveedores"].values())
+    nombre = (nombre_proveedor or "").strip().upper()
+    elegido = None
+    for p in provs:
+        if (codigo_proveedor and p["codigo"] == str(codigo_proveedor).strip()) or \
+                (nombre and p["nombre"].strip().upper() == nombre):
+            elegido = p
+            break
+    if elegido is None and len(provs) == 1:
+        elegido = provs[0]
+    if elegido is None:
+        return {}
+    return {"registros": dict(elegido["registros"]), "telefono": elegido.get("telefono") or ""}
+
+
 def registros_info_de(ruta, nombre_proveedor=None, codigo_proveedor=None):
     """(22 nov 2026, petición de Víctor) {código SAP: Registro Info} del proveedor en un Purchasing, para la columna
     REGISTRO INFO de la TARIFA final de la Acción 3. Los números no cambian (Víctor), así que vale un Purchasing
     antiguo. Proveedor por código o por nombre exacto; si el Purchasing solo tiene uno, ese. {} si no se encuentra."""
-    datos = leer_purchasing(ruta)
-    provs = list(datos["proveedores"].values())
-    nombre = (nombre_proveedor or "").strip().upper()
-    for p in provs:
-        if (codigo_proveedor and p["codigo"] == str(codigo_proveedor).strip()) or \
-                (nombre and p["nombre"].strip().upper() == nombre):
-            return dict(p["registros"])
-    return dict(provs[0]["registros"]) if len(provs) == 1 else {}
+    return datos_proveedor_de(ruta, nombre_proveedor, codigo_proveedor).get("registros", {})
+
+
+def codigo_dali_de_tarifas(carpeta_tarifas, nombre_proveedor):
+    """(23 nov 2026) El «Código:» (C1, el código del proveedor en DALI) de la TARIFA final más reciente de ese
+    proveedor en TARIFAS, para que la plantilla de la Acción 6 lleve el mismo. None si no hay ninguna."""
+    import os
+    import openpyxl
+    nombre = " ".join(str(nombre_proveedor or "").upper().split())
+    if not nombre:
+        return None
+    candidatos = []
+    try:
+        entradas = list(os.scandir(carpeta_tarifas))
+    except OSError:
+        return None
+    for e in entradas:
+        n = e.name
+        if (not e.is_file() or n.startswith("~$") or n.upper().startswith("RINFO ")
+                or not re.search(r"\[\d{2}-\d{2}-\d{4}\]\.xlsx$", n, re.IGNORECASE)):
+            continue
+        try:
+            wb = openpyxl.load_workbook(e.path, read_only=True, data_only=True)
+            try:
+                ws = wb["TARIFA"] if "TARIFA" in wb.sheetnames else wb.active
+                filas = [f[0] if f else None
+                         for f in ws.iter_rows(min_row=1, max_row=2, min_col=3, max_col=3, values_only=True)]
+                c1 = filas[0] if filas else None
+                c2 = filas[1] if len(filas) > 1 else None
+            finally:
+                wb.close()
+        except Exception:  # noqa: BLE001 — un archivo que no se puede leer no cuenta
+            continue
+        if c1 not in (None, "") and " ".join(str(c2 or "").upper().split()) == nombre:
+            candidatos.append((e.stat().st_mtime, c1))
+    return max(candidatos)[1] if candidatos else None
 
 
 def rellenar_registros_info(ws, registros, fila_desde=8):

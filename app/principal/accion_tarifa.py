@@ -85,6 +85,14 @@ class AccionesTarifa:
                 self._avisos_plantilla_rinfo(datos["avisos"])
                 existentes = os.listdir(carpeta_tarifas)
                 plantillas = PR.preparar_plantillas(datos, catalogo, existentes=existentes)
+                # (23 nov 2026) «Código:» como en la TARIFA final: el del proveedor en DALI, si hay una tarifa suya
+                for pl in plantillas:
+                    cod_dali = PR.codigo_dali_de_tarifas(carpeta_tarifas, pl["proveedor"])
+                    if cod_dali not in (None, ""):
+                        pl["codigo"] = cod_dali
+                    else:
+                        self.log_consola(f"  · «{pl['proveedor']}» no tiene TARIFA final en TARIFAS: en «Código:» va "
+                                         f"el código de SAP ({pl['codigo']}), no el de DALI.", "INFO")
                 if not plantillas:
                     self.log_consola(f"  ⚠ {nombre} no tiene ningún precio vigente: no se genera ninguna plantilla.",
                                      "WARN")
@@ -124,11 +132,12 @@ class AccionesTarifa:
         el más parecido y, a igual parecido, el más reciente) y devuelve sus Registros Info por código SAP."""
         def buscar(nombre_proveedor):
             from app.rinfo.comun_rinfo import _buscar_purchasing_compatible
-            from app.comun.plantilla_rinfo import registros_info_de
+            from app.comun.plantilla_rinfo import datos_proveedor_de
             pur = _buscar_purchasing_compatible(str(nombre_proveedor or ""), carpeta_tarifas)
             if not pur:
                 return None
-            return {"mapa": registros_info_de(pur["ruta"], pur.get("proveedor_purchasing")),
+            datos = datos_proveedor_de(pur["ruta"], pur.get("proveedor_purchasing"))
+            return {"mapa": datos.get("registros", {}), "telefono": datos.get("telefono", ""),   # (23 nov 2026)
                     "archivo": pur.get("archivo"), "fecha": pur.get("fecha")}
         return buscar
 
@@ -1308,6 +1317,9 @@ class AccionesTarifa:
             from app.comun.datos_tarifa import CAB_REGISTRO_INFO, COL_REGISTRO_INFO
             if str(ws_inc.cell(7, COL_REGISTRO_INFO).value or "").strip().upper() == CAB_REGISTRO_INFO:
                 _enc = self._registros_info_para_tarifa(os.path.dirname(ruta_inc))(ws_inc["C2"].value)
+                if _enc and _enc.get("telefono"):   # (23 nov 2026) teléfono de C4 si falta, para revisarlo
+                    from app.tarifas.transformar_tarifa import poner_telefono_del_purchasing
+                    poner_telefono_del_purchasing(ws_inc, _enc, lambda m, n=">>": self.log_consola(m, n))
                 if _enc and _enc.get("mapa"):
                     from app.comun.plantilla_rinfo import rellenar_registros_info
                     _n_reg = rellenar_registros_info(ws_inc, _enc["mapa"])

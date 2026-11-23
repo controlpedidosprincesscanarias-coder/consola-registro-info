@@ -1,7 +1,7 @@
 // Manual de usuario de la Consola Registro Info SAP (TARIFA Finder).
 // La idea y el desarrollo de la aplicación, incluidas sus pruebas, son de Víctor Alejandro Martín Andrade,
 // para el Departamento de Central de Compras de Princess Hotels en Canarias.
-const V = process.env.VERSION || "v 10.2.100";
+const V = process.env.VERSION || "v 10.2.102";
 const L = require("./lib.js");
 const { p, vineta, pasos, h1, h2, imagen, leyenda, recuadro, tabla, flujo, portada, indice, generar } = L;
 const fecha = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
@@ -172,6 +172,7 @@ s.push(p("La TARIFA final lleva en la cabecera dos huecos para que, al crear el 
 s.push(...imagen("c_tarifa_cabecera", 17, "Cabecera de la TARIFA final con el teléfono y los hoteles (datos de ejemplo)."));
 s.push(...leyenda([[1, "**Teléfono:** del proveedor, de 8 a 10 cifras (los espacios no importan)."],
   [2, "**HOTELES**, encima de la tabla: marca con **✔** (lista desplegable de cada casilla) o con una **X** los hoteles a los que se aplica la tarifa: GY Guayarmina, IT Inspire Tenerife, LP La Palma & Teneguía, TA Taurito, SU Suite, MG Mogán, GC Gran Canaria, MT Maspalomas & Tabaiba, JN Club Jandía y FV Fuerteventura."]]));
+s.push(p("Si en TARIFAS hay un **Purchasing Info Records** de ese proveedor, la consola pone ya en **Teléfono:** el que tiene SAP y te avisa en la consola (en amarillo) para que lo **revises** y lo cambies si no es el bueno. Los hoteles siempre los marcas tú, porque una tarifa puede ser de solo algunos."));
 s.push(p("La última columna de la tabla, **REGISTRO INFO**, lleva el número del Registro Info de SAP de cada material. La consola lo copia del **Purchasing Info Records** de ese proveedor que haya en TARIFAS (el mismo que usará al crear el RINFO; vale aunque sea antiguo, porque esos números no cambian). Si no hay ninguno, la columna queda vacía, y los materiales que aún no tienen Registro Info en SAP también quedan en blanco."));
 s.push(...recuadro("nota", "Si los dejas en blanco", ["No pasa nada: al crear el RINFO la consola te pregunta el teléfono y los centros como siempre. Lo mismo con las tarifas generadas antes de esta versión, que no tienen estos huecos."]));
 s.push(h2("Códigos SAP faltantes"));
@@ -246,7 +247,7 @@ s.push(p("Es el paso **al revés**: a partir de un **RINFO** o de un **Purchasin
 s.push(...imagen("c_plantilla_rinfo", 10, "Elegir el RINFO o el Purchasing."));
 s.push(...leyenda([[1, "**Arrastra** aquí uno o varios archivos desde el Explorador de Windows."], [2, "O pulsa **Examinar…** para elegirlos."]]));
 s.push(p("La ventana se cierra y la consola genera las plantillas en **TARIFAS**, sin más preguntas. En la consola verás cada archivo generado, con cuántos artículos, qué hoteles y qué teléfono lleva:"));
-s.push(...["**Una tarifa por proveedor**, con sus artículos, el precio **vigente hoy**, su código de proveedor, su **Registro Info**, el teléfono y los hoteles marcados.",
+s.push(...["**Una tarifa por proveedor**, con sus artículos, el precio **vigente hoy**, su código de proveedor, su **Registro Info**, el teléfono y los hoteles marcados. En **Código:** va el del proveedor en DALI, sacado de su última TARIFA final en TARIFAS (si no tiene ninguna, el de SAP, y la consola lo dice), y los descuentos a 0, porque el precio de SAP ya es el neto.",
   "Si un proveedor tiene **precios distintos según el hotel**, sale **una tarifa por cada grupo de hoteles con los mismos precios**; el grupo va en el nombre, por ejemplo «SUMINISTROS DEMO SL (JN-FV) [22-11-2026].xlsx». Si todos pagan lo mismo, sale una sola.",
   "El **código DALI**, la **descripción** y el **formato** salen del catálogo, buscando por código SAP; si un material no está en el catálogo, se ponen los datos de SAP.",
   "No salen los Registros Info o centros **marcados para borrar** ni los precios **caducados**. Los materiales con **escalado** de precio llevan el precio base y la consola los avisa en amarillo.",

@@ -465,6 +465,20 @@ def _cruzar_con_listado_dali_sap(ws, ruta_xls, ultima, log_fn=None) -> list:
 
     return _sin_desc_und
 
+def poner_telefono_del_purchasing(ws, encontrado, log_fn=None):
+    """(23 nov 2026, petición de Víctor) Si la celda del teléfono (C4) está vacía, pone el teléfono que tiene SAP para
+    ese proveedor (hoja 1 del Purchasing, columna AD) y avisa de que hay que revisarlo. Devuelve True si lo ha puesto."""
+    from app.comun.datos_tarifa import COL_TELEFONO, FILA_TELEFONO
+    tel = str(encontrado.get("telefono") or "").strip()
+    celda = ws.cell(FILA_TELEFONO, COL_TELEFONO)
+    if not tel or celda.value not in (None, ""):
+        return False
+    celda.value = tel
+    _log(log_fn, f"  ⚠ Teléfono del proveedor tomado del Purchasing «{encontrado.get('archivo', '')}»: {tel}. "
+                 "Revísalo en la celda C4 de la tarifa y cámbialo si no es el bueno.", "WARN")
+    return True
+
+
 def _rellenar_registros_info(ws, ultima, nombre_proveedor, registros_info, log_fn=None):
     """Paso 27c (22 nov 2026): rellena la columna REGISTRO INFO (H) con el Registro Info de cada código SAP (col A),
     sacado del Purchasing del proveedor que encuentre `registros_info(nombre_proveedor)`. Nunca para la tarifa: si no
@@ -476,6 +490,9 @@ def _rellenar_registros_info(ws, ultima, nombre_proveedor, registros_info, log_f
     except Exception as e:  # noqa: BLE001
         _log(log_fn, f"  ⚠ No se pudo leer el Purchasing para la columna REGISTRO INFO ({e}): queda vacía.", "WARN")
         return 0
+    # (23 nov 2026, petición de Víctor) Teléfono del proveedor (C4) desde el mismo Purchasing, para revisarlo
+    if encontrado and encontrado.get("telefono"):
+        poner_telefono_del_purchasing(ws, encontrado, log_fn)
     if not encontrado or not encontrado.get("mapa"):
         _log(log_fn, "  └ REGISTRO INFO: no hay en TARIFAS un Purchasing Info Records de este proveedor; la columna "
                      "queda vacía.", "INFO")
