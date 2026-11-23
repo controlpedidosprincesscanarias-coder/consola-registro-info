@@ -420,6 +420,8 @@ class InterfazApp:
         _ri_lbl_sub.pack(anchor="w")
 
         def _abrir_ri(e=None):
+            if not self._sesion_vigente_o_pedir():     # (23 nov 2026) sesión caducada → se pide antes
+                return
             self.log_consola("Iniciando: Crear Registro Info\u2026", "INFO")
             iniciar_crear_registro_info(self, self._carpeta_proyecto.get())
 
@@ -560,7 +562,7 @@ class InterfazApp:
                 lbl.configure(bg=BASE_BG)
 
             def _click(e=None):
-                frm._cmd()
+                self._con_sesion(frm._cmd)          # (23 nov 2026) sesión caducada → se pide antes
 
             for w in _widgets:
                 w.bind("<Enter>",    _enter)
@@ -599,7 +601,7 @@ class InterfazApp:
                 frm._label_w.configure(bg=BASE_BG)
 
             def _click(e=None):
-                frm._cmd()
+                self._con_sesion(frm._cmd)          # (23 nov 2026) sesión caducada → se pide antes
 
             for w in [frm, frm._badge_w, frm._label_w]:
                 w.bind("<Enter>",    _enter)

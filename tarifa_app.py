@@ -61,6 +61,7 @@ class App(InterfazApp, AccionOrganizarDali, AccionListadoDali, AccionListadoSap,
         # (v10.2.50) La ventana principal no se enseña hasta iniciar sesión (ver _iniciar_sesion_consola).
         self.withdraw()
         self._credenciales_sesion = None
+        self._sesion_dia = None             # (23 nov 2026) día del inicio de sesión: caduca cada día
         self.config_data       = cargar_config()
         # (nov 2026) Una contraseña de Catálogo Asignaciones antigua en claro se cifra
         # con DPAPI y se borra la copia en claro (ver credenciales.py).

@@ -38,6 +38,36 @@ class ConCifradoSimulado(unittest.TestCase):
         self.assertNotIn(cr.CLAVE_ANTIGUA, cfg)
         self.assertEqual(cr.leer_credenciales_dali(cfg), ("a@b.c", "secreto"))
 
+    def test_sesion_caduca_cada_dia(self):
+        # Petición de Víctor (23 nov 2026): la verificación guardada caduca cada día.
+        import datetime as dt
+        hoy, manana = dt.date(2026, 11, 23), dt.date(2026, 11, 24)
+        cfg = {}
+        cr.guardar_credenciales_dali(cfg, "a@b.c", "secreto")
+        self.assertTrue(cr.anotar_sesion_de_hoy(cfg, "a@b.c", hoy))
+        self.assertNotIn("2026", repr(cfg))                         # el día va cifrado
+        self.assertTrue(cr.sesion_de_hoy(cfg, hoy))
+        self.assertFalse(cr.caducar_si_no_es_de_hoy(cfg, hoy))     # el mismo día no se toca
+        self.assertEqual(cr.leer_credenciales_dali(cfg), ("a@b.c", "secreto"))
+        self.assertFalse(cr.sesion_de_hoy(cfg, manana))
+        self.assertTrue(cr.caducar_si_no_es_de_hoy(cfg, manana))   # al día siguiente: sin contraseña
+        self.assertEqual(cr.leer_credenciales_dali(cfg), (None, None))
+        self.assertEqual(cfg.get(cr.CLAVE_EMAIL), "a@b.c")          # el email se recuerda
+        self.assertNotIn(cr.CLAVE_DIA, cfg)
+
+    def test_sin_marca_del_dia_caduca(self):
+        # Las guardadas antes de este cambio (sin día) se piden una vez.
+        cfg = {}
+        cr.guardar_credenciales_dali(cfg, "a@b.c", "secreto")
+        self.assertTrue(cr.caducar_si_no_es_de_hoy(cfg))
+        self.assertEqual(cr.leer_credenciales_dali(cfg), (None, None))
+
+    def test_marca_de_otro_email_no_vale(self):
+        cfg = {}
+        cr.guardar_credenciales_dali(cfg, "a@b.c", "secreto")
+        cr.anotar_sesion_de_hoy(cfg, "otro@b.c")
+        self.assertFalse(cr.sesion_de_hoy(cfg))
+
     def test_migra_la_antigua_en_claro(self):
         cfg = {"carpeta_proyecto": "X", cr.CLAVE_EMAIL: "a@b.c", cr.CLAVE_ANTIGUA: "secreto"}
         self.assertTrue(cr.migrar_credenciales_dali(cfg))
