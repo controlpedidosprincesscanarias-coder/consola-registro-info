@@ -73,6 +73,10 @@ class TestGuardar(Base):
         self.assertEqual(r["limpiados"], [1])
         self.assertEqual(r["fuera_productos"], [3])
         self.assertFalse(r["completando"])               # faltan Productos/Listas/ARTICULOS_DALI en RECURSOS
+        # (23 nov 2026) El 9999 no está en Productos.xlsx: el envío a la web espera a la guía de los listados
+        self.app._tras_cambiar_sap_en_catalogo.assert_not_called()
+        self.assertEqual(sorted(self.app._sap_esperando_listados), [1, 2, 3])
+        self.app._enviar_sap_en_espera()                 # lo que hace «Más tarde»: se envía ya lo que hay
         self.app._tras_cambiar_sap_en_catalogo.assert_called_once()
         t = C.leer_tabla_sap(self.cat)
         self.assertEqual((t["1"]["cod_sap"], t["2"]["cod_sap"], t["3"]["cod_sap"]), (None, "1000", "9999"))

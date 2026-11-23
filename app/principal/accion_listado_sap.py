@@ -546,17 +546,12 @@ class AccionListadoSap:
 
         self.after(0, _mostrar_resultado)
 
-    def _avisar_listados_sap(self, codigos_sap):
-        """(13 nov 2026, petición de Víctor) Tras guardar códigos SAP (Acción 8 o códigos SAP faltantes de la
-        Acción 4): si alguno no está en Productos.xlsx, avisa de que faltan los listados de SAP actualizados, guía la
-        descarga (app/ui/ventana_listados_sap.py) y, cuando están en RECURSOS, lanza sola la Acción 3. Si se deja para
-        más tarde, avisa de que la web queda parcialmente actualizada. Llamar desde el hilo principal.
-        Devuelve "actualizar", "despues" o None (no hacía falta avisar)."""
+    def _codigos_fuera_de_productos(self, codigos_sap):
+        """Los códigos SAP que no están en RECURSOS/Productos.xlsx (todos si no hay Productos.xlsx que leer)."""
         from app.comun import listados_sap
-        from app.ui.ventana_listados_sap import VentanaListadosSap
         carpeta = self._carpeta_proyecto.get().strip()
         if not carpeta or not codigos_sap:
-            return None
+            return []
         recursos = os.path.join(carpeta, FOLDER_RECURSOS)
         ruta_prod = listados_sap.rutas(recursos)[listados_sap.PRODUCTOS]
         tabla = None
@@ -565,18 +560,47 @@ class AccionListadoSap:
                 tabla, _filas = leer_productos_xlsx(ruta_prod)
             except Exception as e:  # noqa: BLE001
                 self.log_consola(f"  ⚠  No se pudo leer Productos.xlsx: {e}", "WARN")
-        fuera = listados_sap.codigos_sin_datos(codigos_sap, tabla)
+        return listados_sap.codigos_sin_datos(codigos_sap, tabla)
+
+    def _avisar_listados_sap(self, codigos_sap):
+        """(13 nov 2026, petición de Víctor) Tras guardar códigos SAP (Acción 8 o códigos SAP faltantes de la
+        Acción 4): si alguno no está en Productos.xlsx, avisa de que faltan los listados de SAP actualizados, guía la
+        descarga (app/ui/ventana_listados_sap.py) y, cuando están en RECURSOS, lanza sola la Acción 3. Si se deja para
+        más tarde, avisa de que la web queda parcialmente actualizada. Llamar desde el hilo principal.
+        Devuelve "actualizar", "despues" o None (no hacía falta avisar).
+
+        (23 nov 2026, petición de Víctor: «¿no debería esperar a "actualizar ahora" antes de actualizar la web? Así
+        haría un único proceso con todo completo») El envío a Catálogo Asignaciones de esos códigos se queda en
+        espera (`_sap_esperando_listados`, lo apunta `_completar_datos_sap_tras_asignar`) hasta contestar aquí:
+        «Ya están en RECURSOS» → la Acción 2 lo completa y lo envía todo de una vez; «Más tarde» (o cerrar) → se
+        envía ya lo que hay (códigos y los datos de los que sí están en Productos.xlsx), como antes."""
+        from app.comun import listados_sap
+        from app.ui.ventana_listados_sap import VentanaListadosSap
+        carpeta = self._carpeta_proyecto.get().strip()
+        fuera = self._codigos_fuera_de_productos(codigos_sap)
         if not fuera:
+            self._enviar_sap_en_espera()
             return None
-        ven = VentanaListadosSap(self, fuera, recursos)
+        ven = VentanaListadosSap(self, fuera, os.path.join(carpeta, FOLDER_RECURSOS))
         self.wait_window(ven)
         if ven.resultado == "actualizar":
+            self._sap_esperando_listados = []
             self.log_consola("Listados de SAP actualizados en RECURSOS: se lanza la Acción 2 para completar los "
-                             "datos SAP.", "INFO")
-            self.after(300, self._actualizar_listado_sap)
+                             "datos SAP y enviarlo todo a Catálogo Asignaciones de una vez.", "INFO")
+            # (23 nov 2026, petición de Víctor) Sin «Confirmar actualización SAP»: ya se ha confirmado aquí.
+            self.after(300, lambda: self._actualizar_listado_sap(confirmar=False))
         else:
             self.log_consola("  ⚠  " + listados_sap.AVISO_PARCIAL, "WARN")
+            self._enviar_sap_en_espera()
         return ven.resultado
+
+    def _enviar_sap_en_espera(self):
+        """Envía a Catálogo Asignaciones (con el cruce de la Acción 2 para los que sí están en Productos.xlsx) los
+        códigos SAP que esperaban a la respuesta de la guía de los listados."""
+        pendientes = list(getattr(self, "_sap_esperando_listados", None) or [])
+        self._sap_esperando_listados = []
+        if pendientes:
+            self._completar_datos_sap_tras_asignar(pendientes)
 
     def _accion_3_guiada(self):
         """(v10.2.74, petición de Víctor, 13 nov 2026) Botón 3. Antes de la Acción 3 de siempre, en un hilo: trae lo

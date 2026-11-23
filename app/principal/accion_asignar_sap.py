@@ -112,14 +112,25 @@ class AccionAsignarSap:
                 "Productos.xlsx y Listas de productos.xlsx en RECURSOS y pulsa la Acción 2.", "WARN")
         completando = False
         if escritos or limpiados:
-            completando = self._completar_datos_sap_tras_asignar(list(escritos) + list(limpiados))
+            completando = self._completar_datos_sap_tras_asignar(list(escritos) + list(limpiados),
+                                                                 codigos_sap=list(escritos.values()))
         return {"escritos": escritos, "limpiados": limpiados, "no_encontrados": no_encontrados,
                 "fuera_productos": fuera, "completando": completando and bool(set(escritos) - set(fuera))}
 
-    def _completar_datos_sap_tras_asignar(self, cambiados):
+    def _completar_datos_sap_tras_asignar(self, cambiados, codigos_sap=None):
         """Completa los datos SAP con el mismo cruce de la Acción 3 (en segundo plano), que también regenera el
         catálogo y envía los cambios a la web. Si falta algún archivo, solo se envían los códigos.
-        Devuelve True si se ha lanzado el cruce."""
+        Devuelve True si se ha lanzado el cruce.
+
+        (23 nov 2026, petición de Víctor) Si se pasan los `codigos_sap` guardados y alguno no está en Productos.xlsx,
+        no se envía nada todavía: los DALI quedan en `_sap_esperando_listados` hasta contestar a la guía de los
+        listados de SAP (`_avisar_listados_sap`), para enviarlo todo de una vez con la Acción 2."""
+        if codigos_sap and self._codigos_fuera_de_productos(codigos_sap):
+            pend = list(getattr(self, "_sap_esperando_listados", None) or [])
+            self._sap_esperando_listados = pend + [d for d in cambiados if d not in pend]
+            self.log_consola("  ⏸ Catálogo Asignaciones: el envío espera a los listados de SAP, para mandarlo todo "
+                             "completo de una vez.", "INFO")
+            return False
         carpeta = self._carpeta_proyecto.get().strip()
         rec = os.path.join(carpeta, FOLDER_RECURSOS)
         rutas = {n: os.path.join(rec, n) for n in ("Productos.xlsx", "ARTICULOS_DALI.xlsx", "Listas de productos.xlsx")}

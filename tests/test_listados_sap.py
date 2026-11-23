@@ -126,7 +126,66 @@ class EngancheApp(unittest.TestCase):
                 V.return_value.resultado = "actualizar"
                 self.assertEqual(app._avisar_listados_sap([10104081, 10104082]), "actualizar")
             self.assertEqual(V.call_args[0][1], ["10104082"])
-            app.after.assert_called_once_with(300, app._actualizar_listado_sap)
+            # (23 nov 2026) Sin «Confirmar actualización SAP»: ya se confirmó en la guía
+            self.assertEqual(app.after.call_count, 1)
+            app.after.call_args[0][1]()
+            app._actualizar_listado_sap.assert_called_once_with(confirmar=False)
+
+    def test_el_envio_a_la_web_espera_a_la_guia(self):
+        """(23 nov 2026, petición de Víctor) Con códigos que no están en Productos.xlsx, guardar no envía nada a la
+        web: espera a la guía. «Ya están en RECURSOS» → solo la Acción 2 (un único envío completo); «Más tarde» →
+        se envía ya lo que hay."""
+        from app.principal.accion_asignar_sap import AccionAsignarSap
+        from app.principal.accion_listado_sap import AccionListadoSap
+
+        class App(AccionAsignarSap, AccionListadoSap):
+            pass
+        with tempfile.TemporaryDirectory() as carpeta:
+            os.makedirs(os.path.join(carpeta, "RECURSOS"))
+            open(os.path.join(carpeta, "RECURSOS", L.PRODUCTOS), "w").close()
+            tabla = {"10104081": ("LUBINA", "", "KG", "", "", "")}
+            for respuesta, envia_ya in (("actualizar", False), ("despues", True), (None, True)):
+                app = object.__new__(App)
+                app._carpeta_proyecto = mock.Mock(get=lambda: carpeta)
+                app.log_consola = mock.Mock()
+                app.wait_window = lambda v: None
+                app.after = mock.Mock()
+                app._actualizar_listado_sap = mock.Mock()
+                app._tras_cambiar_sap_en_catalogo = mock.Mock()
+                with mock.patch("app.principal.accion_listado_sap.leer_productos_xlsx", return_value=(tabla, [])), \
+                        mock.patch("app.ui.ventana_listados_sap.VentanaListadosSap") as V, \
+                        mock.patch("app.principal.accion_asignar_sap.threading") as hilos:
+                    V.return_value.resultado = respuesta
+                    # Guardar: 10104082 no está en Productos.xlsx → no se lanza nada
+                    self.assertFalse(app._completar_datos_sap_tras_asignar([1569, 8847],
+                                                                           codigos_sap=["10104081", "10104082"]))
+                    hilos.Thread.assert_not_called()
+                    app._tras_cambiar_sap_en_catalogo.assert_not_called()
+                    self.assertEqual(app._sap_esperando_listados, [1569, 8847])
+                    app._avisar_listados_sap(["10104081", "10104082"])
+                    enviado = hilos.Thread.called or app._tras_cambiar_sap_en_catalogo.called
+                    self.assertEqual(enviado, envia_ya, respuesta)
+                    self.assertEqual(app._sap_esperando_listados, [])
+                    self.assertEqual(app.after.called, respuesta == "actualizar")
+
+    def test_todos_en_productos_se_envia_al_momento(self):
+        from app.principal.accion_asignar_sap import AccionAsignarSap
+        from app.principal.accion_listado_sap import AccionListadoSap
+
+        class App(AccionAsignarSap, AccionListadoSap):
+            pass
+        with tempfile.TemporaryDirectory() as carpeta:
+            os.makedirs(os.path.join(carpeta, "RECURSOS"))
+            open(os.path.join(carpeta, "RECURSOS", L.PRODUCTOS), "w").close()
+            app = object.__new__(App)
+            app._carpeta_proyecto = mock.Mock(get=lambda: carpeta)
+            app.log_consola = mock.Mock()
+            app._tras_cambiar_sap_en_catalogo = mock.Mock()
+            tabla = {"10104081": ("LUBINA", "", "KG", "", "", "")}
+            with mock.patch("app.principal.accion_listado_sap.leer_productos_xlsx", return_value=(tabla, [])):
+                app._completar_datos_sap_tras_asignar([1569], codigos_sap=["10104081"])
+            # faltan ARTICULOS_DALI y Listas en RECURSOS → se envían los códigos al momento, como siempre
+            app._tras_cambiar_sap_en_catalogo.assert_called_once_with([1569])
 
 
 # ── Antes de la Acción 3 (v10.2.74) ─────────────────────────────────────────────────────────────────────────────────
