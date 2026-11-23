@@ -287,6 +287,18 @@ class TestRegistroInfo(Base):
                          {"20200001": "5400001"})
         self.assertEqual(PR.registros_info_de(self.ruta, "NO ESTÁ"), {})        # dos proveedores y ninguno casa
 
+    def test_rinfo_de_la_consola_sin_los_correlativos_provisionales(self):
+        """(23 nov 2026, caso real) En un RINFO de la Consola los materiales nuevos llevan en la columna A un
+        correlativo (1, 2…) y «Nueva» = X: no es un Registro Info de SAP y no sale en la plantilla."""
+        nuevo1 = {**h1("1", "10104146"), 37: "X"}
+        crear_purchasing(self.ruta, h1=[h1("5300008221", "10100210"), nuevo1],
+                         h3=[h3("5300008221", "10100210", "0110", 1.19), h3("1", "10104146", "0110", 5.91)])
+        d = PR.leer_purchasing(self.ruta, hoy=HOY)
+        self.assertEqual(d["proveedores"]["1000123"]["registros"], {"10100210": "5300008221"})
+        filas = PR.preparar_plantillas(d, {}, fecha=HOY)[0]["filas"]
+        self.assertEqual({f["sap"]: f["registro_info"] for f in filas}, {"10100210": "5300008221", "10104146": ""})
+        self.assertEqual(d["proveedores"]["1000123"]["materiales"]["10104146"]["precios"]["0110"][0], 5.91)
+
     def test_un_solo_proveedor_aunque_el_nombre_no_case(self):
         crear_purchasing(self.ruta, h1=[h1("5300001", "10100001")], h3=[])
         self.assertEqual(PR.registros_info_de(self.ruta, "Suministros Demo, S.L."), {"10100001": "5300001"})
