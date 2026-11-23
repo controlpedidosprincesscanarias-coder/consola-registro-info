@@ -1764,6 +1764,17 @@ Petición de Víctor, con una captura de la cabecera en «v 10.2.100»: «la sig
 
 ---
 
+## 99. Acción 3: la barra se pone en marcha al pulsar (23 nov 2026, próxima compilación: v10.4.04) — PR en GitHub
+
+Petición de Víctor, con una captura (barra verde «TARIFA.xls localizada correctamente» y el log en «trayendo lo cambiado en la web antes de generar la TARIFA (Acción 3)…»): «cuando pulso la Acción 3 tarda mucho en cambiar la barra de progreso y parece que se ha quedado bloqueado. Debería pasar a amarillo/naranja desde que comienza la lectura del catálogo».
+
+- Causa: la Acción 3 (y la reinscripción de un [INCOMPLETO]) lanzaba el hilo, que primero trae lo cambiado en la web (10-20 s) y lee el catálogo, sin tocar la barra hasta «Procesando…». Las Acciones 2 y 5 ya la ponían en marcha antes.
+- Ahora, al pulsar, la barra pasa a amarilla en movimiento con «Trayendo lo cambiado en Catálogo Asignaciones…», luego «Preparando la TARIFA…» y después los pasos de siempre. `indeterminate` quita el verde del texto si venía de «completado».
+- Pruebas: `tests/test_barra_accion3.py` (la barra se pone antes de lanzar el hilo, en los dos casos). Total: 395.
+- No probado: en Windows con la unidad G: (ver que cambia en el acto).
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Paso «Generar plantilla Tarifa desde RINFO»~~ hecho (sección 90, Acción 6). Pendiente: probarlo en Windows con un RINFO y un Purchasing reales (arrastrar, la plantilla en Excel y la vuelta al RINFO con PRECIO NUEVO). Si se quiere, que el PRECIO NUEVO pase también al catálogo y a Catálogo Asignaciones al crear el RINFO (hoy solo lo hace la Acción 3 con la tarifa de DALI).
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
