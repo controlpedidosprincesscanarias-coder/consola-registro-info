@@ -25,6 +25,7 @@ PREFIJO = "dpapi1:"
 CLAVE_EMAIL = "dali_app_email"
 CLAVE_CIFRADA = "dali_app_password_cifrada"
 CLAVE_ANTIGUA = "dali_app_password"          # en claro: solo se lee para migrarla y se borra
+CLAVE_DIA = "dali_app_sesion_dia"             # (23 nov 2026) día del último inicio de sesión, cifrado
 
 
 def dpapi_disponible() -> bool:
@@ -101,8 +102,47 @@ def guardar_credenciales_dali(config: dict, email: str, clave: str) -> bool:
 
 
 def borrar_credenciales_dali(config: dict):
-    for k in (CLAVE_EMAIL, CLAVE_CIFRADA, CLAVE_ANTIGUA):
+    for k in (CLAVE_EMAIL, CLAVE_CIFRADA, CLAVE_ANTIGUA, CLAVE_DIA):
         config.pop(k, None)
+
+
+# ── Caducidad diaria (petición de Víctor, 23 nov 2026: «la verificación de usuario que realiza la consola al
+# inicio queda grabada en mi PC, ¿no sería conveniente que caduque diariamente?»; decisión: cada día, y si la
+# Consola sigue abierta al cambiar el día, se pide antes de la siguiente acción). La contraseña guardada solo
+# vale el día en que se inició sesión; al día siguiente se borra y se pide de nuevo (el email se recuerda).
+# El día va cifrado con DPAPI junto al email, para que no baste con editar tarifa_config.json.
+
+def _hoy(hoy=None):
+    import datetime as _dt
+    return (hoy or _dt.date.today()).isoformat()
+
+
+def anotar_sesion_de_hoy(config: dict, email: str, hoy=None) -> bool:
+    """Apunta que `email` ha iniciado sesión hoy. False si no se puede cifrar (entonces no se apunta)."""
+    marca = proteger(f"{_hoy(hoy)}|{email}")
+    if not marca:
+        config.pop(CLAVE_DIA, None)
+        return False
+    config[CLAVE_DIA] = marca
+    return True
+
+
+def sesion_de_hoy(config: dict, hoy=None) -> bool:
+    """True si el email guardado inició sesión hoy en este equipo."""
+    marca = desproteger((config or {}).get(CLAVE_DIA))
+    email = (config or {}).get(CLAVE_EMAIL)
+    return bool(marca and email and marca == f"{_hoy(hoy)}|{email}")
+
+
+def caducar_si_no_es_de_hoy(config: dict, hoy=None) -> bool:
+    """Si la sesión guardada no es de hoy, borra la contraseña (y la marca del día) y deja el email.
+    Devuelve True si ha borrado algo (hay que guardar la configuración)."""
+    if sesion_de_hoy(config, hoy):
+        return False
+    habia = any(k in (config or {}) for k in (CLAVE_CIFRADA, CLAVE_ANTIGUA, CLAVE_DIA))
+    for k in (CLAVE_CIFRADA, CLAVE_ANTIGUA, CLAVE_DIA):
+        config.pop(k, None)
+    return habia
 
 
 def migrar_credenciales_dali(config: dict) -> bool:

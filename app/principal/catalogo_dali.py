@@ -10,6 +10,7 @@ Central Compras Princess Canarias · La idea y el desarrollo de la aplicación s
 Víctor Alejandro Martín Andrade (VAMA).
 """
 
+import datetime as _dt
 import os
 import tkinter as tk
 from tkinter import messagebox
@@ -25,7 +26,7 @@ from app.comun.tarifa_core import (
 )
 from app.comun.credenciales import (
     leer_credenciales_dali, guardar_credenciales_dali,
-    borrar_credenciales_dali,
+    borrar_credenciales_dali, anotar_sesion_de_hoy, caducar_si_no_es_de_hoy,
 )
 from app.comun.sap_helpers import (
     CATALOGO_COLUMNAS, CATALOGO_CLAVES_SAP,
@@ -149,7 +150,12 @@ class CatalogoDali:
         from app.comun import catalogo_web
         from app.ui import ventana_login
 
+        # (23 nov 2026, petición de Víctor) La contraseña guardada solo vale el día en que se inició sesión.
+        if caducar_si_no_es_de_hoy(self.config_data):
+            guardar_config(self.config_data)
         email, password = leer_credenciales_dali(self.config_data)
+        if not email:
+            email = self.config_data.get("dali_app_email")      # se recuerda aunque la contraseña haya caducado
 
         def _comprobar(e, p):
             return catalogo_web.comprobar_acceso(catalogo_web.ClienteCatalogo(), e, p)
@@ -170,10 +176,12 @@ class CatalogoDali:
             return
         email, password, usuario = r
         self._credenciales_sesion = (email, password)
+        self._sesion_dia = _dt.date.today()
         conectada = getattr(self, "_web_conectada", None)   # (18 nov 2026) indicador de la cabecera en verde
         if conectada:                                        # (mixin PublicarCatalogoWeb; en pruebas puede faltar)
             conectada()
-        if not guardar_credenciales_dali(self.config_data, email, password):
+        if not (guardar_credenciales_dali(self.config_data, email, password)
+                and anotar_sesion_de_hoy(self.config_data, email)):
             self.log_consola("No se pudo cifrar la contraseña de Catálogo Asignaciones: se usa solo en esta "
                              "sesión y se volverá a pedir la próxima vez.", "WARN")
         guardar_config(self.config_data)
@@ -181,6 +189,48 @@ class CatalogoDali:
         self.lift()
         self._tras_iniciar_sesion()
         self.log_consola(f"Sesión iniciada en Catálogo Asignaciones: {usuario.get('nombre') or email}.", "OK")
+
+    def _sesion_vigente_o_pedir(self):
+        """
+        (23 nov 2026, petición y decisión de Víctor) La sesión caduca cada día: si la Consola sigue abierta al
+        cambiar el día, antes de la siguiente acción se vuelve a pedir la contraseña (el email ya va puesto).
+        True si se puede seguir; False si se cancela (la acción no se lanza). Sin sesión iniciada al abrir
+        (pruebas, código antiguo) no pide nada.
+        """
+        dia = getattr(self, "_sesion_dia", None)
+        if dia is None or dia == _dt.date.today():
+            return True
+        from app.comun import catalogo_web
+        from app.ui import ventana_login
+        email = (getattr(self, "_credenciales_sesion", None) or (None, None))[0] \
+            or self.config_data.get("dali_app_email")
+        self.log_consola("La sesión de Catálogo Asignaciones es de otro día y ha caducado: vuelve a escribir la "
+                         "contraseña para seguir.", "INFO")
+
+        def _comprobar(e, p):
+            return catalogo_web.comprobar_acceso(catalogo_web.ClienteCatalogo(), e, p)
+
+        try:
+            r = ventana_login.pedir_inicio_sesion(self, email, None, _comprobar, texto_salir="Cancelar",
+                                                  sobre=self, aviso="La sesión de ayer ha caducado.")
+        except tk.TclError:
+            return False
+        if not r:
+            self.log_consola("Acción cancelada: hace falta iniciar sesión de nuevo.", "WARN")
+            return False
+        email, password, usuario = r
+        self._credenciales_sesion = (email, password)
+        self._sesion_dia = _dt.date.today()
+        if guardar_credenciales_dali(self.config_data, email, password):
+            anotar_sesion_de_hoy(self.config_data, email)
+        guardar_config(self.config_data)
+        self.log_consola(f"Sesión renovada en Catálogo Asignaciones: {usuario.get('nombre') or email}.", "OK")
+        return True
+
+    def _con_sesion(self, accion):
+        """Lanza `accion` solo si la sesión es de hoy (o se renueva)."""
+        if self._sesion_vigente_o_pedir():
+            accion()
 
     def _adquirir_lock_catalogo_con_aviso(self):
         """

@@ -114,13 +114,66 @@ class TestIniciarSesionConsola(unittest.TestCase):
         app = self._app()
         with mock.patch.object(VL, "pedir_inicio_sesion", return_value=("a@x", "c", {"nombre": "Ana"})), \
                 mock.patch.object(CD, "guardar_credenciales_dali", return_value=True) as guardar, \
+                mock.patch.object(CD, "anotar_sesion_de_hoy", return_value=True) as anotar, \
                 mock.patch.object(CD, "guardar_config"):
             app._iniciar_sesion_consola()
         guardar.assert_called_once_with({}, "a@x", "c")
+        anotar.assert_called_once_with({}, "a@x")
+        self.assertEqual(app._sesion_dia, CD._dt.date.today())
         app.deiconify.assert_called_once()
         app._tras_iniciar_sesion.assert_called_once()
         app.destroy.assert_not_called()
         self.assertEqual(app._obtener_credenciales_dali_app(), ("a@x", "c"))
+
+    def test_contrasena_de_otro_dia_no_entra_sola(self):
+        # Petición de Víctor (23 nov 2026): al abrir otro día, el email va puesto y la contraseña se pide.
+        app = self._app()
+        app.config_data = {"dali_app_email": "a@x", "dali_app_password_cifrada": "dpapi1:zzz"}
+        with mock.patch.object(VL, "pedir_inicio_sesion", return_value=None) as pedir, \
+                mock.patch.object(CD, "guardar_config"):
+            app._iniciar_sesion_consola()
+        self.assertEqual(pedir.call_args.args[1:3], ("a@x", None))
+        self.assertNotIn("dali_app_password_cifrada", app.config_data)
+
+    def test_al_cambiar_el_dia_se_pide_antes_de_la_accion(self):
+        app = self._app()
+        app._credenciales_sesion = ("a@x", "vieja")
+        app._sesion_dia = CD._dt.date.today()
+        hechas = []
+        app._con_sesion(lambda: hechas.append(1))                       # mismo día: sin preguntar
+        self.assertEqual(hechas, [1])
+        app._sesion_dia = CD._dt.date.today() - CD._dt.timedelta(days=1)
+        with mock.patch.object(VL, "pedir_inicio_sesion", return_value=None) as pedir:
+            app._con_sesion(lambda: hechas.append(2))                   # cancela: no se lanza
+        self.assertEqual(hechas, [1])
+        self.assertEqual(pedir.call_args.kwargs["texto_salir"], "Cancelar")
+        self.assertEqual(pedir.call_args.args[1:3], ("a@x", None))
+        app.destroy.assert_not_called()
+        with mock.patch.object(VL, "pedir_inicio_sesion", return_value=("a@x", "nueva", {"nombre": "Ana"})), \
+                mock.patch.object(CD, "guardar_credenciales_dali", return_value=True), \
+                mock.patch.object(CD, "anotar_sesion_de_hoy", return_value=True), \
+                mock.patch.object(CD, "guardar_config"):
+            app._con_sesion(lambda: hechas.append(3))                   # renueva y sigue
+        self.assertEqual(hechas, [1, 3])
+        self.assertEqual(app._credenciales_sesion, ("a@x", "nueva"))
+        self.assertEqual(app._sesion_dia, CD._dt.date.today())
+
+    def test_ventana_de_renovacion_con_cancelar(self):
+        root = tk.Tk()
+        root.withdraw()
+        try:
+            def cancelar():
+                win = [w for w in root.winfo_children() if isinstance(w, tk.Toplevel)][0]
+                textos = [h["text"] for h in _hijos(win) if isinstance(h, (tk.Button, tk.Label))]
+                self.assertIn("Cancelar", textos)
+                self.assertIn("La sesión de ayer ha caducado.", textos)
+                [h for h in _hijos(win) if isinstance(h, tk.Button) and h["text"] == "Cancelar"][0].invoke()
+            root.after(300, cancelar)
+            r = VL.pedir_inicio_sesion(root, "a@x", None, lambda e, p: ("ok", "", {}), texto_salir="Cancelar",
+                                       sobre=root, aviso="La sesión de ayer ha caducado.")
+            self.assertIsNone(r)
+        finally:
+            root.destroy()
 
     def test_salir_cierra_la_consola(self):
         app = self._app()

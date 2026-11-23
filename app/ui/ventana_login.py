@@ -11,7 +11,9 @@ autorizado.» (sin anotar nada). La comprobación está en app/comun/catalogo_we
 aquí solo van la ventana y el hilo (la petición a la web no congela la ventana).
 
 pedir_inicio_sesion(root, email, password, comprobar) abre la ventana (sin transient: la principal está oculta) y
-devuelve (email, password, usuario) si entra, o None si se pulsa «Salir» o se cierra. Si llegan credenciales
+devuelve (email, password, usuario) si entra, o None si se pulsa «Salir» o se cierra. Desde el 23 nov 2026 la
+contraseña guardada solo vale el día del inicio de sesión (credenciales.caducar_si_no_es_de_hoy), y con la
+Consola abierta al cambiar el día se vuelve a pedir antes de la siguiente acción (CatalogoDali._sesion_vigente_o_pedir). Si llegan credenciales
 guardadas, las prueba solas al abrirse. `comprobar(email, password)` devuelve (estado, mensaje, usuario).
 """
 import threading
@@ -23,9 +25,14 @@ from app.comun.tarifa_constants import (
 from app.comun.tarifa_core import cargar_icono_ventana
 
 
-def pedir_inicio_sesion(root, email_guardado, password_guardada, comprobar, al_fallar_credenciales=None):
+def pedir_inicio_sesion(root, email_guardado, password_guardada, comprobar, al_fallar_credenciales=None,
+                        texto_salir="Salir", sobre=None, aviso=""):
+    """(23 nov 2026) Con `sobre` (la ventana principal, ya visible) sale encima de ella y modal: es la renovación
+    diaria de la sesión, donde el botón es «Cancelar» y no cierra la Consola."""
     resultado = {"valor": None}
     win = tk.Toplevel(root)
+    if sobre is not None:
+        win.transient(sobre)
     win.title("Consola Registro Info — Iniciar sesión")
     win.configure(bg=C_DARK)
     win.resizable(False, False)
@@ -36,6 +43,8 @@ def pedir_inicio_sesion(root, email_guardado, password_guardada, comprobar, al_f
     tk.Frame(frm, bg=C_ACCENT, height=3).pack(fill="x", pady=(0, 14))
     tk.Label(frm, text="CREACIÓN  REGISTRO  INFO  SAP", bg=C_DARK, fg=C_ACCENT,
              font=("Segoe UI", 13, "bold")).pack(anchor="w")
+    if aviso:
+        tk.Label(frm, text=aviso, bg=C_DARK, fg=C_ACCENT2, font=FONT_BOLD).pack(anchor="w", pady=(2, 0))
     tk.Label(frm, text="Inicia sesión con tu usuario de Catálogo Asignaciones.",
              bg=C_DARK, fg=C_MUTED, font=FONT_SMALL).pack(anchor="w", pady=(2, 16))
 
@@ -53,11 +62,12 @@ def pedir_inicio_sesion(root, email_guardado, password_guardada, comprobar, al_f
 
     botones = tk.Frame(frm, bg=C_DARK)
     botones.pack(fill="x")
-    btn_salir = tk.Button(botones, text="Salir", font=FONT_LABEL, command=lambda: _cerrar(None))
+    btn_salir = tk.Button(botones, text=texto_salir, font=FONT_LABEL, command=lambda: _cerrar(None))
     btn_salir.pack(side="right", padx=(8, 0))
     btn_entrar = tk.Button(botones, text="Entrar", font=FONT_BOLD, bg=C_ACCENT, fg=C_DARK)
     btn_entrar.pack(side="right")
-    tk.Label(frm, text="La contraseña se guarda cifrada en este equipo (solo tu usuario de Windows puede leerla).",
+    tk.Label(frm, text="La contraseña se guarda cifrada en este equipo (solo tu usuario de Windows puede leerla) "
+                       "y se vuelve a pedir cada día.",
              bg=C_DARK, fg=C_MUTED, font=("Segoe UI", 7), wraplength=320, justify="left").pack(anchor="w", pady=(12, 0))
 
     def _cerrar(valor):
@@ -105,6 +115,11 @@ def pedir_inicio_sesion(root, email_guardado, password_guardada, comprobar, al_f
     win.lift()
     win.focus_force()
     (e_pass if email_guardado else e_email).focus_set()
+    if sobre is not None:
+        try:
+            win.grab_set()
+        except tk.TclError:
+            pass
     if email_guardado and password_guardada:
         win.after(200, lambda: _entrar(email_guardado, password_guardada))
     win.wait_window()
