@@ -49,6 +49,7 @@ from app.comun.tarifa_constants import (
 )
 from app.comun.tarifa_core import cargar_icono_ventana
 from app.comun import datos_tarifa as DT   # (22 nov 2026) teléfono y hoteles escritos en la tarifa
+from app.comun import comprobar_purchasing as CP   # (23 nov 2026) ¿Purchasing al día?
 # normalizar_codigo_sap vive en sap_helpers.py (sin tkinter) para que
 # también pueda importarla test_crear_registro_info.py sin arrastrar
 # la UI. Ver ese fichero para la implementación y el porqué.
@@ -531,6 +532,16 @@ class VentanaPurchasingEncontrado(tk.Toplevel):
         # La elección del usuario se guardará aquí antes de iniciar el flujo
         self._eleccion = None   # "continuar" | "desde_cero"
 
+        # (23 nov 2026, petición de Víctor) ¿Está al día este Purchasing? Se avisa aquí, donde ya se decide.
+        self._avisos_purchasing = []
+        try:
+            self._avisos_purchasing = CP.textos_aviso(CP.comprobar(
+                ruta_tarifa, purchasing["ruta"], carpeta_tarifas, codigo_sap, nombre_sap))
+        except Exception as e:  # noqa: BLE001 — la comprobación nunca impide seguir
+            _log(parent_ventana, f"No se pudo comprobar si el Purchasing está al día: {e}", "WARN")
+        for linea in self._avisos_purchasing:
+            _log(parent_ventana, f"⚠ {linea}", "WARN")
+
         self._construir_ui()
         self.grab_set()
         self.transient(self.master)
@@ -541,7 +552,7 @@ class VentanaPurchasingEncontrado(tk.Toplevel):
         sw = self.winfo_screenwidth()
         sh = self.winfo_screenheight()
         w  = min(700, sw - 40)
-        h  = min(sh - 60, 560)
+        h  = min(sh - 60, 560 + (190 if self._avisos_purchasing else 0))
         x  = (sw - w) // 2
         y  = 20
         self.geometry(f"{w}x{h}+{x}+{y}")
@@ -594,6 +605,21 @@ class VentanaPurchasingEncontrado(tk.Toplevel):
                  bg="#EBF4FF", fg="#1A3A6A",
                  font=FONT_LABEL, padx=10, pady=7, relief="flat").pack(fill="x")
 
+        # (23 nov 2026) Aviso si el Purchasing parece anterior a la última importación (comprobar_purchasing.py)
+        if self._avisos_purchasing:
+            caja = tk.Frame(cuerpo, bg="#FFF4E0", highlightthickness=1, highlightbackground="#E0A040",
+                            padx=10, pady=8)
+            caja.pack(fill="x", pady=(8, 0))
+            tk.Label(caja, text="⚠  Este Purchasing puede estar desactualizado", bg="#FFF4E0", fg="#8A4B00",
+                     font=FONT_BOLD).pack(anchor="w")
+            for linea in self._avisos_purchasing:
+                tk.Label(caja, text="•  " + linea, bg="#FFF4E0", fg="#5A3A00", font=FONT_LABEL,
+                         wraplength=600, justify="left").pack(anchor="w", pady=(3, 0))
+            tk.Button(caja, text="📥  Cómo descargar el Purchasing de SAP",
+                      command=self._ver_instrucciones_purchasing,
+                      bg="#E0A040", fg="white", font=FONT_BOLD, padx=10, pady=5, cursor="hand2",
+                      relief="flat", activebackground="#C88A30").pack(anchor="w", pady=(6, 0))
+
         tk.Frame(cuerpo, bg="#D0D8E8", height=1).pack(fill="x", pady=10)
 
         tk.Label(cuerpo,
@@ -624,6 +650,15 @@ class VentanaPurchasingEncontrado(tk.Toplevel):
                   cursor="hand2", relief="flat",
                   bg="#D8DEE8",
                   activebackground="#C0C8D8").pack(fill="x")
+
+    def _ver_instrucciones_purchasing(self):
+        """Los pasos para descargar el Purchasing de SAP; al cerrarlos, esta ventana vuelve a ser la activa."""
+        v = VentanaInstruccionesSAP(self, self._nombre_sap)
+        self.wait_window(v)
+        try:
+            self.grab_set()
+        except tk.TclError:
+            pass
 
     # ── Elección del usuario ───────────────────────────────────────────────────
 

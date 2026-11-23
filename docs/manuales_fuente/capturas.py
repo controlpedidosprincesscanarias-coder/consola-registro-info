@@ -108,7 +108,7 @@ import tarifa_app  # noqa: E402
 # El inicio de sesión de Catálogo Asignaciones (sin red) se fotografía aparte (c_login); aquí se entra sin él.
 tarifa_app.App._iniciar_sesion_consola = lambda self: (self.deiconify(), self._tras_iniciar_sesion())
 # La versión que se enseña es la del .exe que llevará este manual (en el código fuente, APP_VERSION es la antigua).
-tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.94")
+tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.96")
 _crear_catalogo_demo()
 
 
@@ -333,6 +333,9 @@ def pasos(app):
                                                                       {"ruta": os.path.join(TARIFAS, "Purchasing Info Records.xlsx"),
                                                                        "archivo": "Purchasing Info Records.xlsx", "score": 100,
                                                                        "proveedor": "SUMINISTROS DEMO SL"}, TARIFAS, app), lambda v: [(B(v, "SUMINISTROS DEMO SL  [1009999]"), 1, "r"), (B(v, "Purchasing Info Records.xlsx"), 2, "r"), (boton(v, "Continuar usando"), 3, "l"), (boton(v, "Comenzar desde cero"), 4, "l")]),
+        ("c_rinfo_purchasing_aviso", lambda: _purchasing_con_aviso(app, cri, tarifa), lambda v: [
+            (next((w.master for w in widgets(v) if "puede estar desactualizado" in texto(w)), None), 1, "l"),
+            (boton(v, "Cómo descargar el Purchasing"), 2, "r")]),
         ("c_rinfo_sin_purchasing", lambda: cri.VentanaOpcionesSinPurchasing(app, tarifa, os.path.basename(tarifa), "SUMINISTROS DEMO SL",
                                                                           "SUMINISTROS DEMO SL", "1009999", TARIFAS, app), lambda v: [(boton(v, "Descargar el Purchasing"), 1, "l"), (boton(v, "Crear nuevo Registro Info"), 2, "l")]),
         ("c_rinfo_instrucciones", lambda: cri.VentanaInstruccionesSAP(app, "SUMINISTROS DEMO SL"), lambda v: [(B(v, "https://"), 1, "r")]),
@@ -383,6 +386,19 @@ DIF_DEMO = {
                  "proveedor": "PAPELERIA EJEMPLO SL"}]}
 SIMS_DEMO = {"accion4": {"irregulares": [{"codigo_dali": 10003, "tipo": "codigo_proveedor_distinto",
                                           "detalle": "El código de proveedor guardado es «P-500» y la tarifa trae «P-501»: no se toca."}]}}
+
+
+def _purchasing_con_aviso(app, cri, tarifa):
+    """(23 nov 2026) «Purchasing encontrado» con el aviso de Purchasing desactualizado (datos inventados)."""
+    import datetime as _dt
+    from unittest import mock
+    ejemplo = {"faltan": [("10509003", "5300009991"), ("10509004", "5300009992")],
+               "rinfo_posteriores": [("RINFO SUMINISTROS DEMO SL [10-11-2026].xlsx", _dt.datetime(2026, 11, 10, 9, 15))]}
+    with mock.patch.object(cri.CP, "comprobar", return_value=ejemplo):
+        return cri.VentanaPurchasingEncontrado(
+            app, tarifa, os.path.basename(tarifa), "SUMINISTROS DEMO SL", "SUMINISTROS DEMO SL", "1009999",
+            {"ruta": os.path.join(TARIFAS, "Purchasing Info Records.xlsx"), "archivo": "Purchasing Info Records.xlsx",
+             "score": 100, "proveedor": "SUMINISTROS DEMO SL"}, TARIFAS, app)
 
 
 def marcas_asignar_sap(v):

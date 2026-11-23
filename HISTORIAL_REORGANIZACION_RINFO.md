@@ -1680,6 +1680,19 @@ Víctor mandó el log de la mañana y los archivos reales (tarifa, Purchasing y 
 
 ---
 
+## 93. Aviso de Purchasing desactualizado al crear el RINFO (23 nov 2026, próxima compilación: v10.2.96) — PR en GitHub
+
+Pregunta de Víctor: «cuando una tarifa tenga todos los registros info, ¿ya no sería necesario explícitamente el Purchasing, verdad?». Respuesta (del código): sí hace falta. El número solo identifica el registro; del Purchasing salen los periodos de precio de la hoja 3 (el RINFO del 23 nov 2026 ajustó el fin de 270 líneas existentes), los datos de cada centro de la hoja 2, las bajas (materiales que ya no vienen en la tarifa) y la estructura del archivo que SAP acepta (`_postprocesar_para_sap`). Y tiene que estar descargado después de la última importación. Propuesta aceptada («ok, me parece bien, prepáralo»): que la Consola avise cuando el Purchasing no lo parece.
+
+- **`app/comun/comprobar_purchasing.py`** (nuevo, sin tkinter): `registros_de_tarifa` (columna REGISTRO INFO, solo si la tarifa la tiene), `registros_de_purchasing` (columna A de la hoja 1, en solo lectura porque el de SAP no se abre en modo normal), `rinfo_posteriores` (RINFO de TARIFAS del mismo proveedor, por código o nombre dentro del archivo, guardados después del Purchasing; sin temporales `~$`) y `textos_aviso`.
+- **Ventana «Purchasing encontrado»**: recuadro naranja «Este Purchasing puede estar desactualizado» con lo encontrado y el botón «Cómo descargar el Purchasing de SAP» (los 7 pasos de siempre). En la consola, en WARN. No para nada: si el RINFO que avisa no se llegó a importar, se continúa (decisión ya en esa misma ventana). Un fallo en la comprobación solo deja una línea en la consola.
+- **Con los archivos reales de COMERCIAL YU FONG SL** (sección 92): sin avisos, como debe (los 27 Registros Info de la tarifa están en el Purchasing).
+- **Pruebas:** `tests/test_comprobar_purchasing.py`, 9 (al día, faltan registros, tarifa antigua sin columna, resumen de muchos códigos, RINFO posterior, anteriores / de otro proveedor / temporales no cuentan, por nombre sin código, y la ventana con y sin aviso). Total: 369.
+- **Manual:** párrafos y captura nueva «Purchasing que puede estar desactualizado» en el capítulo 7; capturas y portada con la v 10.2.96.
+- **No probado:** en Windows, con un Purchasing descargado antes de importar un RINFO (debe salir el aviso) y en la unidad G: (fechas de modificación de los archivos).
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Paso «Generar plantilla Tarifa desde RINFO»~~ hecho (sección 90, Acción 6). Pendiente: probarlo en Windows con un RINFO y un Purchasing reales (arrastrar, la plantilla en Excel y la vuelta al RINFO con PRECIO NUEVO). Si se quiere, que el PRECIO NUEVO pase también al catálogo y a Catálogo Asignaciones al crear el RINFO (hoy solo lo hace la Acción 3 con la tarifa de DALI).
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
