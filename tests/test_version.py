@@ -14,8 +14,21 @@ import version as V  # noqa: E402
 
 
 class VersionAutomatica(unittest.TestCase):
-    def test_primera_compilacion_sube_dos_desde_el_codigo(self):
-        self.assertEqual(V.siguiente("10.2.36", []), "10.2.38")
+    def test_sin_releases_usa_la_del_codigo(self):
+        self.assertEqual(V.siguiente("10.2.36", []), "10.2.36")
+
+    def test_salto_a_10_4_00(self):
+        # Petición de Víctor (23 nov 2026): tras la v10.2.100 (en borrador), la v 10.4.00.
+        self.assertEqual(V.siguiente("10.4.00", ["10.2.98", "10.2.100"]), "10.4.00")
+        self.assertEqual(V.siguiente("10.4.00", ["10.2.100", "10.4.00"]), "10.4.02")
+        self.assertEqual(V.siguiente("10.4.00", ["10.4.98"]), "10.4.100")
+
+    def test_el_codigo_por_debajo_no_cuenta(self):
+        self.assertEqual(V.siguiente("10.2.36", ["10.4.02"]), "10.4.04")
+
+    def test_ultimo_numero_con_dos_cifras(self):
+        self.assertEqual(V.siguiente("10.4.00", ["10.4.06"]), "10.4.08")
+        self.assertEqual(V.siguiente("10.4.00", ["10.4.08"]), "10.4.10")
 
     def test_parte_de_la_ultima_release(self):
         self.assertEqual(V.siguiente("10.2.36", ["10.2.38", "10.2.40"]), "10.2.42")
@@ -27,7 +40,8 @@ class VersionAutomatica(unittest.TestCase):
         self.assertEqual(V.siguiente("10.2.37", []), "10.2.38")
 
     def test_forzar(self):
-        self.assertEqual(V.siguiente("10.2.36", ["10.2.38"], "10.3.0"), "10.3.0")
+        self.assertEqual(V.siguiente("10.2.36", ["10.2.38"], "10.3.0"), "10.3.00")
+        self.assertEqual(V.siguiente("10.4.00", ["10.4.02"], "10.6.00"), "10.6.00")
         for mala in ("10.2.38", "10.2.20", "10.3.1", "10.3"):
             with self.assertRaises(SystemExit):
                 V.siguiente("10.2.36", ["10.2.38"], mala)

@@ -50,6 +50,8 @@ class Versiones(unittest.TestCase):
         self.assertEqual(A.numeros("v 10.2.38"), (10, 2, 38))
         self.assertTrue(A.es_mas_nueva("10.2.40", "v 10.2.38"))
         self.assertTrue(A.es_mas_nueva("10.2.100", "v 10.2.98"))
+        self.assertTrue(A.es_mas_nueva("10.4.00", "v 10.2.100"))   # salto a la v 10.4.00 (23 nov 2026)
+        self.assertFalse(A.es_mas_nueva("10.4.00", "v 10.4.0"))
         self.assertFalse(A.es_mas_nueva("10.2.38", "v 10.2.38"))
         self.assertFalse(A.es_mas_nueva("10.2.36", "v 10.2.38"))
         self.assertFalse(A.es_mas_nueva("", "v 10.2.38"))
@@ -94,6 +96,12 @@ class NotasDeUnaVersion(unittest.TestCase):
             notas = A.notas_de_version("v 10.2.44")
         self.assertIn("Icono nuevo", notas)
         self.assertTrue(u.call_args.args[0].full_url.endswith("/releases/tags/v10.2.44"))
+
+    def test_etiqueta_con_el_cero_de_dos_cifras(self):
+        cuerpo = json.dumps({"tag_name": "v10.4.00", "body": "notas"}).encode()
+        with mock.patch.object(A.urllib.request, "urlopen", return_value=_Resp(cuerpo)) as u:
+            A.notas_de_version("v 10.4.00")
+        self.assertTrue(u.call_args.args[0].full_url.endswith("/releases/tags/v10.4.00"))
 
     def test_sin_release_o_sin_numero(self):
         err = urllib.error.HTTPError(A.API_ETIQUETA, 404, "Not Found", {}, None)

@@ -100,10 +100,11 @@ def notas_de_version(version, timeout=10):
     """(nov 2026) Las notas de la Release de `version` («v 10.2.44» → etiqueta «v10.2.44»), para verlas al
     pulsar el número de versión. None si esa versión no tiene Release (404: p. ej. desde el código, o
     una versión que no se publicó). Lanza la excepción de red en cualquier otro fallo."""
-    nums = numeros(version)
-    if not nums:
+    cifras = re.findall(r"\d+", str(version or ""))
+    if not cifras:
         return None
-    etiqueta = "v" + ".".join(map(str, nums))
+    # Tal cual se escribió: «v 10.4.00» → «v10.4.00» (con «10.4.0» GitHub no la encuentra).
+    etiqueta = "v" + ".".join(cifras)
     req = urllib.request.Request(API_ETIQUETA.format(etiqueta), headers={
         "Accept": "application/vnd.github+json", "User-Agent": USER_AGENT})
     try:

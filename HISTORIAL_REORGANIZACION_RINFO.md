@@ -1723,16 +1723,29 @@ Víctor mandó el log de las 10:02 (v10.2.98): RINFO de AHUMADOS CANARIOS SA LP 
 
 ---
 
-## 96. Teléfono desde el Purchasing y plantilla de la Acción 6 completa (23 nov 2026, próxima compilación: v10.2.102; la v10.2.100 está en borrador) — PR en GitHub
+## 96. Teléfono desde el Purchasing y plantilla de la Acción 6 completa (23 nov 2026, próxima compilación: v10.4.00, ver sección 97) — PR en GitHub
 
 Petición de Víctor, con una captura de la TARIFA de AHUMADOS CANARIOS SA (teléfono vacío): «si existe un Purchasing del proveedor, asignar el teléfono que tenga asociado al Excel de la tarifa que se crea e indicar al usuario que deba revisar y modificar si lo cree conveniente; cuando se crea a la inversa también rellenar todos los campos correctamente».
 
 - **TARIFA final (Acción 3):** con el mismo Purchasing que ya rellena REGISTRO INFO (`_registros_info_para_tarifa` → `plantilla_rinfo.datos_proveedor_de`), `poner_telefono_del_purchasing` pone en C4 el teléfono de la hoja 1 (columna AD) si la celda está vacía y avisa en WARN: «Teléfono del proveedor tomado del Purchasing …: revísalo en la celda C4 y cámbialo si no es el bueno». También al reprocesar un [INCOMPLETO]. Los hoteles **no** se toman del Purchasing: tiene todos los centros y la tarifa puede ser de solo algunos (sección 95).
 - **Plantilla (Acción 6):** «Código:» con el código DALI del proveedor (C1 de su TARIFA final más reciente en TARIFAS, `codigo_dali_de_tarifas`; con los archivos reales de COMERCIAL YU FONG SL, 43), y si no tiene ninguna, el de SAP con una línea en la consola; «Dto.(%)» con «0 línea» y «0 general», como la TARIFA final. Lo demás ya lo rellenaba (teléfono, hoteles, Registro Info, precios); el «Periodo:» sigue vacío a propósito, para que lo ponga el proveedor.
 - **Pruebas:** 3 nuevas en `tests/test_plantilla_rinfo.py` (teléfono del proveedor, no pisar el escrito y avisar, código DALI de la última tarifa sin contar RINFO ni otros proveedores) y `transformar()` comprueba C4. Total: 379.
-- **Manual:** párrafo del teléfono en «Teléfono del proveedor y hoteles de la TARIFA» y el «Código:» en la Acción 6; v 10.2.102.
-- **Versión:** la v10.2.100 está como **borrador** sin publicar; como la siguiente compilación cuenta también los borradores, esto saldrá en la v10.2.102. Si se prefiere una sola versión, se puede publicar solo la v10.2.102 (incluye todo lo de la 100).
+- **Manual:** párrafo del teléfono en «Teléfono del proveedor y hoteles de la TARIFA» y el «Código:» en la Acción 6; v 10.4.00.
+- **Versión:** saldrá en la **v10.4.00** (sección 97), que incluye también lo de la v10.2.100 (en borrador).
 - **No probado:** en Windows, una TARIFA de AHUMADOS con su Purchasing en TARIFAS (C4 con el teléfono y el aviso) y una plantilla de la Acción 6 (código 322).
+
+---
+
+## 97. Salto a la v 10.4.00 (23 nov 2026) — PR en GitHub
+
+Petición de Víctor, con una captura de la cabecera en «v 10.2.100»: «la siguiente versión sumamos dos al del centro y 0 al final, v 10.4.00 … revisar documentación y manuales».
+
+- **`compilacion/version.py`:** si `APP_VERSION` de `tarifa_app.py` es mayor que todas las Releases (también los borradores), la compilación la usa tal cual; si no, la última +2 como siempre. El último número va con **dos cifras** como mínimo (10.4.00, 10.4.02 … 10.4.98, 10.4.100), como el Organizador (4.18.00…). `APP_VERSION = "v 10.4.00"`: la próxima compilación, aunque la v10.2.100 siga en borrador, será la **v10.4.00**, y las siguientes 10.4.02, 10.4.04…
+- **`actualizaciones.notas_de_version`:** pedía la etiqueta con los números convertidos (`v10.4.0`); ahora con las cifras tal cual (`v10.4.00`), si no, al pulsar la versión no saldrían sus novedades. Las actualizaciones automáticas comparan como números: 10.4.00 es mayor que 10.2.100.
+- **Pruebas:** salto a 10.4.00 con la v10.2.100 en borrador, siguiente 10.4.02, 10.4.98 → 10.4.100, dos cifras, código por debajo de las Releases, forzar, etiqueta `v10.4.00` y 10.4.00 > 10.2.100. Total: 383.
+- **Documentación:** las entregas que iban a salir en la v10.2.102 (sección 96) salen en la v10.4.00; README, CLAUDE.md, comentarios del workflow y manual regenerado con «v 10.4.00».
+- **Para el próximo salto:** poner la nueva versión en `APP_VERSION` (p. ej. `"v 10.6.00"`) o escribirla en el campo «version» del workflow.
+- **No probado:** la compilación real en GitHub (debe salir «v10.4.00» en el paso «Calcular la versión»).
 
 ---
 

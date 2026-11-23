@@ -27,7 +27,7 @@ from app.comun.credenciales import (
 )
 
 # ─── Versión de la aplicación ────────────────────────────────────────────────
-APP_VERSION = "v 10.2.36"   # ← actualiza aquí cada vez que termines una fase
+APP_VERSION = "v 10.4.00"   # ← salto de versión: si es mayor que todas las Releases, la compilación la usa tal cual (compilacion/version.py)
 
 # DALI_APP_API_BASE (URL del Worker de Catálogo Asignaciones) vive en app/principal/catalogo_dali.py.
 # ─────────────────────────────────────────────────────────────────────────────

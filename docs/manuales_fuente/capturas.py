@@ -108,7 +108,7 @@ import tarifa_app  # noqa: E402
 # El inicio de sesión de Catálogo Asignaciones (sin red) se fotografía aparte (c_login); aquí se entra sin él.
 tarifa_app.App._iniciar_sesion_consola = lambda self: (self.deiconify(), self._tras_iniciar_sesion())
 # La versión que se enseña es la del .exe que llevará este manual (en el código fuente, APP_VERSION es la antigua).
-tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.2.102")
+tarifa_app.APP_VERSION = os.environ.get("VERSION", "v 10.4.00")
 _crear_catalogo_demo()
 
 
@@ -362,7 +362,7 @@ def pasos(app):
          lambda v: [(B(v, "Valores escritos").master, 1, "ir"), (boton(v, "Sí, abrir ahora"), 2, "t")]),
         ("c_consulta_manual", lambda: VentanaConsultaManual(app, "códigos SAP faltantes", app.log_consola),
          lambda v: [(de_clase(v, "Entry"), 1, "ir"), (de_clase(v, "Canvas"), 2, "ir"), (boton(v, "Abrir el manual"), 3, "tr"), (boton(v, "Guardar una copia"), 4, "tl")]),
-        ("c_actualizacion", lambda: VentanaActualizacion(app, {"version": "10.2.42", "notas": "## What's Changed\n* Mejoras en la "
+        ("c_actualizacion", lambda: VentanaActualizacion(app, {"version": "10.4.02", "notas": "## What's Changed\n* Mejoras en la "
                                                          "consulta del manual by @x in #12\n* Correcciones menores by @x in #13",
                                                          "url_exe": "", "url_sha": ""}, tarifa_app.APP_VERSION, app.log_consola),
          lambda v: [(de_clase(v, "Text"), 1, "ir"), (boton(v, "Actualizar ahora"), 2, "t"), (boton(v, "Más tarde"), 3, "t")]),
