@@ -1670,6 +1670,16 @@ Petición de Víctor (22 nov 2026): «¿Podríamos añadir una nueva columna don
 
 ---
 
+## 92. Revisión con datos reales de COMERCIAL YU FONG SL y corrección en la Acción 6 (23 nov 2026, próxima compilación: v10.2.94) — PR en GitHub
+
+Víctor mandó el log de la mañana y los archivos reales (tarifa, Purchasing y RINFO de COMERCIAL YU FONG SL), probados con el código de las secciones 89-91 sin compilar aún.
+
+- **Revisado y correcto:** la TARIFA final salió con el recuadro de HOTELES encima de la tabla y la columna REGISTRO INFO (44 de 46 del Purchasing; al terminar el [INCOMPLETO], 27 de 29: los 2 que faltan, 10104146 y 10104147, son materiales nuevos sin Registro Info en SAP). Los hoteles marcados a mano (uno con ✔ y nueve con X) se leyeron bien y el RINFO no preguntó los centros. El teléfono estaba vacío en la tarifa y se preguntó, como debe. El RINFO: 27 materiales sin cambios (los precios de la tarifa son los mismos que en SAP para el 2º semestre de 2026), 2 nuevos con sus 20 filas de la hoja 3, «Sin incidencias detectadas». Comparado material a material y centro a centro con el Purchasing.
+- **Acción 6 con esos archivos (en local):** desde el Purchasing, una sola plantilla (los 10 hoteles con los mismos precios), 27 artículos, con teléfono, hoteles y Registros Info. El Purchasing real de SAP no se puede abrir con openpyxl en modo normal (`ColumnDimension … 's'`, el motivo de `_parchear_column_dimension`), pero `leer_purchasing` lo abre en solo lectura y funciona.
+- **Error corregido** (commit propio): desde el RINFO, los 2 materiales nuevos habrían salido con REGISTRO INFO «1» y «2», que son los correlativos provisionales que pone el Generador en la columna A, no números de SAP. `leer_purchasing` ya no guarda el Registro Info de las filas con «Nueva» (AK) = X. Prueba nueva con ese caso. Total: 360.
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Paso «Generar plantilla Tarifa desde RINFO»~~ hecho (sección 90, Acción 6). Pendiente: probarlo en Windows con un RINFO y un Purchasing reales (arrastrar, la plantilla en Excel y la vuelta al RINFO con PRECIO NUEVO). Si se quiere, que el PRECIO NUEVO pase también al catálogo y a Catálogo Asignaciones al crear el RINFO (hoy solo lo hace la Acción 3 con la tarifa de DALI).
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
