@@ -37,7 +37,7 @@ La **consola** de la derecha muestra cada paso con su hora y un color por nivel:
 
 **Acción 1 con `ARTICULOS.htm` (desde v10.2.74):** además de `ARTICULOS1.xls` y `ARTICULOS2.xls`, la Acción 1 acepta `ARTICULOS.htm`: el listado de artículos de DALI exportado como informe, con las 9 columnas en un solo archivo (código, descripción, unidad, familia, subfamilia, naturaleza, impuesto compra, proveedor por defecto y no permitir compra). El resultado es el mismo; además, las descripciones largas salen sin el espacio que DALI mete al exportar a Excel donde partía la línea («PLATANO- MANZANA»). La consola dice cuántos artículos ha leído y si coinciden con el «Total Líneas» del informe. Si en RECURSOS están las dos descargas, se usa **la más reciente** y la consola dice cuál; después se borran las tres, como hasta ahora los `.xls`, para no usar por error una descarga vieja.
 
-**Teléfono desde el Purchasing (desde v10.2.102, petición de Víctor, 23 nov 2026):** si en TARIFAS hay un Purchasing del proveedor, la TARIFA final de la Acción 3 sale ya con su teléfono en «Teléfono:» y la consola avisa en amarillo para revisarlo (si la celda ya tiene uno, no se toca). Los hoteles se siguen marcando a mano. La plantilla de la Acción 6 lleva en «Código:» el código DALI del proveedor (de su última TARIFA final en TARIFAS; si no hay, el de SAP) y los descuentos a 0, como la TARIFA final.
+**Teléfono desde el Purchasing (desde v10.4.00, petición de Víctor, 23 nov 2026):** si en TARIFAS hay un Purchasing del proveedor, la TARIFA final de la Acción 3 sale ya con su teléfono en «Teléfono:» y la consola avisa en amarillo para revisarlo (si la celda ya tiene uno, no se toca). Los hoteles se siguen marcando a mano. La plantilla de la Acción 6 lleva en «Código:» el código DALI del proveedor (de su última TARIFA final en TARIFAS; si no hay, el de SAP) y los descuentos a 0, como la TARIFA final.
 
 **Bajas solo en los hoteles de la tarifa (desde v10.2.100, 23 nov 2026, caso real AHUMADOS CANARIOS SA LP):** al crear el RINFO desde un Purchasing con una tarifa de solo algunos hoteles, los materiales que no vienen en ella ya no se dan de baja en el Registro Info entero (que en SAP los borraba en todos los hoteles), sino solo en los hoteles de esa tarifa; los que solo están en hoteles de fuera no se tocan. Si la tarifa es de todos sus hoteles, como siempre. La sigla de Suite Princess pasa a ser **SU** (las tarifas con ST se siguen leyendo).
 
@@ -80,7 +80,7 @@ Al abrirse, la app comprueba si hay una versión nueva publicada en GitHub. Si l
 2. Elige el destino:
    - **solo-descarga**: el `.exe` queda en la propia ejecución, en «Artifacts».
    - **borrador**: además crea una Release en borrador, que se publica a mano.
-3. La versión sale sola: la última más 2 (10.2.36 → 10.2.38). Se puede forzar otra en el campo «version».
+3. La versión sale sola: la última más 2, con el último número de dos cifras (10.4.00 → 10.4.02). Para un salto (como el de la v10.2.100 a la **v10.4.00**, 23 nov 2026), se pone la nueva en `APP_VERSION` de `tarifa_app.py` y la compilación la usa tal cual si es mayor que todas. También se puede forzar otra en el campo «version».
 
 Antes de compilar se pasan todas las pruebas.
 
