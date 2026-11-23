@@ -57,8 +57,8 @@ def escribir_plantilla(plantilla, carpeta_tarifas):
         ws.cell(fila, 2).value = etiqueta
         ws.cell(fila, 3).value = valor if valor != "" else None
     ws.cell(5, 2).value = "Dto.(%):"
-    ws.cell(5, 3).value = "línea"
-    ws.cell(5, 4).value = "general"
+    ws.cell(5, 3).value = "0 línea"     # (23 nov 2026) como la TARIFA final: el precio de SAP ya es el neto
+    ws.cell(5, 4).value = "0 general"
     for r in (1, 2, 3, 5):
         ws.cell(r, 2).font = _font(bold=True, size=11)
         ws.cell(r, 2).alignment = _alin(h="center", v="center")
