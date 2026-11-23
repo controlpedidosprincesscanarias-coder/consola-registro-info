@@ -1749,6 +1749,21 @@ Petición de Víctor, con una captura de la cabecera en «v 10.2.100»: «la sig
 
 ---
 
+## 98. La sesión caduca cada día y Categoría valoración distinta solo de los códigos en uso (23 nov 2026, sale en la v10.4.00) — PR en GitHub
+
+**Sesión diaria.** Petición de Víctor: «la verificación de usuario que realiza la consola al inicio queda grabada en mi PC, ¿no sería conveniente que caduque diariamente?». Decisiones: caduca cada día; si la Consola sigue abierta al cambiar el día, se pide antes de la siguiente acción.
+- `credenciales.py`: `anotar_sesion_de_hoy` (día y email cifrados con DPAPI), `sesion_de_hoy` y `caducar_si_no_es_de_hoy` (borra la contraseña y deja el email). Las credenciales guardadas antes de este cambio no tienen día: se piden una vez.
+- `_iniciar_sesion_consola`: caduca al abrir y apunta el día al entrar. `_sesion_vigente_o_pedir` / `_con_sesion`: los seis botones y «Crear / Actualizar Registro Info SAP» comprueban el día antes de lanzar; si cambió, la ventana de inicio de sesión sale encima de la Consola, con el email puesto y «Cancelar» (no la cierra; la acción no se hace).
+- La fecha es la del PC: no protege contra quien la cambie a mano, pero sí contra usar la Consola otro día sin escribir la contraseña.
+
+**Categoría valoración.** Petición de Víctor, con una captura del log de la Acción 2 («3 código(s) con Categoría valoración distinta según el centro»): «solo se tendrán en cuenta si están en uso en la web y catalogo-dali-completo; si no, no se tendrá en cuenta la incoherencia». El aviso pasa de la lectura de Listas de productos al cruce con el catálogo (`_avisar_conflictos_categoria` + `sap_helpers.conflictos_en_uso`, con los códigos de la columna D, que es lo mismo que hay en la web tras traer sus cambios). El valor que se escribe sigue siendo el más frecuente.
+
+- **Pruebas:** 10 nuevas (caducidad, marca de otro email, guardadas sin día, renovación con la Consola abierta, ventana con «Cancelar», filtro de códigos en uso). Total: 393.
+- **Manual:** inicio de sesión (vale solo ese día) y Acción 2; regenerado.
+- **No probado:** en Windows, abrir al día siguiente (pide la contraseña) y dejarla abierta pasada la medianoche; la Acción 2 con los listados reales (no deben salir 10103148, 10300003 ni 10800950 si no están en el catálogo).
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Paso «Generar plantilla Tarifa desde RINFO»~~ hecho (sección 90, Acción 6). Pendiente: probarlo en Windows con un RINFO y un Purchasing reales (arrastrar, la plantilla en Excel y la vuelta al RINFO con PRECIO NUEVO). Si se quiere, que el PRECIO NUEVO pase también al catálogo y a Catálogo Asignaciones al crear el RINFO (hoy solo lo hace la Acción 3 con la tarifa de DALI).
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
