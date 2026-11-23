@@ -760,7 +760,17 @@ class VentanaSAPFaltantes(tk.Toplevel):
                 _cambiados = list(nuevos) + list(_dali_limpiados)
                 if _cambiados and self._catalogo_refresh_fn:
                     try:
-                        self._catalogo_refresh_fn(_cambiados)
+                        # (23 nov 2026) con los códigos: si alguno no está en Productos.xlsx, el envío a la
+                        # web espera a la guía de los listados de SAP (un solo envío con todo completo)
+                        import inspect
+                        try:
+                            _con_codigos = "codigos_sap" in inspect.signature(self._catalogo_refresh_fn).parameters
+                        except (TypeError, ValueError):
+                            _con_codigos = False
+                        if _con_codigos:
+                            self._catalogo_refresh_fn(_cambiados, codigos_sap=list(nuevos.values()))
+                        else:
+                            self._catalogo_refresh_fn(_cambiados)
                     except Exception as _e_cat_ref:
                         self._log(
                             f"  ⚠  No se pudieron enviar los cambios a Catálogo "

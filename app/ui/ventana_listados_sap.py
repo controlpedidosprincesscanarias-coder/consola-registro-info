@@ -10,6 +10,7 @@ Productos.xlsx. Explica, con imágenes, cómo descargar de SAP Productos.xlsx (�
 y Listas de productos.xlsx («Lista de productos») y guardarlos en RECURSOS. Opciones:
   - «Ya están en RECURSOS: actualizar ahora» → resultado "actualizar" (la app lanza la Acción 3);
   - «Más tarde» (o cerrar) → avisa de que la web queda parcialmente actualizada; resultado "despues".
+  (23 nov 2026) Mientras esta ventana está abierta no se envía nada a la web: se espera a la respuesta.
 La lógica y los textos están en app/comun/listados_sap.py.
 Desde v10.2.74 también VentanaAntesAccion3: la misma guía al pulsar la Acción 3, con la comprobación de si hace falta
 descargar los listados (ver su docstring).
@@ -72,10 +73,10 @@ class VentanaListadosSap(tk.Toplevel):
         n = len(self._codigos)
         lista = ", ".join(self._codigos[:12]) + (" …" if n > 12 else "")
         tk.Label(self, text=(f"Has asignado {n} código(s) SAP que todavía no están en Productos.xlsx: {lista}.\n"
-                             "Los códigos ya se envían a Catálogo Asignaciones, pero para que toda la información "
-                             "quede registrada (descripción, unidad,\ngrupos y categoría de valoración) hay que "
-                             "descargar de SAP estos dos listados, guardarlos en RECURSOS y actualizar con la "
-                             "Acción 2."),
+                             "Para que se registre toda la información (descripción, unidad, grupos y categoría de "
+                             "valoración), descarga de SAP estos dos listados\ny guárdalos en RECURSOS: la Acción 2 lo "
+                             "completa y lo envía todo a Catálogo Asignaciones de una vez. Con «Más tarde» se "
+                             "envían ya solo los códigos."),
                  font=FONT_LABEL, fg=C_TEXT_LIGHT, bg=C_MID, justify="left").pack(anchor="w", padx=14, pady=(8, 4))
 
         # Botones (antes que la guía, para que siempre se vean)

@@ -1,7 +1,7 @@
 // Manual de usuario de la Consola Registro Info SAP (TARIFA Finder).
 // La idea y el desarrollo de la aplicación, incluidas sus pruebas, son de Víctor Alejandro Martín Andrade,
 // para el Departamento de Central de Compras de Princess Hotels en Canarias.
-const V = process.env.VERSION || "v 10.2.96";
+const V = process.env.VERSION || "v 10.2.98";
 const L = require("./lib.js");
 const { p, vineta, pasos, h1, h2, imagen, leyenda, recuadro, tabla, flujo, portada, indice, generar } = L;
 const fecha = new Date().toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
@@ -148,14 +148,14 @@ s.push(...pasos(["Pulsa **5 · Asignar SAP pendientes**.",
 s.push(...recuadro("consejo", "Sin prisa", ["No hace falta completarlos todos de una vez: guarda cuando quieras y cierra. La próxima vez solo saldrán los que sigan sin código. Si cierras con códigos sin guardar, la consola te pregunta."]));
 
 s.push(h2("Descargar los listados de SAP (Productos y Listas de productos)"));
-s.push(p("Cuando guardas códigos SAP (Acción 5 o «Códigos SAP faltantes» de la Acción 3) de materiales que **todavía no están en Productos.xlsx** —normalmente, materiales recién creados en SAP—, los códigos se envían ya a Catálogo Asignaciones, pero sus **datos SAP** (descripción, unidad, grupos y categoría de valoración) solo llegan con los listados descargados de SAP **después** de crearlos. Por eso la consola abre esta ventana:"));
+s.push(p("Cuando guardas códigos SAP (Acción 5 o «Códigos SAP faltantes» de la Acción 3) de materiales que **todavía no están en Productos.xlsx** —normalmente, materiales recién creados en SAP—, sus **datos SAP** (descripción, unidad, grupos y categoría de valoración) solo llegan con los listados descargados de SAP **después** de crearlos. Por eso la consola abre esta ventana y, mientras tanto, **no envía nada a Catálogo Asignaciones**: espera a tu respuesta para mandarlo todo completo de una vez:"));
 s.push(...imagen("c_listados_sap", 16, "Faltan los listados de SAP actualizados (datos de ejemplo)."));
 s.push(...leyenda([[1, "Los códigos que no están en Productos.xlsx."],
   [2, "La aplicación de SAP de cada listado: **Productos.xlsx** se descarga en **«Gestionar datos maestros de producto»** y **Listas de productos.xlsx** en **«Lista de productos»**."],
   [3, "Pulsa **Ir** para cargar la tabla y, a la derecha de su barra, el botón **⌄** de exportar (el último, «Abrir menú») → **Exportar como…**."],
   [4, "Deja el **nombre de fichero** que se indica («Productos» o «Listas de productos») y el formato **Microsoft Excel** (*.xlsx), y pulsa **Exportar**. Guarda los dos archivos en **RECURSOS**, sustituyendo a los anteriores (con **📂 Abrir RECURSOS** se abre la carpeta). Debajo se ve si cada archivo ya se ha descargado de nuevo."],
-  [5, "**Ya están en RECURSOS: actualizar ahora**: la consola lanza sola la **Acción 2**, que completa los datos SAP en el catálogo y en la web."],
-  [6, "**Más tarde**: la consola avisa de que la web queda **parcialmente actualizada** (tiene los códigos SAP, pero no sus datos SAP) hasta que descargues los listados y pulses la Acción 2."]]));
+  [5, "**Ya están en RECURSOS: actualizar ahora**: la consola lanza sola la **Acción 2**, sin volver a preguntar, que completa los datos SAP en el catálogo y lo envía todo a la web de una vez."],
+  [6, "**Más tarde** (o cerrar la ventana): la consola envía ya los códigos SAP y avisa de que la web queda **parcialmente actualizada** (sin sus datos SAP) hasta que descargues los listados y pulses la Acción 2."]]));
 s.push(...recuadro("importante", "Exportar como Excel", ["Exporta siempre con «Exportar como…» y el formato **Microsoft Excel** (*.xlsx), y con el nombre exacto: **Productos** y **Listas de productos**. Con otro nombre o formato, la consola no los encuentra."]));
 
 // ── 6 ──────────────────────────────────────────────────────────────────────

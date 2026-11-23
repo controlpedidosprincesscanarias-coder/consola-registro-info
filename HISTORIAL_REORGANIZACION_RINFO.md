@@ -1680,7 +1680,7 @@ Víctor mandó el log de la mañana y los archivos reales (tarifa, Purchasing y 
 
 ---
 
-## 93. Aviso de Purchasing desactualizado al crear el RINFO (23 nov 2026, próxima compilación: v10.2.96) — PR en GitHub
+## 93. Aviso de Purchasing desactualizado al crear el RINFO (23 nov 2026, próxima compilación: v10.2.98; la v10.2.96 se publicó antes con la sección 92) — PR en GitHub
 
 Pregunta de Víctor: «cuando una tarifa tenga todos los registros info, ¿ya no sería necesario explícitamente el Purchasing, verdad?». Respuesta (del código): sí hace falta. El número solo identifica el registro; del Purchasing salen los periodos de precio de la hoja 3 (el RINFO del 23 nov 2026 ajustó el fin de 270 líneas existentes), los datos de cada centro de la hoja 2, las bajas (materiales que ya no vienen en la tarifa) y la estructura del archivo que SAP acepta (`_postprocesar_para_sap`). Y tiene que estar descargado después de la última importación. Propuesta aceptada («ok, me parece bien, prepáralo»): que la Consola avise cuando el Purchasing no lo parece.
 
@@ -1688,8 +1688,21 @@ Pregunta de Víctor: «cuando una tarifa tenga todos los registros info, ¿ya no
 - **Ventana «Purchasing encontrado»**: recuadro naranja «Este Purchasing puede estar desactualizado» con lo encontrado y el botón «Cómo descargar el Purchasing de SAP» (los 7 pasos de siempre). En la consola, en WARN. No para nada: si el RINFO que avisa no se llegó a importar, se continúa (decisión ya en esa misma ventana). Un fallo en la comprobación solo deja una línea en la consola.
 - **Con los archivos reales de COMERCIAL YU FONG SL** (sección 92): sin avisos, como debe (los 27 Registros Info de la tarifa están en el Purchasing).
 - **Pruebas:** `tests/test_comprobar_purchasing.py`, 9 (al día, faltan registros, tarifa antigua sin columna, resumen de muchos códigos, RINFO posterior, anteriores / de otro proveedor / temporales no cuentan, por nombre sin código, y la ventana con y sin aviso). Total: 369.
-- **Manual:** párrafos y captura nueva «Purchasing que puede estar desactualizado» en el capítulo 7; capturas y portada con la v 10.2.96.
+- **Manual:** párrafos y captura nueva «Purchasing que puede estar desactualizado» en el capítulo 7; capturas y portada con la v 10.2.98.
 - **No probado:** en Windows, con un Purchasing descargado antes de importar un RINFO (debe salir el aviso) y en la unidad G: (fechas de modificación de los archivos).
+
+---
+
+## 94. La web espera a la guía de los listados de SAP: un solo envío completo (23 nov 2026, próxima compilación: v10.2.98) — PR en GitHub
+
+Petición de Víctor, con una captura (la ventana «Cambios para Catálogo Asignaciones» encima de la guía «Faltan los listados de SAP actualizados») y el log de AHUMADOS CANARIOS SA: «¿no debería esperar a "actualizar ahora" antes de solicitar actualizar la web? De esta manera realizaría un único proceso de actualización con todo completo y no solo parte (código SAP sin más info que llega en el paso pendiente)». En el log: a las 09:21 se guardan 2 códigos SAP desde «Códigos SAP faltantes», el cruce corre con el Productos.xlsx antiguo y a las 09:22 se envían a la web 2 cambios (solo los códigos); a las 09:24 «Ya están en RECURSOS» lanza la Acción 2 y, tras la pregunta «Confirmar actualización SAP» (39 s), a las 09:26 se envían 3 cambios más. Segunda petición, con otra captura: «y esto ¿no sobra ya?» (esa pregunta).
+
+- **Un solo envío:** `_completar_datos_sap_tras_asignar` recibe los códigos guardados (`codigos_sap`); si alguno no está en Productos.xlsx, no lanza el cruce ni el envío y deja los DALI en `_sap_esperando_listados`. Lo llaman así la Acción 5 (`_guardar_sap_asignados`) y la ventana «Códigos SAP faltantes» (`VentanaSAPFaltantes`, solo si la función acepta `codigos_sap`). `_avisar_listados_sap`: «Ya están en RECURSOS» → la Acción 2, que lo completa y lo envía todo; «Más tarde» o cerrar → `_enviar_sap_en_espera()`, que envía ya lo que hay (como antes) con el aviso de web parcial. Si todos están en Productos.xlsx, se envía al momento, como siempre.
+- **Sin «Confirmar actualización SAP»** después de «Ya están en RECURSOS»: `_actualizar_listado_sap(confirmar=False)`. Se mantiene la ventana «Completado con advertencias» de los duplicados, porque hay que corregirlos antes de crear el RINFO.
+- **Texto de la guía:** ya no dice que los códigos «ya se envían»; dice que la Acción 2 lo envía todo de una vez y que con «Más tarde» se envían solo los códigos.
+- **Pruebas:** 2 nuevas en `tests/test_listados_sap.py` (la espera con las tres respuestas y el envío inmediato cuando todos están en Productos) y al día las de `test_listados_sap` (sin confirmar) y `test_accion_asignar_sap` (espera y «Más tarde»). Total: 371.
+- **Manual:** capítulo 5, «Descargar los listados de SAP», y la captura de la guía; portada v 10.2.98. Esta rama va encima de la de la sección 93 (las dos tocan el manual).
+- **No probado:** en Windows, guardar un código que no está en Productos.xlsx y contestar «Ya están en RECURSOS» (un solo envío) y «Más tarde».
 
 ---
 
