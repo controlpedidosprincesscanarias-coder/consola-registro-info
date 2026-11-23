@@ -126,8 +126,11 @@ def leer_purchasing(ruta, hoy=None):
                                                 "materiales": OrderedDict(), "registros": {}})
         if not p["telefono"]:
             p["telefono"] = _txt(_celda(f, 30))
-        if reg and mat not in p["registros"]:      # (22 nov 2026) Registro Info de cada material, también si
-            p["registros"][mat] = reg              # está marcado para borrar (el número no cambia)
+        # (22 nov 2026) Registro Info de cada material, también si está marcado para borrar (el número no cambia).
+        # (23 nov 2026, con el RINFO real de COMERCIAL YU FONG SL) Salvo en las filas nuevas de un RINFO de la
+        # Consola (AK «Nueva» = X): su columna A es un correlativo provisional (1, 2…), no un Registro Info de SAP.
+        if reg and mat not in p["registros"] and not _marcado(_celda(f, 37)):
+            p["registros"][mat] = reg
         if _marcado(_celda(f, 36)):
             borrados.add((clave_prov, mat))
             avisos["borrados"].add(mat)
