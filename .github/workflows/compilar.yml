@@ -4,9 +4,10 @@
 # Andrade, para el Departamento de Central de Compras de Princess Hotels en Canarias.
 #
 # Solo se lanza A MANO (pestaña Actions → «Compilar Consola Registro Info» → Run workflow); nunca al subir código.
-#   - La VERSIÓN sale sola (compilacion/version.py): la mayor entre APP_VERSION de tarifa_app.py y las
-#     Releases ya creadas, +2 (siempre par). Se escribe en la copia que se compila, así que el .exe la
-#     muestra, y queda como etiqueta de la Release. «version» permite forzar otra (p. ej. 10.3.0).
+#   - La VERSIÓN sale sola (compilacion/version.py): la última Release ya creada +2 (siempre par, con dos
+#     cifras: 10.4.00 → 10.4.02); si APP_VERSION de tarifa_app.py es mayor que todas, esa tal cual (salto
+#     de versión, p. ej. v 10.4.00). Se escribe en la copia que se compila, así que el .exe la muestra, y
+#     queda como etiqueta de la Release. «version» permite forzar otra (p. ej. 10.6.00).
 #   - destino «solo-descarga»: deja TARIFA_Finder.exe y su .sha256 como descarga del propio workflow.
 #     No crea ninguna Release (la versión no se gasta: la siguiente compilación usará la misma).
 #   - destino «borrador»: además crea una Release en BORRADOR con el .exe y el .sha256 y las novedades
@@ -25,7 +26,7 @@ on:
           - borrador
         default: solo-descarga
       version:
-        description: "Versión (vacío = automática, +2 sobre la última)"
+        description: "Versión (vacío = automática: +2 sobre la última, o el salto puesto en APP_VERSION)"
         type: string
         required: false
         default: ""
