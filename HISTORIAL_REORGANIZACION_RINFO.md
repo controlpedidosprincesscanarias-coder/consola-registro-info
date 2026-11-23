@@ -1723,6 +1723,19 @@ Víctor mandó el log de las 10:02 (v10.2.98): RINFO de AHUMADOS CANARIOS SA LP 
 
 ---
 
+## 96. Teléfono desde el Purchasing y plantilla de la Acción 6 completa (23 nov 2026, próxima compilación: v10.2.102; la v10.2.100 está en borrador) — PR en GitHub
+
+Petición de Víctor, con una captura de la TARIFA de AHUMADOS CANARIOS SA (teléfono vacío): «si existe un Purchasing del proveedor, asignar el teléfono que tenga asociado al Excel de la tarifa que se crea e indicar al usuario que deba revisar y modificar si lo cree conveniente; cuando se crea a la inversa también rellenar todos los campos correctamente».
+
+- **TARIFA final (Acción 3):** con el mismo Purchasing que ya rellena REGISTRO INFO (`_registros_info_para_tarifa` → `plantilla_rinfo.datos_proveedor_de`), `poner_telefono_del_purchasing` pone en C4 el teléfono de la hoja 1 (columna AD) si la celda está vacía y avisa en WARN: «Teléfono del proveedor tomado del Purchasing …: revísalo en la celda C4 y cámbialo si no es el bueno». También al reprocesar un [INCOMPLETO]. Los hoteles **no** se toman del Purchasing: tiene todos los centros y la tarifa puede ser de solo algunos (sección 95).
+- **Plantilla (Acción 6):** «Código:» con el código DALI del proveedor (C1 de su TARIFA final más reciente en TARIFAS, `codigo_dali_de_tarifas`; con los archivos reales de COMERCIAL YU FONG SL, 43), y si no tiene ninguna, el de SAP con una línea en la consola; «Dto.(%)» con «0 línea» y «0 general», como la TARIFA final. Lo demás ya lo rellenaba (teléfono, hoteles, Registro Info, precios); el «Periodo:» sigue vacío a propósito, para que lo ponga el proveedor.
+- **Pruebas:** 3 nuevas en `tests/test_plantilla_rinfo.py` (teléfono del proveedor, no pisar el escrito y avisar, código DALI de la última tarifa sin contar RINFO ni otros proveedores) y `transformar()` comprueba C4. Total: 379.
+- **Manual:** párrafo del teléfono en «Teléfono del proveedor y hoteles de la TARIFA» y el «Código:» en la Acción 6; v 10.2.102.
+- **Versión:** la v10.2.100 está como **borrador** sin publicar; como la siguiente compilación cuenta también los borradores, esto saldrá en la v10.2.102. Si se prefiere una sola versión, se puede publicar solo la v10.2.102 (incluye todo lo de la 100).
+- **No probado:** en Windows, una TARIFA de AHUMADOS con su Purchasing en TARIFAS (C4 con el teléfono y el aviso) y una plantilla de la Acción 6 (código 322).
+
+---
+
 ## Próximos pasos, en orden de prioridad
 - ~~Paso «Generar plantilla Tarifa desde RINFO»~~ hecho (sección 90, Acción 6). Pendiente: probarlo en Windows con un RINFO y un Purchasing reales (arrastrar, la plantilla en Excel y la vuelta al RINFO con PRECIO NUEVO). Si se quiere, que el PRECIO NUEVO pase también al catálogo y a Catálogo Asignaciones al crear el RINFO (hoy solo lo hace la Acción 3 con la tarifa de DALI).
 - ~~La rama CASO B del paso 6c no resuelve nunca nada~~ hecho (sección 68): el periodo posterior solapado se retrasa a J_nueva + 1 y el nuevo queda íntegro (decisión de Víctor).
